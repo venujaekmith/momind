@@ -1,0 +1,131 @@
+<style>
+.role-dashboard-page {
+    --role-accent: #e85d8f;
+    --role-accent-dark: #a13e63;
+    min-height: calc(100vh - 9rem);
+    padding: 1.5rem;
+    background: radial-gradient(circle at 7% 7%, rgba(232,93,143,.14), transparent 26%), radial-gradient(circle at 94% 92%, rgba(255,184,203,.22), transparent 30%), linear-gradient(145deg, #fff2f6 0%, #fff 48%, #fde8ee 100%);
+    border: 1px solid #f5c4d2;
+    border-radius: 22px;
+}
+.content-area .role-dashboard-page > .card-pink:first-child {
+    position: relative;
+    overflow: hidden;
+    color: #fff;
+    background: linear-gradient(135deg, #e85d8f 0%, #cc4677 58%, #a13e63 100%);
+    border-color: #d97599;
+    box-shadow: 0 17px 38px rgba(126,42,75,.2);
+}
+.content-area .role-dashboard-page > .card-pink:first-child::after {
+    content: "";
+    position: absolute;
+    right: -70px;
+    top: -105px;
+    width: 240px;
+    height: 240px;
+    pointer-events: none;
+    background: radial-gradient(circle, rgba(255,255,255,.2), rgba(255,255,255,0) 68%);
+    border-radius: 50%;
+}
+.content-area .role-dashboard-page > .card-pink:first-child:hover { transform: none; box-shadow: 0 19px 42px rgba(126,42,75,.23); }
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child h2,
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child h3,
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child p,
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child strong,
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child .text-muted { color: #fff !important; }
+.content-area .role-dashboard-page > .card-pink:first-child > .flex-between:first-child {
+    position: relative;
+    z-index: 1;
+    padding: 0;
+    margin-bottom: .75rem;
+    color: #fff;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+}
+.role-dashboard-page > .card-pink:first-child .btn-outline-pink {
+    color: #8f3659;
+    background: #fff;
+    border-color: rgba(255,255,255,.82);
+    box-shadow: 0 7px 17px rgba(91,23,50,.2);
+}
+.role-dashboard-page > .card-pink:first-child .btn-outline-pink:hover { color: #fff; background: rgba(255,255,255,.16); border-color: #fff; }
+.role-dashboard-page > .card-pink:first-child #qrcode { position: relative; z-index: 1; width: fit-content; padding: .5rem; background: #fff; border-radius: 10px; }
+.role-dashboard-page > .card-pink:first-child #qrcode:empty { display: none; }
+.role-dashboard-page .stats-grid { gap: 1rem; margin-bottom: 1.5rem; }
+.role-dashboard-page .stat-card {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(145deg, #fff, #fff5f8);
+    border: 1px solid #f0bdcc;
+    box-shadow: 0 9px 25px rgba(126,42,75,.1);
+}
+.role-dashboard-page .stat-card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    background: linear-gradient(#e85d8f, #cc4677);
+}
+.role-dashboard-page .stat-card i { color: var(--role-accent); }
+.role-dashboard-page .stat-card h3 { color: #743149; }
+.content-area .role-dashboard-page > .card-pink:not(:first-child) {
+    border-color: #f0bdcc;
+    box-shadow: 0 10px 28px rgba(126,42,75,.09);
+}
+.content-area .role-dashboard-page > .card-pink:not(:first-child):hover { border-color: #e99ab2; box-shadow: 0 14px 34px rgba(126,42,75,.14); }
+.role-dashboard-page > .card-pink:not(:first-child) > h3,
+.role-dashboard-page > .calendar-wrapper > h3 {
+    display: flex;
+    align-items: center;
+    gap: .65rem;
+    margin-bottom: 1rem;
+    padding-bottom: .8rem;
+    color: #743149;
+    border-bottom: 2px solid #f8d4de;
+}
+.role-dashboard-page > .card-pink:not(:first-child) > h3 i,
+.role-dashboard-page > .calendar-wrapper > h3 i { color: var(--role-accent); }
+.content-area .role-dashboard-page .card-pink .card-pink {
+    margin-top: .8rem;
+    background: linear-gradient(145deg, #fff, #fff8fa);
+    border: 1px solid #f3ccd7;
+    border-left: 4px solid var(--role-accent);
+    border-radius: 13px;
+    box-shadow: 0 6px 18px rgba(126,42,75,.07);
+}
+.content-area .role-dashboard-page .card-pink .card-pink:hover { transform: translateY(-1px); box-shadow: 0 9px 22px rgba(126,42,75,.11); }
+.role-dashboard-page .calendar-wrapper {
+    margin-bottom: 1.5rem;
+    background: #fff;
+    border-color: #f0bdcc;
+    box-shadow: 0 10px 28px rgba(126,42,75,.1);
+}
+.role-dashboard-page .fc-scrollgrid { width: 100% !important; border-color: #e99ab2 !important; }
+.role-dashboard-page .fc-theme-standard td, .role-dashboard-page .fc-theme-standard th { border-color: #f0bdcc !important; }
+.role-dashboard-page .fc-col-header-cell { background: #fce4ec; color: #743149; }
+.role-dashboard-page .fc-day-today { background: #ffe8ed !important; }
+.role-dashboard-page .table-modern { width: 100%; border: 1px solid #f0bdcc; border-radius: 12px; overflow: hidden; }
+.role-dashboard-page .table-modern th { color: #743149; background: #fce4ec; border-color: #efb0c3; }
+.role-dashboard-page .table-modern td { background: #fff; border-color: #f6dce3; }
+.role-dashboard-page .form-control, .role-dashboard-page input:not([type="hidden"]), .role-dashboard-page textarea, .role-dashboard-page select {
+    color: #4f2938;
+    background-color: #fffafb;
+    border: 2px solid #efb0c3;
+    border-radius: 11px;
+}
+.role-dashboard-page .form-control:focus, .role-dashboard-page input:focus, .role-dashboard-page textarea:focus, .role-dashboard-page select:focus {
+    background: #fff;
+    border-color: #cc4677;
+    box-shadow: 0 0 0 4px rgba(232,93,143,.13);
+}
+.role-dashboard-page > .btn-outline-pink:last-child { margin-top: .25rem; background: #fff; box-shadow: 0 7px 18px rgba(126,42,75,.1); }
+@media (max-width: 700px) {
+    .role-dashboard-page { padding: .75rem; border-radius: 16px; }
+    .content-area .role-dashboard-page > .card-pink:first-child { padding: 1.2rem; }
+    .role-dashboard-page .flex-between { gap: .75rem; }
+    .role-dashboard-page .calendar-wrapper { padding: 1rem; }
+    .role-dashboard-page .fc-toolbar { flex-direction: column; gap: .65rem; }
+    .role-dashboard-page .fc-toolbar-chunk { display: flex; justify-content: center; }
+}
+</style>

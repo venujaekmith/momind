@@ -1,6 +1,11 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+{% include 'dashboard_role_theme.html' %}
+{% endblock %}
+
 {% block content %}
+<div class="role-dashboard-page doctor-dashboard-page">
 <div class="card-pink">
     <div class="flex-between">
         <div>
@@ -60,5 +65,6 @@
         <a href="{% url 'dashboards:reschedule_event' app.id %}" class="btn-outline-pink">Reschedule</a>
     </div>
     {% endfor %}
+</div>
 </div>
 {% endblock %}

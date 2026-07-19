@@ -1,6 +1,11 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+{% include 'dashboard_role_theme.html' %}
+{% endblock %}
+
 {% block content %}
+<div class="role-dashboard-page midwife-dashboard-page">
 <div class="card-pink">
     <div class="flex-between">
         <div>
@@ -133,4 +138,5 @@ if (calendarEl) {
 </script>
 
 <a href="{% url 'dashboards:dashboard' %}" class="btn-outline-pink"><i class="fas fa-sync-alt"></i> Refresh Dashboard</a>
+</div>
 {% endblock %}

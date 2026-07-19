@@ -1,22 +1,32 @@
-{% extends 'base.html' %}
+{% extends 'basec.html' %}
+{% load static %}
+
+{% block extra_head %}
+{% include 'community/forum_theme.html' %}
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="forum-page">
     <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2>🗣️ Community Forum</h2>
-            <p class="text-muted">Share your thoughts, ask questions, and connect with other members</p>
+    <div class="forum-hero">
+        <div class="forum-title-wrap">
+            <span class="forum-hero-icon"><i class="fas fa-comments"></i></span>
+            <div>
+                <h2>Community Forum</h2>
+                <p>Share your thoughts, ask questions, and connect with other members</p>
+            </div>
         </div>
-        <a href="{% url 'community:group_list' %}"> group list</a>
-        <div class="col-md-4 text-end">
+        <div class="forum-actions">
+            <a href="{% url 'community:group_list' %}" class="btn btn-secondary">
+                <i class="fas fa-users"></i> Groups
+            </a>
             <a href="{% url 'community:create_post' %}" class="btn btn-primary btn-lg">
-                ✍️ New Post
+                <i class="fas fa-pen"></i> New Post
             </a>
             {% if user.is_authenticated %}
                 <a href="{% url 'community:view_notifications' %}" class="btn btn-secondary">
-                    🔔 Notifications
+                    <i class="fas fa-bell"></i> Notifications
                 </a>
             {% endif %}
         </div>
@@ -32,7 +42,7 @@
                 <div class="row">
                     {% for category in categories %}
                         <div class="col-md-4 mb-2">
-                            <div class="card">
+                            <div class="card category-card">
                                 <div class="card-body p-2">
                                     <h6 class="mb-1">{{ category.name }}</h6>
                                     <p class="mb-2 text-muted small">{{ category.description }}</p>
@@ -66,13 +76,13 @@
         <div class="card-body">
             {% if posts %}
                 {% for post in posts %}
-                    <div class="card mb-3 border">
+                    <div class="card post-card mb-3">
                         <div class="card-body">
                             <!-- Post Header -->
                             <div class="d-flex justify-content-between align-items-start">
                                 <div>
                                     <h5 class="mb-1">
-                                        <a href="{% url 'community:post_detail' post.id %}" class="text-dark text-decoration-none">
+                                        <a href="{% url 'community:post_detail' post.id %}" class="post-title-link text-decoration-none">
                                             {{ post.title }}
                                         </a>
                                     </h5>
@@ -104,7 +114,7 @@
                                     {% for file in post.attachments.all %}
                                         {% if file.file.url|lower|slice:"-4:" == ".jpg" or file.file.url|lower|slice:"-4:" == ".png" or file.file.url|lower|slice:"-5:" == ".jpeg" %}
                                             <!-- IMAGE PREVIEW -->
-                                            <img src="{{ file.file.url }}" style="max-width:150px; max-height:150px; margin-top:5px; border-radius:8px; margin-right:10px;">
+                                            <img src="{{ file.file.url }}" class="forum-attachment-image" alt="Attachment for {{ post.title }}">
                                         {% else %}
                                             <!-- FILE LINK -->
                                             <a href="{{ file.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
@@ -135,16 +145,4 @@
     </div>
 </div>
 
-<style>
-    .card {
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    .card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-    }
-</style>
-
 {% endblock %}
-

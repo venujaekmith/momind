@@ -1,8 +1,25 @@
-{% extends 'base.html' %}
+{% extends 'basec.html' %}
+{% load static %}
+
+{% block extra_head %}
+{% include 'community/forum_theme.html' %}
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="forum-page forum-detail-page">
+    <div class="forum-hero">
+        <div class="forum-title-wrap">
+            <span class="forum-hero-icon"><i class="fas fa-comments"></i></span>
+            <div>
+                <h2>Community Discussion</h2>
+                <p>Read the conversation and share your support.</p>
+            </div>
+        </div>
+        <div class="forum-actions">
+            <a href="{% url 'community:forum_home' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Forum</a>
+        </div>
+    </div>
     <div class="card mb-4">
         <div class="card-body">
             <h2>{{ post.title }}</h2>
@@ -37,7 +54,7 @@
         <div class="card-body">
             <!-- Authenticated Comments -->
             {% for comment in comments %}
-                <div class="comment mb-3 p-3" style="background-color: #f8f9fa; border-left: 3px solid #007bff;">
+                <div class="forum-comment">
                     <div class="d-flex justify-content-between">
                         <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
                         <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
@@ -48,7 +65,7 @@
 
             <!-- Anonymous Comments -->
             {% for comment in anonymous_comments %}
-                <div class="comment mb-3 p-3" style="background-color: #fff3cd; border-left: 3px solid #ffc107;">
+                <div class="forum-comment anonymous">
                     <div class="d-flex justify-content-between">
                         <strong>{{ comment.author_name }} <span class="badge badge-warning">Anonymous</span></strong>
                         <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
@@ -102,6 +119,4 @@
 </div>
 
 {% endblock %}
-
-
 

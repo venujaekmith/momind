@@ -1,16 +1,317 @@
 {% extends 'base.html' %}
 
+{% block body_class %}register-screen{% endblock %}
+
+{% block extra_head %}
+<style>
+    .register-screen {
+        min-height: 100vh;
+        color: #3f2630;
+        background: radial-gradient(circle at 8% 9%, rgba(232, 93, 143, 0.18), transparent 27%), radial-gradient(circle at 92% 91%, rgba(255, 184, 203, 0.25), transparent 30%), linear-gradient(145deg, #fff1f5 0%, #ffffff 48%, #fde6ed 100%);
+        font-family: 'Inter', Arial, sans-serif;
+    }
+
+    .register-screen .navbar {
+        position: relative;
+        z-index: 2;
+        padding: 0.85rem max(1rem, 4vw) !important;
+        background: rgba(255, 255, 255, 0.9) !important;
+        border-bottom: 1px solid rgba(232, 93, 143, 0.18);
+        box-shadow: 0 7px 24px rgba(126, 42, 75, 0.08);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+    }
+
+    .register-screen .navbar-brand {
+        color: #a13e63 !important;
+        font-size: 1.2rem;
+        font-weight: 750;
+        letter-spacing: -0.02em;
+    }
+
+    .register-screen .navbar-brand::before {
+        content: "♥";
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        margin-right: 0.55rem;
+        color: #ffffff;
+        background: linear-gradient(135deg, #e85d8f, #cc4677);
+        border-radius: 10px;
+        box-shadow: 0 5px 13px rgba(204, 70, 119, 0.22);
+    }
+
+    .register-screen .navbar .btn-light {
+        color: #a13e63;
+        background: #fff5f8;
+        border: 1px solid #efb0c3;
+        border-radius: 999px;
+        font-weight: 700;
+    }
+
+    .register-screen > .container {
+        width: 100%;
+        max-width: none;
+        padding: 0;
+        margin-top: 0 !important;
+    }
+
+    .register-page-shell {
+        min-height: calc(100vh - 70px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 1.25rem;
+    }
+
+    .register-card {
+        width: min(100%, 980px);
+        display: grid;
+        grid-template-columns: minmax(290px, 0.85fr) minmax(390px, 1.15fr);
+        overflow: hidden;
+        background: #ffffff;
+        border: 1px solid #efb0c3;
+        border-radius: 24px;
+        box-shadow: 0 24px 65px rgba(126, 42, 75, 0.17);
+    }
+
+    .register-welcome {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        padding: 2.5rem;
+        color: #ffffff;
+        background: linear-gradient(145deg, #e85d8f 0%, #cc4677 58%, #963654 100%);
+    }
+
+    .register-welcome::before,
+    .register-welcome::after {
+        content: "";
+        position: absolute;
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        border-radius: 50%;
+    }
+
+    .register-welcome::before { width: 240px; height: 240px; right: -110px; top: -100px; }
+    .register-welcome::after { width: 180px; height: 180px; left: -85px; bottom: -90px; }
+
+    .register-welcome-icon {
+        position: relative;
+        z-index: 1;
+        width: 58px;
+        height: 58px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 1.25rem;
+        color: #b83b6e;
+        background: #ffffff;
+        border-radius: 17px;
+        font-size: 1.4rem;
+        box-shadow: 0 9px 24px rgba(91, 23, 50, 0.24);
+    }
+
+    .register-welcome h1 {
+        position: relative;
+        z-index: 1;
+        margin: 0 0 0.75rem;
+        color: #ffffff;
+        font-size: clamp(1.8rem, 4vw, 2.45rem);
+        font-weight: 750;
+        letter-spacing: -0.035em;
+    }
+
+    .register-welcome > p {
+        position: relative;
+        z-index: 1;
+        margin: 0;
+        color: rgba(255, 255, 255, 0.88);
+        line-height: 1.7;
+    }
+
+    .register-benefits {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        gap: 0.7rem;
+        margin-top: 1.5rem;
+    }
+
+    .register-benefit {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        color: rgba(255, 255, 255, 0.92);
+        font-size: 0.84rem;
+        font-weight: 600;
+    }
+
+    .register-benefit i { color: #d6f7df; }
+
+    .register-form-panel {
+        padding: 2.35rem;
+    }
+
+    .register-form-panel h2 {
+        margin: 0 0 0.35rem;
+        color: #743149;
+        font-size: 1.55rem;
+        font-weight: 750;
+    }
+
+    .register-subtitle {
+        margin: 0 0 1.4rem;
+        color: #806572;
+    }
+
+    .register-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .register-field {
+        padding: 0.9rem;
+        background: linear-gradient(145deg, #ffffff, #fff8fa);
+        border: 1px solid #f3ccd7;
+        border-radius: 12px;
+    }
+
+    .register-field label {
+        display: block;
+        margin-bottom: 0.48rem;
+        color: #5f2940;
+        font-size: 0.88rem;
+        font-weight: 700;
+    }
+
+    .register-field input,
+    .register-field select,
+    .register-field textarea {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.72rem 0.88rem;
+        color: #3f2630;
+        background: #ffffff;
+        border: 2px solid #efb0c3;
+        border-radius: 10px;
+        outline: none;
+        font: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .register-field input:focus,
+    .register-field select:focus,
+    .register-field textarea:focus {
+        border-color: #cc4677;
+        box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.13);
+    }
+
+    .register-help {
+        display: block;
+        margin-top: 0.55rem;
+        color: #806572;
+        font-size: 0.75rem;
+        line-height: 1.45;
+    }
+
+    .register-help ul {
+        margin: 0.35rem 0 0;
+        padding-left: 1.15rem;
+    }
+
+    .register-help li + li { margin-top: 0.2rem; }
+
+    .register-error,
+    .register-errors {
+        padding: 0.55rem 0.7rem;
+        margin-top: 0.55rem;
+        color: #9d264d;
+        background: #fff0f3;
+        border-left: 3px solid #d93f6c;
+        border-radius: 7px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .register-errors { margin: 0 0 1rem; }
+
+    .register-submit {
+        min-height: 50px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        margin-top: 0.3rem;
+        color: #ffffff;
+        background: linear-gradient(135deg, #e85d8f, #cc4677);
+        border: 0;
+        border-radius: 12px;
+        font-weight: 750;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(204, 70, 119, 0.25);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .register-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 25px rgba(204, 70, 119, 0.32);
+    }
+
+    @media (max-width: 800px) {
+        .register-page-shell { padding: 1rem; }
+        .register-card { grid-template-columns: 1fr; border-radius: 18px; }
+        .register-welcome { padding: 1.6rem; }
+        .register-form-panel { padding: 1.6rem; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<main class="register-page-shell">
+    <section class="register-card" aria-labelledby="registerTitle">
+        <div class="register-welcome">
+            <span class="register-welcome-icon"><i class="fas fa-user-plus"></i></span>
+            <h1>Join MoMind</h1>
+            <p>Create your secure account and begin a more connected maternal care journey.</p>
+            <div class="register-benefits">
+                <span class="register-benefit"><i class="fas fa-circle-check"></i> Personalized maternal support</span>
+                <span class="register-benefit"><i class="fas fa-circle-check"></i> Connected family and care team</span>
+                <span class="register-benefit"><i class="fas fa-circle-check"></i> Private and secure wellness records</span>
+            </div>
+        </div>
 
-<div class="card p-4 shadow">
-    <h3>Register</h3>
+        <div class="register-form-panel">
+            <h2 id="registerTitle">Create your account</h2>
+            <p class="register-subtitle">Enter your details below to get started.</p>
 
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
+            <form method="POST" class="register-form">
+                {% csrf_token %}
 
-        <button class="btn btn-primary">Register</button>
-    </form>
-</div>
+                {% if form.non_field_errors %}
+                <div class="register-errors">{{ form.non_field_errors }}</div>
+                {% endif %}
 
+                {% for field in form %}
+                <div class="register-field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                    <small class="register-help">{{ field.help_text|safe }}</small>
+                    {% endif %}
+                    {% for error in field.errors %}
+                    <div class="register-error">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+
+                <button type="submit" class="register-submit"><span>Register</span><i class="fas fa-arrow-right"></i></button>
+            </form>
+        </div>
+    </section>
+</main>
 {% endblock %}

@@ -23,15 +23,24 @@
             </div>
         </div>
         {% if pregnancies and pregnancies|length > 1 %}
-        <div style="margin-top:0.5rem;">
-            <label for="pregSelectDetail">Select pregnancy:</label>
-            <select id="pregSelectDetail" onchange="onPregDetailSelect()">
-                {% for p in pregnancies %}
-                    <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
-                        #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
-                    </option>
-                {% endfor %}
-            </select>
+        <div class="pregnancy-select-group">
+            <label for="pregSelectDetail">
+                <span class="pregnancy-select-label-icon"><i class="fas fa-calendar-check"></i></span>
+                <span>
+                    <strong>Select pregnancy</strong>
+                    <small>Choose the record you want to view</small>
+                </span>
+            </label>
+            <div class="pregnancy-select-control">
+                <select id="pregSelectDetail" onchange="onPregDetailSelect()">
+                    {% for p in pregnancies %}
+                        <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
+                            #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+                <i class="fas fa-chevron-down pregnancy-select-chevron" aria-hidden="true"></i>
+            </div>
         </div>
         {% endif %}
         
@@ -494,6 +503,121 @@ function onPregDetailSelect(){
 .note-meta { font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; display: flex; gap: 1.25rem; }
 .recommendations-box { background: #fffcfd; border: 1px solid #ffd0dc; border-left: 4px solid #e85d8f; padding: 0.75rem; margin-top: 0.6rem; font-size: 0.9rem; border-radius: 0 8px 8px 0; }
 .baby-profile-card { background: #fffcfd; border: 1px solid #fce8ec; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.pregnancy-select-group {
+    display: grid;
+    grid-template-columns: minmax(180px, 0.55fr) minmax(280px, 1.45fr);
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #fff8fa 0%, #ffffff 62%, #fff0f4 100%);
+    border: 1px solid #f3b5c7;
+    border-left: 4px solid #e85d8f;
+    border-radius: 14px;
+    box-shadow: 0 7px 20px rgba(161, 62, 99, 0.08);
+}
+.pregnancy-select-group label {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0;
+    color: #7d3150;
+    cursor: pointer;
+}
+.pregnancy-select-group label strong {
+    display: block;
+    font-size: 0.95rem;
+    line-height: 1.25;
+}
+.pregnancy-select-group label small {
+    display: block;
+    margin-top: 0.15rem;
+    color: #8a6573;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+.pregnancy-select-label-icon {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    background: linear-gradient(135deg, #e85d8f, #cc4677);
+    border-radius: 11px;
+    box-shadow: 0 5px 12px rgba(204, 70, 119, 0.23);
+}
+.pregnancy-select-control {
+    position: relative;
+    min-width: 0;
+}
+#pregSelectDetail {
+    width: 100%;
+    min-height: 48px;
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 0.72rem 3rem 0.72rem 1rem;
+    color: #5f2940;
+    background: #ffffff;
+    border: 2px solid #efb0c3;
+    border-radius: 12px;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    line-height: 1.4;
+    cursor: pointer;
+    box-shadow: inset 0 1px 2px rgba(161, 62, 99, 0.04);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+#pregSelectDetail:hover {
+    background: #fffafd;
+    border-color: #e85d8f;
+    box-shadow: 0 5px 14px rgba(232, 93, 143, 0.12);
+}
+#pregSelectDetail:focus {
+    background: #ffffff;
+    border-color: #cc4677;
+    box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.14), 0 6px 16px rgba(161, 62, 99, 0.10);
+}
+.pregnancy-select-control:focus-within .pregnancy-select-chevron {
+    color: #cc4677;
+    transform: translateY(-50%) rotate(180deg);
+}
+.pregnancy-select-chevron {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    color: #e85d8f;
+    pointer-events: none;
+    transform: translateY(-50%);
+    transition: color 0.2s ease, transform 0.2s ease;
+}
+#pregSelectDetail option {
+    padding: 0.7rem;
+    color: #5f2940;
+    background-color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 500;
+}
+#pregSelectDetail option:checked {
+    color: #8e3557;
+    background-color: #fce4ec;
+    font-weight: 700;
+}
+#pregSelectDetail option:hover,
+#pregSelectDetail option:focus {
+    color: #7d3150;
+    background-color: #fff0f4;
+}
+@media (max-width: 700px) {
+    .pregnancy-select-group {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+}
 .modal-momind { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
 .modal-momind-content { background: white; padding: 2rem; border-radius: 16px; max-width: 620px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
 </style>

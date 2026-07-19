@@ -1,12 +1,216 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+<style>
+    .start-pregnancy-page {
+        min-height: calc(100vh - 9rem);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+        background: radial-gradient(circle at 8% 10%, rgba(232, 93, 143, 0.15), transparent 28%), radial-gradient(circle at 92% 90%, rgba(255, 184, 203, 0.22), transparent 30%), linear-gradient(145deg, #fff2f6 0%, #ffffff 50%, #fde8ee 100%);
+        border: 1px solid #f5c4d2;
+        border-radius: 22px;
+    }
+
+    .content-area .start-pregnancy-card {
+        width: min(100%, 680px);
+        max-width: 680px;
+        padding: 2rem;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border: 1px solid #efb0c3;
+        box-shadow: 0 18px 45px rgba(126, 42, 75, 0.14);
+    }
+
+    .content-area .start-pregnancy-card:hover {
+        transform: none;
+        box-shadow: 0 18px 45px rgba(126, 42, 75, 0.14);
+    }
+
+    .start-pregnancy-header {
+        display: flex;
+        align-items: center;
+        gap: 0.9rem;
+        padding-bottom: 1rem;
+        margin-bottom: 0.55rem;
+        border-bottom: 2px solid #f8d4de;
+    }
+
+    .start-pregnancy-icon {
+        width: 48px;
+        height: 48px;
+        flex: 0 0 48px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        background: linear-gradient(135deg, #e85d8f, #cc4677);
+        border-radius: 14px;
+        font-size: 1.2rem;
+        box-shadow: 0 7px 18px rgba(204, 70, 119, 0.24);
+    }
+
+    .start-pregnancy-header h2 {
+        margin: 0;
+        color: #743149;
+        font-size: clamp(1.3rem, 3vw, 1.65rem);
+        font-weight: 750;
+    }
+
+    .start-form-intro {
+        margin: 0 0 1.5rem;
+        color: #765766;
+        line-height: 1.6;
+    }
+
+    .start-pregnancy-form {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .start-form-field {
+        padding: 1rem;
+        background: linear-gradient(145deg, #ffffff, #fff8fa);
+        border: 1px solid #f3ccd7;
+        border-radius: 13px;
+    }
+
+    .start-form-field + .start-form-field {
+        margin-top: 1.15rem;
+    }
+
+    .start-form-field label {
+        display: block;
+        margin-bottom: 0.55rem;
+        color: #5f2940;
+        font-size: 0.92rem;
+        font-weight: 700;
+    }
+
+    .start-form-field input:not([type="checkbox"]):not([type="radio"]),
+    .start-form-field select,
+    .start-form-field textarea {
+        width: 100%;
+        min-height: 48px;
+        padding: 0.72rem 0.9rem;
+        color: #3f2630;
+        background: #ffffff;
+        border: 2px solid #efb0c3;
+        border-radius: 11px;
+        outline: none;
+        font: inherit;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .start-form-field input:focus,
+    .start-form-field select:focus,
+    .start-form-field textarea:focus {
+        border-color: #cc4677;
+        box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.13);
+    }
+
+    .start-form-field input[type="checkbox"],
+    .start-form-field input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin: 0;
+        accent-color: #e85d8f;
+        vertical-align: middle;
+        cursor: pointer;
+    }
+
+    .start-form-help {
+        display: block;
+        margin-top: 0.5rem;
+        color: #806572;
+        font-size: 0.78rem;
+        line-height: 1.45;
+    }
+
+    .start-form-error,
+    .start-form-errors {
+        padding: 0.55rem 0.7rem;
+        margin-top: 0.55rem;
+        color: #9d264d;
+        background: #fff0f3;
+        border-left: 3px solid #d93f6c;
+        border-radius: 7px;
+        font-size: 0.82rem;
+        font-weight: 600;
+    }
+
+    .start-form-errors {
+        margin: 0 0 1.15rem;
+    }
+
+    .start-form-actions {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f3ccd7;
+    }
+
+    .start-form-actions .btn-pink {
+        min-width: 150px;
+        justify-content: center;
+    }
+
+    @media (max-width: 600px) {
+        .start-pregnancy-page {
+            padding: 0.7rem;
+            border-radius: 16px;
+        }
+
+        .content-area .start-pregnancy-card {
+            padding: 1.2rem;
+        }
+
+        .start-form-field {
+            padding: 0.85rem;
+        }
+
+        .start-form-actions .btn-pink {
+            width: 100%;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="card-pink" style="max-width: 600px; margin: 0 auto;">
-    <h2><i class="fas fa-play-circle"></i> Start New</h2>
-    <form method="post">
+<div class="start-pregnancy-page">
+<div class="card-pink start-pregnancy-card">
+    <div class="start-pregnancy-header">
+        <span class="start-pregnancy-icon"><i class="fas fa-heart-circle-plus"></i></span>
+        <h2>Start a New Pregnancy</h2>
+    </div>
+    <p class="start-form-intro">Enter the pregnancy details below to begin your new care journey.</p>
+
+    <form method="post" class="start-pregnancy-form">
         {% csrf_token %}
-        {{ forum }}
-        <button type="submit" class="btn-pink" style="margin-top: 1rem;">Save</button>
+
+        {% if forum.non_field_errors %}
+        <div class="start-form-errors">{{ forum.non_field_errors }}</div>
+        {% endif %}
+
+        {% for field in forum %}
+        <div class="start-form-field">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.help_text %}
+            <small class="start-form-help">{{ field.help_text|safe }}</small>
+            {% endif %}
+            {% for error in field.errors %}
+            <div class="start-form-error">{{ error }}</div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        <div class="start-form-actions">
+            <button type="submit" class="btn-pink"><i class="fas fa-check"></i> Save</button>
+        </div>
     </form>
+</div>
 </div>
 {% endblock %}

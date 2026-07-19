@@ -7,9 +7,9 @@
             <h2><i class="fas fa-male"></i> Welcome, {{ user.username }}!</h2>
             <p>ID: <strong id="qrValue">{{ user.user_father.father_id }}</strong></p>
         </div>
-        <button onclick="generateQR()" class="btn-outline-pink">Generate QR</button>
+        <button onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
     </div>
-    <div id="qrcode" style="margin-top: 1rem;"></div>
+    <div id="qrcode" style="margin-top: 1rem; display: none;"></div>
 </div>
 
     {% if pregnancies and pregnancies|length > 1 %}
@@ -47,12 +47,12 @@
             {% if family.mother %}
                 <p>✓ Connected: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</p>
                 <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink">Change Mother</button>
+                    <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink" title="Change Mother"><i class="fas fa-pencil-alt"></i></button>
                     <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
                         {% csrf_token %}
                         <input type="hidden" name="family_id" value="{{ family.id }}">
                         <input type="hidden" name="role" value="MOTHER">
-                        <button type="submit" class="btn-outline-pink">Remove Mother</button>
+                        <button type="submit" class="btn-outline-pink" title="Remove Mother"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             {% else %}
@@ -64,12 +64,12 @@
             {% if family.midwife %}
                 <p>✓ {{ family.midwife.user.username }}</p>
                 <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink">Change Midwife</button>
+                    <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink" title="Change Midwife"><i class="fas fa-pencil-alt"></i></button>
                     <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
                         {% csrf_token %}
                         <input type="hidden" name="family_id" value="{{ family.id }}">
                         <input type="hidden" name="role" value="MIDWIFE">
-                        <button type="submit" class="btn-outline-pink">Remove Midwife</button>
+                        <button type="submit" class="btn-outline-pink" title="Remove Midwife"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             {% else %}
@@ -81,12 +81,12 @@
             {% if family.doctor %}
                 <p>✓ Dr. {{ family.doctor.user.username }}</p>
                 <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink">Change Doctor</button>
+                    <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink" title="Change Doctor"><i class="fas fa-pencil-alt"></i></button>
                     <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
                         {% csrf_token %}
                         <input type="hidden" name="family_id" value="{{ family.id }}">
                         <input type="hidden" name="role" value="DOCTOR">
-                        <button type="submit" class="btn-outline-pink">Remove Doctor</button>
+                        <button type="submit" class="btn-outline-pink" title="Remove Doctor"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             {% else %}
@@ -98,12 +98,12 @@
             {% if family.hospital %}
                 <p>✓ {{ family.hospital.name }}</p>
                 <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink">Change Hospital</button>
+                    <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink" title="Change Hospital"><i class="fas fa-pencil-alt"></i></button>
                     <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
                         {% csrf_token %}
                         <input type="hidden" name="family_id" value="{{ family.id }}">
                         <input type="hidden" name="role" value="HOSPITAL">
-                        <button type="submit" class="btn-outline-pink">Remove Hospital</button>
+                        <button type="submit" class="btn-outline-pink" title="Remove Hospital"><i class="fas fa-trash"></i></button>
                     </form>
                 </div>
             {% else %}

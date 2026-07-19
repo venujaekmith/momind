@@ -1,13 +1,27 @@
-{% extends 'base.html' %}
+{% extends 'basec.html' %}
+{% load static %}
+
+{% block extra_head %}
+{% include 'community/forum_theme.html' %}
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
+<div class="forum-page forum-form-page">
+    <div class="forum-hero">
+        <div class="forum-title-wrap">
+            <span class="forum-hero-icon"><i class="fas fa-pen-to-square"></i></span>
+            <div>
+                <h2>Create a Forum Post</h2>
+                <p>Start a supportive conversation with the community.</p>
+            </div>
+        </div>
+    </div>
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3>📝 Create a Forum Post</h3>
+                <div class="card-header bg-primary">
+                    <h3><i class="fas fa-message"></i> Post details</h3>
                 </div>
                 <div class="card-body">
                     <p class="alert alert-info">

@@ -1,6 +1,11 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+{% include 'dashboard_role_theme.html' %}
+{% endblock %}
+
 {% block content %}
+<div class="role-dashboard-page hospital-dashboard-page">
 <div class="card-pink">
     <div class="flex-between">
         <div>
@@ -134,4 +139,5 @@
 </div>
 
 {% endif %}
+</div>
 {% endblock %}

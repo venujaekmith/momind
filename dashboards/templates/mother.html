@@ -1,15 +1,126 @@
 {% extends 'basec.html' %}
 {% load static %}
 
+{% block extra_head %}
+<style>
+    .calendar-wrapper {
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+        background: #ffffff;
+        border: 2px solid #f3b5c7;
+        box-shadow: 0 8px 28px rgba(204, 70, 119, 0.10);
+    }
+
+    .calendar-wrapper > h3 {
+        margin: 0 0 1rem;
+        padding-bottom: 0.85rem;
+        color: var(--secondary);
+        border-bottom: 2px solid #fce4ec;
+    }
+
+    #scheduleCalendar {
+        width: 100%;
+        min-width: 0;
+        min-height: 400px;
+        padding: 1rem;
+        background: #ffffff;
+        border: 1px solid #ef9eb7;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    #scheduleCalendar .fc-toolbar {
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: #fff5f8;
+        border: 1px solid #f8cbd7;
+        border-radius: 10px;
+    }
+
+    #scheduleCalendar .fc-toolbar-title {
+        color: #a13e63;
+        font-size: clamp(1.05rem, 2vw, 1.45rem);
+        font-weight: 700;
+    }
+
+    #scheduleCalendar .fc-theme-standard .fc-scrollgrid,
+    #scheduleCalendar .fc-scrollgrid {
+        border: 2px solid #e989a6;
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    #scheduleCalendar .fc-theme-standard td,
+    #scheduleCalendar .fc-theme-standard th {
+        border-color: #f1b6c7;
+    }
+
+    #scheduleCalendar .fc-col-header-cell {
+        padding: 0.45rem 0;
+        background: #fce4ec;
+        color: #8e3557;
+        border-bottom: 2px solid #e989a6;
+    }
+
+    #scheduleCalendar .fc-daygrid-day {
+        background: #ffffff;
+        transition: background-color 0.18s ease;
+    }
+
+    #scheduleCalendar .fc-daygrid-day:hover {
+        background: #fff8fa;
+    }
+
+    #scheduleCalendar .fc-day-today {
+        background: #ffe8ed !important;
+    }
+
+    #scheduleCalendar .fc-daygrid-day-number {
+        padding: 0.45rem;
+        color: #6f3049;
+        font-weight: 600;
+        text-decoration: none;
+    }
+
+    #scheduleCalendar .fc-day-other {
+        background: #fffafa;
+    }
+
+    #scheduleCalendar .fc-event {
+        padding: 0.15rem 0.3rem;
+        border-color: #cc4677;
+        border-radius: 5px;
+    }
+
+    @media (max-width: 720px) {
+        .calendar-wrapper { padding: 1rem; }
+        #scheduleCalendar { padding: 0.5rem; }
+
+        #scheduleCalendar .fc-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        #scheduleCalendar .fc-toolbar-chunk {
+            display: flex;
+            justify-content: center;
+        }
+    }
+</style>
+{% include 'dashboard_role_theme.html' %}
+{% endblock %}
+
 {% block content %}
+<div class="role-dashboard-page mother-dashboard-page">
 <div class="card-pink">
     <div class="flex-between">
         <div>
             <h2><i class="fas fa-female"></i> Welcome, {{ user.username }}!</h2>
             <p class="text-muted">Mother ID: <strong id="qrValue">{{ user.user_mother.mother_id }}</strong></p>
         </div>
-        <button onclick="generateQR()" class="btn-outline-pink">
-            <i class="fas fa-qrcode"></i> Generate QR
+        <button onclick="showQRCodeModal()" class="btn-outline-pink">
+            <i class="fas fa-qrcode"></i> Show My QR
         </button>
     </div>
     {% if pregnancies and pregnancies|length > 1 %}
@@ -165,7 +276,7 @@
 <!-- Calendar Schedule -->
 <div class="calendar-wrapper">
     <h3><i class="fas fa-calendar-alt"></i> Your Schedule</h3>
-    <div id="scheduleCalendar" style="min-height: 400px;"></div>
+    <div id="scheduleCalendar"></div>
     <div style="margin-top: 1rem;">
         <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-pink">
             <i class="fas fa-plus"></i> Add New Event
@@ -252,6 +363,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         calendar.render();
+
+        if ('ResizeObserver' in window) {
+            let calendarResizeFrame;
+            let previousCalendarWidth = calendarEl.getBoundingClientRect().width;
+            const calendarResizeObserver = new ResizeObserver(function(entries) {
+                const currentCalendarWidth = entries[0].contentRect.width;
+                if (Math.abs(currentCalendarWidth - previousCalendarWidth) < 0.5) return;
+                previousCalendarWidth = currentCalendarWidth;
+                cancelAnimationFrame(calendarResizeFrame);
+                calendarResizeFrame = requestAnimationFrame(function() {
+                    calendar.updateSize();
+                });
+            });
+            calendarResizeObserver.observe(calendarEl);
+        }
     }
 });
 </script>
@@ -349,4 +475,5 @@ document.addEventListener('DOMContentLoaded', function() {
 </div>
 
 <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">View My Details</a>
+</div>
 {% endblock %} 

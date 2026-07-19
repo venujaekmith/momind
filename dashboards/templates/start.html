@@ -1,0 +1,12 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 600px; margin: 0 auto;">
+    <h2><i class="fas fa-play-circle"></i> Start New</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ forum }}
+        <button type="submit" class="btn-pink" style="margin-top: 1rem;">Save</button>
+    </form>
+</div>
+{% endblock %}

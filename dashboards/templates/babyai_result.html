@@ -1,0 +1,8 @@
+<h2>AI Response for {{ baby }}</h2>
+<p><strong>You asked:</strong> {{ query }}</p>
+
+<div class="ai-response">
+    {{ response|linebreaks }}
+</div>
+
+<a href="{% url 'babyai' baby.id %}">Ask another question</a>

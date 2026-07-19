@@ -1,0 +1,199 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink">
+    <div class="flex-between">
+        <div>
+            <h2><i class="fas fa-male"></i> Welcome, {{ user.username }}!</h2>
+            <p>ID: <strong id="qrValue">{{ user.user_father.father_id }}</strong></p>
+        </div>
+        <button onclick="generateQR()" class="btn-outline-pink">Generate QR</button>
+    </div>
+    <div id="qrcode" style="margin-top: 1rem;"></div>
+</div>
+
+    {% if pregnancies and pregnancies|length > 1 %}
+    <div style="margin-top:0.75rem;">
+        <label for="pregSelectF">Select pregnancy:</label>
+        <select id="pregSelectF" class="form-group" onchange="onPregFSelect()">
+            {% for p in pregnancies %}
+                <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
+                    Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+{% if warning %}
+<div class="alert alert-warning">Please add your partner and midwife for your account!</div>
+{% endif %}
+
+{% if not is_postpartum and pregnancy %}
+<div class="alert alert-info">
+    {% if pregnancy %}
+        <a href="{% url 'dashboards:end_pregnancy' pregnancy.id %}" class="btn-pink">I Have Delivered - End Pregnancy</a>
+        <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Mother Details</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Family Members -->
+<div class="card-pink">
+    <h3><i class="fas fa-heart"></i> Your Family Unit</h3>
+    <div class="grid-2">
+        <div>
+            <h4>Partner</h4>
+            {% if family.mother %}
+                <p>✓ Connected: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink">Change Mother</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="MOTHER">
+                        <button type="submit" class="btn-outline-pink">Remove Mother</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('MOTHER')" class="btn-outline-pink">+ Add Mother</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Midwife</h4>
+            {% if family.midwife %}
+                <p>✓ {{ family.midwife.user.username }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink">Change Midwife</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="MIDWIFE">
+                        <button type="submit" class="btn-outline-pink">Remove Midwife</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('MIDWIFE')" class="btn-outline-pink">+ Link Midwife</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Doctor</h4>
+            {% if family.doctor %}
+                <p>✓ Dr. {{ family.doctor.user.username }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink">Change Doctor</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="DOCTOR">
+                        <button type="submit" class="btn-outline-pink">Remove Doctor</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('DOCTOR')" class="btn-outline-pink">+ Link Doctor</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Hospital</h4>
+            {% if family.hospital %}
+                <p>✓ {{ family.hospital.name }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink">Change Hospital</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="HOSPITAL">
+                        <button type="submit" class="btn-outline-pink">Remove Hospital</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('HOSPITAL')" class="btn-outline-pink">+ Link Hospital</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Baby Growth -->
+{% if not is_postpartum and pregnancy %}
+<div class="card-pink">
+    <h3><i class="fas fa-baby"></i> Baby's Growth</h3>
+    <p>Week: {{ pregnancy.get_pregnancy_week }}</p>
+    {% if baby_info %}
+    <p>Baby is size of a <strong>{{ baby_info.size }}</strong></p>
+    {% endif %}
+</div>
+
+<!-- Calendar -->
+<div class="calendar-wrapper">
+    <h3><i class="fas fa-calendar-alt"></i> Upcoming Schedule</h3>
+    <div id="scheduleCalendar" style="min-height: 400px;"></div>
+    <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-pink" style="margin-top: 1rem;">+ Add New Event</a>
+</div>
+
+{% if hospital_queue_count and hospital_name %}
+<div class="card-pink">
+    <h3><i class="fas fa-user-clock"></i> Hospital Queue for {{ hospital_name }}</h3>
+    <p>There are <strong>{{ hospital_queue_count }}</strong> hospital clinic visits scheduled for today.</p>
+    <table class="table-modern" style="margin-top: 1rem; width: 100%;">
+        <thead>
+            <tr><th>Time</th><th>Patient</th><th>Visit</th></tr>
+        </thead>
+        <tbody>
+            {% for visit in hospital_queue %}
+            <tr>
+                <td>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</td>
+                <td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td>
+                <td>{{ visit.title }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif family and family.hospital %}
+<div class="card-pink">
+    <h3><i class="fas fa-user-clock"></i> Hospital Queue</h3>
+    <p>No hospital clinic visits are scheduled for today at {{ family.hospital.name }}.</p>
+</div>
+{% endif %}
+
+{% if available_clinics %}
+<div class="card-pink">
+    <h3><i class="fas fa-clinic-medical"></i> Available Hospital Clinics</h3>
+    <ul>
+        {% for clinic in available_clinics|slice:":3" %}
+            <li><strong>{{ clinic.name }}</strong> on {{ clinic.date }} at {{ clinic.time|time:"H:i"|default:"TBD" }} — {{ clinic.location }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'dashboards:clinic_directory' %}" class="btn-pink">See all clinics</a>
+</div>
+{% endif %}
+
+{% endif %}
+
+<script>
+const events = [];
+{% for event in schedule_events %}
+events.push({ title: "{{ event.title|escapejs }}", start: "{{ event.scheduled_date|date:'Y-m-d' }}" });
+{% endfor %}
+const calendarEl = document.getElementById('scheduleCalendar');
+if (calendarEl) {
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
+        events: events,
+        eventColor: '#e85d8f'
+    });
+    calendar.render();
+}
+</script>
+<script>
+function onPregFSelect(){
+    const sel = document.getElementById('pregSelectF');
+    if(!sel) return;
+    const pid = sel.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('pregnancy', pid);
+    window.location.href = url.toString();
+}
+</script>
+{% endblock %}

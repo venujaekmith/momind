@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2>{{ post.title }}</h2>
+            
+            <div class="text-muted small mb-3">
+                {% if post.is_anonymous %}
+                    <span>Posted anonymously</span>
+                {% else %}
+                    <span>By: <strong>{{ post.author.get_full_name|default:post.author.username }}</strong></span>
+                {% endif %}
+                on {{ post.created_at|date:"M d, Y" }}
+            </div>
+
+            <p>{{ post.content }}</p>
+
+            {% if post.attachments.all %}
+                <hr>
+                <h5>Attachments</h5>
+                {% for attachment in post.attachments.all %}
+                    <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary">
+                        📎 {{ attachment.file.name }}
+                    </a>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <h4>Comments ({{ comments.count|add:anonymous_comments.count }})</h4>
+        </div>
+        <div class="card-body">
+            <!-- Authenticated Comments -->
+            {% for comment in comments %}
+                <div class="comment mb-3 p-3" style="background-color: #f8f9fa; border-left: 3px solid #007bff;">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    <p class="mb-0 mt-2">{{ comment.content }}</p>
+                </div>
+            {% endfor %}
+
+            <!-- Anonymous Comments -->
+            {% for comment in anonymous_comments %}
+                <div class="comment mb-3 p-3" style="background-color: #fff3cd; border-left: 3px solid #ffc107;">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ comment.author_name }} <span class="badge badge-warning">Anonymous</span></strong>
+                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                    </div>
+                    <p class="mb-0 mt-2">{{ comment.content }}</p>
+                </div>
+            {% endfor %}
+
+            {% if not comments and not anonymous_comments %}
+                <p class="text-muted">No comments yet. Be the first to comment!</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h4>Leave a Comment</h4>
+        </div>
+        <div class="card-body">
+            {% if is_authenticated %}
+                <p class="alert alert-info">You are commenting as <strong>{{ user.get_full_name|default:user.username }}</strong></p>
+            {% else %}
+                <p class="alert alert-warning">You are commenting <strong>anonymously</strong>. Your name will not be shown unless you provide it.</p>
+            {% endif %}
+
+            <form method="POST" class="form">
+                {% csrf_token %}
+                
+                <div class="form-group">
+                    {{ form.content }}
+                </div>
+
+                {% if not is_authenticated %}
+                    <div class="form-group">
+                        <label for="{{ form.author_name.id_for_label }}">Name (Optional)</label>
+                        {{ form.author_name }}
+                        <small class="form-text text-muted">Leave blank to stay anonymous</small>
+                    </div>
+                {% endif %}
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Post Comment</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
+

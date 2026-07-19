@@ -1,0 +1,46 @@
+{% extends "postpartum/base.html" %}
+{% block title %}Dashboard — Postpartum{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block content %}
+<h2 style="font-size:18px; font-weight:500; margin-bottom:1rem;">Welcome back, {{ request.user.first_name|default:request.user.username }}</h2>
+
+{% if assessment and assessment.overall_score %}
+<div class="card" style="margin-bottom:1rem;">
+  <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Latest wellness score</p>
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+    <span style="font-size:32px; font-weight:500;">{{ assessment.overall_score }}</span>
+    <span class="badge level-{{ assessment.level }}">{{ assessment.level }} stress</span>
+  </div>
+  <div class="stress-bar-wrap"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.overall_score }}%"></div></div>
+  {% if assessment.recommendation %}
+  <p style="font-size:13px; color:#666; margin-top:10px; line-height:1.6;">{{ assessment.recommendation }}</p>
+  {% endif %}
+</div>
+{% endif %}
+
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
+  <a href="{% url 'postpartum:chat' %}" class="card" style="display:block; cursor:pointer; transition:border-color .15s;" onmouseover="this.style.borderColor='#1D9E75'" onmouseout="this.style.borderColor='#e5e5e0'">
+    <div style="font-size:22px; margin-bottom:8px;">💬</div>
+    <div style="font-weight:500; font-size:14px;">Chat with companion</div>
+    <div style="font-size:12px; color:#888; margin-top:4px;">Talk about how you're feeling</div>
+  </a>
+  <a href="{% url 'postpartum:draw' %}" class="card" style="display:block; cursor:pointer; transition:border-color .15s;" onmouseover="this.style.borderColor='#1D9E75'" onmouseout="this.style.borderColor='#e5e5e0'">
+    <div style="font-size:22px; margin-bottom:8px;">🎨</div>
+    <div style="font-weight:500; font-size:14px;">Draw your feelings</div>
+    <div style="font-size:12px; color:#888; margin-top:4px;">Express yourself visually</div>
+  </a>
+</div>
+
+{% if conversations %}
+<div class="card">
+  <p style="font-size:13px; font-weight:500; margin-bottom:10px;">Recent conversations</p>
+  {% for conv in conversations %}
+  <a href="{% url 'postpartum:chat' %}?conv={{ conv.id }}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0eb; font-size:13px; color:#444;">
+    <span>Session on {{ conv.created_at|date:"M d, g:i a" }}</span>
+    <span style="color:#bbb;">{{ conv.messages.count }} messages →</span>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

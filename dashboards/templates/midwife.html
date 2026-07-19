@@ -1,0 +1,136 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink">
+    <div class="flex-between">
+        <div>
+            <h2><i class="fas fa-user-md"></i> Welcome, Midwife {{ user.get_full_name|default:user.username }}!</h2>
+            <p>ID: <strong id="qrValue">{{ user.user_midwife.midwife_id }}</strong> | Status: {% if user.user_midwife.is_verified %}✅ Verified{% else %}⏳ Pending{% endif %}</p>
+        </div>
+        <button onclick="generateQR()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Generate QR</button>
+    </div>
+    <div id="qrcode" style="margin-top: 1rem;"></div>
+</div>
+
+<!-- Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-female" style="font-size: 2rem;"></i>
+        <h3>{{ total_active|default:0 }}</h3>
+        <p>Active Pregnancies</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-baby-carriage" style="font-size: 2rem;"></i>
+        <h3>{{ total_postpartum|default:0 }}</h3>
+        <p>Postpartum Mothers</p>
+    </div>
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-door-open"></i> My Family Assignments</h3>
+    {% if families %}
+        {% for family in families %}
+            <div class="card-pink" style="margin-bottom: 0.75rem;">
+                <strong>Family ID: {{ family.id }}</strong>
+                {% if family.mother %}<div>Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</div>{% endif %}
+                {% if family.father %}<div>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}</div>{% endif %}
+                <form method="POST" action="{% url 'dashboards:leave_family' family.id %}" style="margin-top:0.75rem; display:inline-block;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline-pink">Leave This Family</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No families assigned yet.</p>
+    {% endif %}
+</div>
+
+<!-- Active Pregnancies -->
+<div class="card-pink">
+    <h3><i class="fas fa-heartbeat"></i> Active Pregnancies</h3>
+    {% for pregnancy in active_pregnancies %}
+    <div class="card-pink" style="margin-bottom: 1rem;">
+        <div class="flex-between">
+            <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
+            <span>Pregnancy #{{ pregnancy.pregnancy_number }} • Week {{ pregnancy.get_pregnancy_week|default:"—" }}</span>
+        </div>
+        <p>Status: {{ pregnancy.status|capfirst }} • EDD: {{ pregnancy.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
+        <div class="flex-between" style="margin-top: 0.5rem;">
+            <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">View Record</a>
+            <a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Progress</a>
+            <a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Fetal</a>
+            <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule</a>
+            <a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Lab</a>
+        </div>
+    </div>
+    {% empty %}
+    <p>No active pregnancies assigned.</p>
+    {% endfor %}
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-baby"></i> Postpartum / Completed Pregnancies</h3>
+    {% for pregnancy in postpartum_pregnancies %}
+    <div class="card-pink" style="margin-bottom: 1rem;">
+        <div class="flex-between">
+            <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
+            <span>Pregnancy #{{ pregnancy.pregnancy_number }} • {{ pregnancy.status|capfirst }}</span>
+        </div>
+        <p>Delivery: {{ pregnancy.actual_delivery_date|date:"d M, Y"|default:"—" }}</p>
+        <div class="flex-between" style="margin-top: 0.5rem;">
+            <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">View Record</a>
+            <a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Progress</a>
+            <a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Fetal</a>
+            <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule</a>
+            <a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Lab</a>
+        </div>
+    </div>
+    {% empty %}
+    <p>No postpartum mothers under your care.</p>
+    {% endfor %}
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-history"></i> Full Pregnancy History</h3>
+    {% for pregnancy in all_pregnancies %}
+    <div class="card-pink" style="margin-bottom: 0.5rem;">
+        <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
+        <span> • Pregnancy #{{ pregnancy.pregnancy_number }} • {{ pregnancy.status|capfirst }}</span>
+        <p>Started: {{ pregnancy.created_at|date:"d M, Y" }} • EDD: {{ pregnancy.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
+    </div>
+    {% empty %}
+    <p>No pregnancy history yet.</p>
+    {% endfor %}
+</div>
+
+<!-- Calendar -->
+<div class="calendar-wrapper">
+    <h3><i class="fas fa-calendar-alt"></i> My Upcoming Visits</h3>
+    <div id="visitsCalendar" style="min-height: 400px;"></div>
+</div>
+
+<script>
+const visitEvents = [];
+{% for visit in upcoming_visits %}
+visitEvents.push({
+    title: "{{ visit.title|escapejs }} - {{ visit.pregnancy.mother.user.username }}",
+    start: "{{ visit.scheduled_date|date:'Y-m-d' }}",
+    description: "{{ visit.notes|escapejs }}"
+});
+{% endfor %}
+
+const calendarEl = document.getElementById('visitsCalendar');
+if (calendarEl) {
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
+        events: visitEvents,
+        eventColor: '#9b59b6',
+        height: 'auto'
+    });
+    calendar.render();
+}
+</script>
+
+<a href="{% url 'dashboards:dashboard' %}" class="btn-outline-pink"><i class="fas fa-sync-alt"></i> Refresh Dashboard</a>
+{% endblock %}

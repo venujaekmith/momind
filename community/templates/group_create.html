@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>➕ Create Community Group</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <p class="alert alert-info">
+                        Create a custom community group for <strong>{{ hospital.name }}</strong>
+                    </p>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="form-group mb-3">
+                            <label class="form-label">
+                                <strong>Hospital</strong>
+                            </label>
+                            <input type="text" class="form-control" value="{{ hospital.name }}" disabled>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.name.id_for_label }}" class="form-label">
+                                <strong>Group Name</strong>
+                            </label>
+                            {{ form.name }}
+                            <small class="form-text text-muted d-block mt-1">
+                                Examples: "Prenatal Support Group", "New Mothers", "Labor & Delivery Team", "Pediatric Clinic"
+                            </small>
+                            {% if form.name.errors %}
+                                <div class="text-danger mt-1">{{ form.name.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">
+                                <strong>Description</strong>
+                            </label>
+                            {{ form.description }}
+                            <small class="form-text text-muted d-block mt-1">
+                                Describe the purpose and what members of this group can discuss/do
+                            </small>
+                            {% if form.description.errors %}
+                                <div class="text-danger mt-1">{{ form.description.errors }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
+                            <input type="checkbox" name="is_private" id="is_private" class="form-check-input" value="on">
+                            <label class="form-check-label" for="is_private">
+                                <strong>🔒 Private Group</strong>
+                            </label>
+                            <small class="d-block text-muted mt-2">
+                                <strong>Public (Unchecked):</strong> Anyone can view and join<br>
+                                <strong>Private (Checked):</strong> Only invited members can view and participate<br>
+                                <em>Recommended for staff-only teams or sensitive discussions</em>
+                            </small>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                ✅ Create Group
+                            </button>
+                            <a href="{% url 'community:group_list' %}" class="btn btn-secondary btn-lg">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+
+                    <hr class="my-4">
+
+                    <div class="alert alert-secondary">
+                        <h6>📋 What to do after creating the group:</h6>
+                        <ul class="mb-0">
+                            <li>Share the group link with staff/patients</li>
+                            <li>They can click "Join" to become members</li>
+                            <li>Start posting announcements and clinic schedules</li>
+                            <li>Monitor group activity in the group page</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

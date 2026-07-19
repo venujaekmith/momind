@@ -1,0 +1,12 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 600px; margin: 0 auto;">
+    <h2><i class="fas fa-chart-line"></i> Add Pregnancy Progress</h2>
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn-pink">Save Progress</button>
+    </form>
+</div>
+{% endblock %}

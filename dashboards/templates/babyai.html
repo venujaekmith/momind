@@ -1,0 +1,33 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 800px; margin: 0 auto;">
+    <h2><i class="fas fa-robot"></i> Baby AI Advisor - {{ baby }}</h2>
+    <p><strong>Current Age:</strong> {{ baby.get_age_display }}</p>
+    
+    {% if ai_summary %}
+    <div class="card-pink" style="background: #fdf0f5;">
+        <h3>📋 AI Baby Summary</h3>
+        <div class="summary-content">{{ ai_summary|linebreaks }}</div>
+    </div>
+    {% endif %}
+    
+    <hr>
+    
+    <h3>Ask Anything About Your Baby</h3>
+    <form method="post">
+        {% csrf_token %}
+        <textarea name="query" rows="4" placeholder="E.g., Is my baby growing well? What milestones should we expect now? Any feeding tips?" required class="form-group"></textarea>
+        <button type="submit" class="btn-pink">Ask AI Advisor →</button>
+    </form>
+    
+    {% if ai_response %}
+    <div class="card-pink" style="margin-top: 1rem;">
+        <h3>Your Question:</h3>
+        <p><strong>{{ query }}</strong></p>
+        <h3>AI Response:</h3>
+        {{ ai_response|linebreaks }}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

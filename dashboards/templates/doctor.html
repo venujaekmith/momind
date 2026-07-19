@@ -1,0 +1,64 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink">
+    <div class="flex-between">
+        <div>
+            <h2><i class="fas fa-user-md"></i> Doctor Dashboard</h2>
+            <p>Welcome Dr. {{ user.username }} | ID: <strong id="qrValue">{{ user.user_doctor.doctor_id }}</strong></p>
+        </div>
+        <button onclick="generateQR()" class="btn-outline-pink">Generate QR</button>
+    </div>
+    <div id="qrcode" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="card-pink">    <h3><i class="fas fa-door-open"></i> Family Assignments</h3>
+    {% if families %}
+        {% for family in families %}
+            <div class="card-pink" style="margin-bottom: 0.75rem;">
+                <strong>Family ID: {{ family.id }}</strong>
+                {% if family.mother %}<div>Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</div>{% endif %}
+                {% if family.father %}<div>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}</div>{% endif %}
+                <form method="POST" action="{% url 'dashboards:leave_family' family.id %}" style="margin-top:0.75rem; display:inline-block;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline-pink">Leave This Family</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No family assignments yet.</p>
+    {% endif %}
+</div>
+
+<div class="card-pink">    <h3><i class="fas fa-female"></i> Assigned Pregnancies</h3>
+    {% for p in pregnancies %}
+    <div class="card-pink" style="margin-bottom: 1rem;">
+        <div class="flex-between">
+            <strong>Mother: {{ p.mother.user.username }}</strong>
+            <span>Pregnancy #{{ p.pregnancy_number }} • {{ p.status|capfirst }}</span>
+        </div>
+        <p>Week: {{ p.get_pregnancy_week|default:"—" }} • EDD: {{ p.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
+        <div class="flex-between" style="margin-top: 0.5rem;">
+            <a href="{% url 'dashboards:midwife_mother_detail' p.id %}" class="btn-pink">View Details</a>
+            <a href="{% url 'dashboards:add_schedule' p.id %}" class="btn-outline-pink">+ Add Checkup</a>
+        </div>
+    </div>
+    {% empty %}
+    <p>No pregnancies assigned yet.</p>
+    {% endfor %}
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-calendar-alt"></i> My Upcoming Appointments</h3>
+    {% for app in my_appointments %}
+    <div class="card-pink" style="margin-bottom: 0.5rem;">
+        <div class="flex-between">
+            <strong>{{ app.scheduled_date }}</strong>
+            <span>{{ app.title }}</span>
+        </div>
+        <p>{{ app.pregnancy.mother.user.username }}</p>
+        <a href="{% url 'dashboards:reschedule_event' app.id %}" class="btn-outline-pink">Reschedule</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

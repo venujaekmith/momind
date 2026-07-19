@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Pregnancy Risk Assessment</h2>
+
+    <div class="row">
+        <!-- Main Risk Card -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-{{ color }} text-white">
+                    <h4 class="mb-0">
+                        Current Risk Level: 
+                        <strong>{{ risk.risk_level|upper }}</strong>
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <h1 class="display-1 fw-bold text-{{ color }}">
+                            {{ risk.risk_score }}
+                        </h1>
+                        <p class="text-muted">Risk Score (out of 100)</p>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Week {{ pregnancy.get_pregnancy_week|default:"N/A" }} • 
+                        {{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
+                    </div>
+
+                    <!-- Explanation -->
+                    <h5 class="mt-4">AI Explanation</h5>
+                    <div class="border p-3 rounded bg-light">
+                        {{ risk.factors.llm_explanation|linebreaks }}
+                    </div>
+
+                    {% if family_note %}
+                        <hr>
+                        <h5>Family & Care Team Summary</h5>
+                        <div class="border p-3 rounded bg-light">
+                            {{ family_note|linebreaks }}
+                        </div>
+                    {% endif %}
+
+                    <hr>
+                    
+                    <!-- Recommendations -->
+                    <h5>Recommendations</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item">Monitor fetal movements daily</li>
+                        <li class="list-group-item">Keep regular midwife visits</li>
+                        <li class="list-group-item">Control blood pressure and sugar levels</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Trend -->
+            <div class="card shadow mb-4">
+                <div class="card-header">
+                    <h5>Risk Trend (Last 30 Days)</h5>
+                </div>
+                <div class="card-body">
+                    {% if trend.scores %}
+                        <p><strong>Trend:</strong> {{ trend.trend|title }}</p>
+                        <small class="text-muted">
+                            Latest: {{ trend.scores|last }} • 
+                            Previous: {{ trend.scores|first }}
+                        </small>
+                    {% else %}
+                        <p class="text-muted">No trend data yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="card shadow">
+                <div class="card-body">
+                    <h6>Key Factors</h6>
+                    <ul>
+                        {% for factor in risk.factors.rule_factors %}
+                            <li class="text-danger">{{ factor }}</li>
+                        {% empty %}
+                            <li class="text-success">No major risk factors detected</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <a href="{% url 'ai_services:risk_assessment' pregnancy.id %}" class="btn btn-primary mt-3">
+        Recalculate Risk
+    </a>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'basec.html' %}
+{% block content %}
+<div style="max-width: 900px; margin: 30px auto;">
+    <h1>📨 Family Invitations</h1>
+
+    {% if invitations %}
+        {% for invite in invitations %}
+            <div style="border: 3px solid #4caf50; padding: 25px; margin: 20px 0; border-radius: 15px; background: #f9fff9;">
+                <h3>Invitation from <strong>{{ invite.invited_by.get_full_name|default:invite.invited_by.username }}</strong></h3>
+                <p><strong>Role:</strong> {{ invite.role|title }}</p>
+                <p><strong>Sent:</strong> {{ invite.created_at|timesince }} ago</p>
+                
+                {% if invite.message %}
+                    <p><em>"{{ invite.message }}"</em></p>
+                {% endif %}
+
+                <div style="margin-top: 25px;">
+                    <form method="post" action="{% url 'dashboards:accept_invitation' invite.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:14px 30px; background:#28a745; color:white; border:none; border-radius:10px; font-size:17px;">
+                            ✅ Accept & Join Family
+                        </button>
+                    </form>
+                    
+                    <form method="post" action="{% url 'dashboards:reject_invitation' invite.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" style="padding:14px 30px; background:#dc3545; color:white; border:none; border-radius:10px; font-size:17px;">
+                            ❌ Decline
+                        </button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <div style="text-align:center; padding:80px; background:#f8f9fa; border-radius:15px;">
+            <h2>No Pending Invitations</h2>
+            <p>You don't have any family invitations right now.</p>
+        </div>
+    {% endif %}
+
+    <br>
+    <a href="{% url 'dashboards:dashboard' %}">← Back to Dashboard</a>
+</div>
+{% endblock %}

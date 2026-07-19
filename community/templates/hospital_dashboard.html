@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<h2>Hospital Dashboard - {{ hospital.name }}</h2>
+
+<h3>Clinics</h3>
+<ul>
+    {% for clinic in clinics %}
+    <li>
+        <strong>{{ clinic.name }}</strong> - {{ clinic.date }}
+        <form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" style="display:inline">{% csrf_token %}
+            <input type="hidden" name="title" value="Announcement: {{ clinic.name }}">
+            <input type="text" name="message" placeholder="Announcement message">
+            <button type="submit">Send Announcement</button>
+        </form>
+    </li>
+    {% empty %}
+    <li>No clinics scheduled.</li>
+    {% endfor %}
+</ul>
+
+<h3>Upcoming Appointments</h3>
+<table>
+<thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Clinic</th><th>Actions</th></tr></thead>
+<tbody>
+{% for appt in upcoming_appointments %}
+<tr>
+    <td>{{ appt.scheduled_date }}</td>
+    <td>{{ appt.scheduled_time }}</td>
+    <td>{{ appt.pregnancy.mother.user.get_full_name }} ({{ appt.pregnancy.mother.user.username }})</td>
+    <td>{{ appt.clinic.name if appt.clinic }}</td>
+    <td>
+        <form method="post" action="{% url 'community:reschedule_appointment' appt.id %}">{% csrf_token %}
+            <input type="date" name="date" value="{{ appt.scheduled_date }}">
+            <input type="time" name="time" value="{{ appt.scheduled_time }}">
+            <button type="submit">Reschedule</button>
+        </form>
+    </td>
+</tr>
+{% empty %}
+<tr><td colspan="5">No upcoming appointments.</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h3>Hospital Groups</h3>
+<ul>
+    {% for group in groups %}
+    <li>{{ group.name }} - {{ group.description }} - Members: {{ group.members.count }}</li>
+    {% empty %}
+    <li>No groups yet.</li>
+    {% endfor %}
+</ul>
+
+<h3>Create Group</h3>
+<form method="post" action="{% url 'community:create_group_and_add_members' %}">{% csrf_token %}
+    {{ group_form.as_p }}
+    <label>Members (comma-separated usernames)</label>
+    <input type="text" name="members">
+    <button type="submit">Create Group</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Maternal AI Chat</title>
+
+  <style>
+    body {
+      font-family: Arial;
+      background: #f4f6f8;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+    }
+
+    .chat-container {
+      width: 420px;
+      height: 90vh;
+      background: white;
+      margin-top: 20px;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      padding: 15px;
+      background: #4a90e2;
+      color: white;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+    }
+
+    .msg {
+      margin: 8px 0;
+      padding: 10px;
+      border-radius: 10px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background: #dcf8c6;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .ai {
+      background: #eee;
+      margin-right: auto;
+    }
+
+    .input-box {
+      display: flex;
+      border-top: 1px solid #ddd;
+    }
+
+    input {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      outline: none;
+    }
+
+    button {
+      background: #4a90e2;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #357ab7;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="chat-container">
+
+  <div class="header">
+    🩺 Maternal AI Assistant
+  </div>
+
+  <div class="messages" id="messages"></div>
+
+  <div class="input-box">
+    <input type="text" id="msgInput" placeholder="Ask something..." />
+    <button onclick="sendMessage()">Send</button>
+  </div>
+
+</div>
+
+<script>
+let sessionId = null;
+
+function getCSRFToken() {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, 10) === 'csrftoken=') {
+                cookieValue = decodeURIComponent(cookie.substring(10));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 🚀 Start session
+async function startSession() {
+    let res = await fetch("/chat/chat/start/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json","X-CSRFToken": getCSRFToken()},
+    });
+
+    let data = await res.json();
+    sessionId = data.session_id;
+
+    loadMessages();
+}
+
+// 📩 Send message
+async function sendMessage() {
+    let input = document.getElementById("msgInput");
+    let message = input.value;
+    input.value = "";
+
+    if (!message) return;
+
+    addMessage("user", message);
+
+    let res = await fetch("/chat/chat/send/", {
+        method: "POST",
+        headers: {"Content-Type": "application/json","X-CSRFToken": getCSRFToken()},
+        body: JSON.stringify({
+            session_id: sessionId,
+            message: message
+        })
+    });
+
+    let data = await res.json();
+
+    addMessage("ai", data.reply);
+}
+
+// 📜 Load history
+async function loadMessages() {
+    let res = await fetch(`/chat/chat/messages/${sessionId}/`);
+    let data = await res.json();
+
+    document.getElementById("messages").innerHTML = "";
+
+    data.messages.forEach(m => {
+        addMessage(m.sender, m.message);
+    });
+}
+
+// 💬 UI helper
+function addMessage(sender, text) {
+    let div = document.createElement("div");
+    div.classList.add("msg");
+    div.classList.add(sender === "user" ? "user" : "ai");
+    div.innerText = text;
+
+    let container = document.getElementById("messages");
+    container.appendChild(div);
+
+    container.scrollTop = container.scrollHeight;
+}
+
+// init
+startSession();
+</script>
+
+</body>
+</html>

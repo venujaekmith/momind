@@ -1,0 +1,164 @@
+{% extends "postpartum/base.html" %}
+{% block title %}Chat — Postpartum{% endblock %}
+{% block nav_chat %}active{% endblock %}
+
+{% block extra_css %}
+.chat-wrap { display:flex; flex-direction:column; height:calc(100vh - 130px); }
+.messages { flex:1; overflow-y:auto; padding:1rem; display:flex; flex-direction:column; gap:12px; background:#fff; border:1px solid #e5e5e0; border-bottom:none; border-radius:10px 10px 0 0; }
+.msg { max-width:80%; }
+.msg.bot { align-self:flex-start; }
+.msg.user { align-self:flex-end; }
+.bubble { padding:10px 14px; border-radius:10px; font-size:14px; line-height:1.65; }
+.msg.bot .bubble { background:#f5f5f0; border-bottom-left-radius:3px; }
+.msg.user .bubble { background:#1D9E75; color:#fff; border-bottom-right-radius:3px; }
+.msg-time { font-size:11px; color:#bbb; margin-top:3px; padding:0 2px; }
+.msg.user .msg-time { text-align:right; }
+.input-bar { display:flex; gap:8px; padding:10px; background:#fff; border:1px solid #e5e5e0; border-top:1px solid #f0f0eb; border-radius:0 0 10px 10px; }
+.input-bar textarea { flex:1; border:1px solid #e5e5e0; border-radius:6px; padding:8px 12px; font-size:14px; resize:none; min-height:40px; max-height:100px; font-family:inherit; outline:none; background:#fafafa; }
+.input-bar textarea:focus { border-color:#1D9E75; background:#fff; }
+.send-btn { width:40px; height:40px; border-radius:6px; border:none; background:#1D9E75; color:#fff; cursor:pointer; font-size:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
+.send-btn:disabled { opacity:.5; cursor:not-allowed; }
+.dots span { display:inline-block; animation:blink 1.2s infinite; }
+.dots span:nth-child(2){animation-delay:.2s} .dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.2}40%{opacity:1}}
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.75rem;">
+  <h2 style="font-size:16px; font-weight:500;">How are you feeling today?</h2>
+  <button class="btn" id="new-chat-btn" onclick="newConversation()" style="font-size:12px; padding:5px 10px;">+ New chat</button>
+</div>
+
+<div class="chat-wrap">
+  <div class="messages" id="messages">
+    {% if not messages %}
+    <div class="msg bot">
+      <div class="bubble">Hi there 💚 I'm here just for you. How are you feeling today? Tell me anything — about the baby, your sleep, how your body feels, or whatever is on your mind.</div>
+      <div class="msg-time">now</div>
+    </div>
+    {% else %}
+      {% for msg in messages %}
+      <div class="msg {{ msg.role }}">
+        <div class="bubble">{{ msg.content|linebreaksbr }}</div>
+        <div class="msg-time">{{ msg.created_at|date:"g:i a" }}</div>
+      </div>
+      {% endfor %}
+    {% endif %}
+    <div class="msg bot" id="typing" style="display:none;">
+      <div class="bubble" style="color:#888;"><span class="dots"><span>●</span><span>●</span><span>●</span></span></div>
+    </div>
+  </div>
+
+  <div class="input-bar">
+    <textarea id="msg-input" placeholder="Write how you're feeling..." rows="1"
+      onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg()}"
+      oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px'"></textarea>
+    <button class="send-btn" id="send-btn" onclick="sendMsg()" title="Send">➤</button>
+  </div>
+</div>
+
+{% if assessment and assessment.chat_score %}
+<div class="card" style="margin-top:1rem;" id="stress-result">
+  <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Stress estimate from chat</p>
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+    <span style="font-size:28px; font-weight:500;">{{ assessment.chat_score }}</span>
+    <span class="badge level-{{ assessment.level }}">{{ assessment.level }}</span>
+  </div>
+  <div class="stress-bar-wrap"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.chat_score }}%"></div></div>
+  <p style="font-size:13px; color:#666; margin-top:10px; line-height:1.6;">{{ assessment.chat_insight }}</p>
+</div>
+{% else %}
+<div id="stress-result" style="display:none;" class="card" style="margin-top:1rem;">
+  <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Stress estimate from chat</p>
+  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
+    <span style="font-size:28px; font-weight:500;" id="stress-num">—</span>
+    <span class="badge" id="stress-tag"></span>
+  </div>
+  <div class="stress-bar-wrap"><div class="stress-bar" id="stress-bar" style="width:0%"></div></div>
+  <p style="font-size:13px; color:#666; margin-top:10px; line-height:1.6;" id="stress-insight"></p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CONV_ID = {{ conversation.id }};
+const SEND_URL = "{% url 'postpartum:send_message' %}";
+const NEW_URL = "{% url 'postpartum:new_conversation' %}";
+const CSRF = "{{ csrf_token }}";
+let busy = false;
+
+function scrollDown() {
+  const m = document.getElementById('messages');
+  m.scrollTop = m.scrollHeight;
+}
+scrollDown();
+
+function addMsg(role, text, time) {
+  const msgs = document.getElementById('messages');
+  const typing = document.getElementById('typing');
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.innerHTML = `<div class="bubble">${text.replace(/\n/g,'<br>')}</div><div class="msg-time">${time || 'now'}</div>`;
+  msgs.insertBefore(div, typing);
+  scrollDown();
+}
+
+async function sendMsg() {
+  if (busy) return;
+  const input = document.getElementById('msg-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  input.style.height = 'auto';
+  addMsg('user', text);
+  busy = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('typing').style.display = 'block';
+  scrollDown();
+
+  try {
+    const res = await fetch(SEND_URL, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json','X-CSRFToken':CSRF},
+      body: JSON.stringify({conversation_id: CONV_ID, message: text})
+    });
+    const data = await res.json();
+    document.getElementById('typing').style.display = 'none';
+    addMsg('bot', data.reply);
+    if (data.stress) showStress(data.stress);
+  } catch(e) {
+    document.getElementById('typing').style.display = 'none';
+    addMsg('bot', 'Something went wrong. Please try again.');
+  }
+  busy = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+function showStress(s) {
+  const card = document.getElementById('stress-result');
+  card.style.display = 'block';
+  document.getElementById('stress-num').textContent = s.score;
+  const colors = {low:'#1D9E75', moderate:'#BA7517', high:'#E24B4A'};
+  const bg = {low:'#E1F5EE', moderate:'#FAEEDA', high:'#FCEBEB'};
+  const tc = {low:'#085041', moderate:'#633806', high:'#501313'};
+  const tag = document.getElementById('stress-tag');
+  tag.textContent = s.level + ' stress';
+  tag.style.background = bg[s.level];
+  tag.style.color = tc[s.level];
+  const bar = document.getElementById('stress-bar');
+  bar.style.width = s.score + '%';
+  bar.style.background = colors[s.level];
+  document.getElementById('stress-insight').textContent = s.insight + ' — ' + s.recommendation;
+}
+
+async function newConversation() {
+  const res = await fetch(NEW_URL, {
+    method:'POST',
+    headers:{'X-CSRFToken':CSRF}
+  });
+  const data = await res.json();
+  window.location.href = "{% url 'postpartum:chat' %}?conv=" + data.conversation_id;
+}
+</script>
+{% endblock %}

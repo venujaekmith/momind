@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %}Journal{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4">Dear Diary...</h3>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        
+        <button type="submit" class="btn btn-primary btn-lg">Save Entry</button>
+        <a href="{% url 'postpartum:postpartum_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+    </form>
+</div>
+{% endblock %}

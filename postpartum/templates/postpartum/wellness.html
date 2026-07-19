@@ -1,0 +1,51 @@
+{% extends "postpartum/base.html" %}
+{% block title %}Wellness — Postpartum{% endblock %}
+{% block nav_wellness %}active{% endblock %}
+
+{% block content %}
+<h2 style="font-size:16px; font-weight:500; margin-bottom:1rem;">Your wellness summary</h2>
+
+{% if assessment %}
+  {% if assessment.overall_score %}
+  <div class="card" style="margin-bottom:1rem;">
+    <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:10px;">Overall stress score</p>
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:8px;">
+      <span style="font-size:40px; font-weight:500;">{{ assessment.overall_score }}</span>
+      <span class="badge level-{{ assessment.level }}" style="font-size:13px;">{{ assessment.level }} stress</span>
+    </div>
+    <div class="stress-bar-wrap" style="height:10px;"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.overall_score }}%"></div></div>
+    <p style="font-size:13px; color:#555; margin-top:14px; line-height:1.7; padding:12px; background:#f8f8f5; border-radius:6px;">{{ assessment.recommendation }}</p>
+  </div>
+  {% endif %}
+
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+    {% if assessment.chat_score %}
+    <div class="card">
+      <p style="font-size:12px; color:#888; margin-bottom:8px;">From conversation</p>
+      <div style="font-size:26px; font-weight:500; margin-bottom:4px;">{{ assessment.chat_score }}</div>
+      <div class="stress-bar-wrap"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.chat_score }}%"></div></div>
+      <p style="font-size:12px; color:#666; margin-top:8px; line-height:1.6;">{{ assessment.chat_insight }}</p>
+    </div>
+    {% endif %}
+
+    {% if assessment.draw_score %}
+    <div class="card">
+      <p style="font-size:12px; color:#888; margin-bottom:8px;">From drawing</p>
+      <div style="font-size:26px; font-weight:500; margin-bottom:4px;">{{ assessment.draw_score }}</div>
+      <div class="stress-bar-wrap"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.draw_score }}%"></div></div>
+      <p style="font-size:12px; color:#666; margin-top:8px; line-height:1.6;">{{ assessment.draw_insight }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <div style="margin-top:1rem; display:flex; gap:8px;">
+    <a href="{% url 'postpartum:chat' %}" class="btn btn-primary">Continue chatting</a>
+    <a href="{% url 'postpartum:draw' %}" class="btn">Draw again</a>
+  </div>
+
+{% else %}
+  <div class="card">
+    <p style="font-size:14px; color:#666; line-height:1.7;">No assessment yet. Start a <a href="{% url 'postpartum:chat' %}" style="color:#1D9E75;">conversation</a> or <a href="{% url 'postpartum:draw' %}" style="color:#1D9E75;">drawing session</a> to see your wellness summary here.</p>
+  </div>
+{% endif %}
+{% endblock %}

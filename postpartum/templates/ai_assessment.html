@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Stress Check-in{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-center mb-4">🧠 AI Postpartum Stress Assessment</h2>
+    <p class="text-center text-muted">Answer honestly. This will help identify your stress level.</p>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-body">
+                {{ form.as_p }}
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">Analyze My Stress Level</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

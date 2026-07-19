@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MoMind - Care Beyond Birth | Empowering Mothers Together</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fff5f8 0%, #ffe0e8 100%);
+            color: #3b2c35;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(232, 93, 143, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(232, 93, 143, 0.2);
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            font-size: 0.75rem;
+            color: #b66882;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #a13e63;
+            font-weight: 500;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            color: #e85d8f;
+            transform: translateY(-2px);
+        }
+
+        .btn-login {
+            background: transparent;
+            border: 2px solid #e85d8f;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            color: #e85d8f;
+            font-weight: 600;
+        }
+
+        .btn-login:hover {
+            background: #e85d8f;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-signup {
+            background: linear-gradient(95deg, #e85d8f, #cf4679);
+            padding: 0.5rem 1.8rem;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(232, 93, 143, 0.3);
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(232, 93, 143, 0.4);
+            background: linear-gradient(95deg, #cf4679, #b12e60);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 3rem;
+            padding: 3rem 5% 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero-content {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .hero-content .badge {
+            background: rgba(232, 93, 143, 0.15);
+            color: #cf4679;
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-content h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.2rem;
+            background: linear-gradient(135deg, #2d1b24, #a13e63);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero-content .tagline {
+            font-size: 1.2rem;
+            color: #b66882;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .hero-content p {
+            color: #5a4a54;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(95deg, #e85d8f, #cf4679);
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+            box-shadow: 0 6px 14px rgba(232, 93, 143, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(232, 93, 143, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #e85d8f;
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            color: #e85d8f;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #e85d8f;
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .hero-image {
+            flex: 1;
+            min-width: 280px;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 5%;
+            background: rgba(255, 255, 255, 0.6);
+            margin-top: 1rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2d1b24;
+            margin-bottom: 3rem;
+        }
+
+        .section-title span {
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ffe0e8;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 35px rgba(232, 93, 143, 0.12);
+            border-color: #ffcdda;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #e85d8f;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.8rem;
+            color: #3b2c35;
+        }
+
+        .feature-card p {
+            color: #7a6672;
+            line-height: 1.5;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            padding: 4rem 5%;
+            background: #fffafc;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.8rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            border-left: 6px solid #e85d8f;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            color: #4a3a44;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .testimonial-author {
+            font-weight: 700;
+            color: #e85d8f;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            margin: 3rem 5%;
+            padding: 3rem 2rem;
+            border-radius: 3rem;
+            text-align: center;
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .btn-cta {
+            background: white;
+            color: #e85d8f;
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-cta:hover {
+            transform: scale(1.05);
+            background: #fff0f5;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d1b24;
+            color: #e0cbd4;
+            padding: 3rem 5% 2rem;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .footer-col h4 {
+            color: #ffb8d0;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .footer-col p, .footer-col a {
+            color: #d4b9c4;
+            text-decoration: none;
+            line-height: 1.8;
+            font-size: 0.9rem;
+        }
+
+        .footer-col a:hover {
+            color: #e85d8f;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            font-size: 1.3rem;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                text-align: center;
+                padding: 1rem;
+            }
+            .hero-content h1 {
+                font-size: 2.2rem;
+            }
+            .hero {
+                padding: 2rem 1.5rem;
+                text-align: center;
+            }
+            .hero-buttons {
+                justify-content: center;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Floating decoration */
+        .floating-heart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #e85d8f;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 99;
+        }
+        .floating-heart:hover {
+            transform: scale(1.1);
+            background: #cf4679;
+        }
+        .floating-heart i {
+            color: white;
+            font-size: 1.6rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">
+            <h1>🌸 MoMind</h1>
+            <p>care beyond birth, empowering mothers, together</p>
+        </div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#testimonials">Stories</a>
+            <a href="#contact">Support</a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'dashboards:dashboard' %}" class="btn-login"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="{% url 'accounts:logout' %}" class="btn-signup"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn-login"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="{% url 'accounts:register' %}" class="btn-signup"><i class="fas fa-user-plus"></i> Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="badge">
+                <i class="fas fa-heartbeat"></i> Trusted by 5,000+ mothers
+            </div>
+            <h1>Your Journey,<br>Our Gentle Care</h1>
+            <div class="tagline">MoMind — AI-powered maternal wellness, from pregnancy to postpartum.</div>
+            <p>Track baby development, connect with midwives & doctors, access AI health insights, and join a supportive community — all in one safe, beautiful space.</p>
+            <div class="hero-buttons">
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'dashboards:dashboard' %}" class="btn-primary"><i class="fas fa-arrow-right"></i> Go to Dashboard</a>
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn-primary"><i class="fas fa-heart"></i> Start Free Journey</a>
+                    <a href="{% url 'accounts:login' %}" class="btn-secondary">Existing Member →</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-image">
+            <!-- Modern placeholder illustration (emoji / CSS art) -->
+            <div style="background: linear-gradient(145deg, #ffe0e8, #ffd0dc); border-radius: 2rem; padding: 1.5rem; text-align: center;">
+                <i class="fas fa-baby-carriage" style="font-size: 7rem; color: #e85d8f; margin-bottom: 0.5rem; display: block;"></i>
+                <i class="fas fa-hand-holding-heart" style="font-size: 3rem; color: #cf4679; margin: 0 0.5rem;"></i>
+                <i class="fas fa-chart-line" style="font-size: 3rem; color: #b83b6e;"></i>
+                <p style="margin-top: 1rem; font-weight: 500; color:#a13e63;">💖 Smart care, human touch</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-title">
+            Why moms <span>❤️ MoMind</span>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Baby Advisor</h3>
+                <p>Ask anything about baby growth, milestones, feeding — get instant personalized AI guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-calendar-check"></i></div>
+                <h3>Smart Schedule</h3>
+                <p>Interactive calendar for appointments, vaccinations, and midwife visits — never miss a checkup.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                <h3>Postpartum Support</h3>
+                <p>Mood tracking, baby development logs, and wellness resources for the fourth trimester.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                <h3>Family & Care Team</h3>
+                <p>Connect with partner, midwife, doctor — share progress and stay united in care.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-chart-simple"></i></div>
+                <h3>Health Tracking</h3>
+                <p>Water intake, kick counts, fetal health, lab results — all in one dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-shield-heart"></i></div>
+                <h3>Risk Assessment AI</h3>
+                <p>Real-time pregnancy risk analysis with actionable insights for safer motherhood.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="testimonials">
+        <div class="section-title">
+            Real <span>Stories, Real Care</span>
+        </div>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “MoMind's AI advisor helped me track my baby's growth week by week. The calendar kept all my midwife visits organized, and the postpartum mood tracker was a lifesaver.”
+                </div>
+                <div class="testimonial-author">— Priya S., New Mother</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “As a midwife, having all my mothers' data in one place with risk alerts and easy scheduling improves the quality of care immensely. A game changer!”
+                </div>
+                <div class="testimonial-author">— Sarah J., Certified Midwife</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “The family linking feature made my husband feel involved. We could see kick counts together and prepare for appointments. Empowering and beautiful.”
+                </div>
+                <div class="testimonial-author">— Aditi R., Mother of twins</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div class="cta">
+        <h2>Ready to embrace motherhood with confidence?</h2>
+        <p>Join thousands of mothers & care providers who trust MoMind for every milestone.</p>
+        {% if request.user.is_authenticated %}
+            <a href="{% url 'dashboards:dashboard' %}" class="btn-cta"><i class="fas fa-arrow-right"></i> Go to Dashboard</a>
+        {% else %}
+            <a href="{% url 'accounts:register' %}" class="btn-cta"><i class="fas fa-heart"></i> Create Free Account</a>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4>🌸 MoMind</h4>
+                <p>Care beyond birth, empowering mothers, together.</p>
+                <div class="social-links">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-whatsapp"></i></a>
+                    <a href="#"><i class="fab fa-youtube"></i></a>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <a href="#home">Home</a><br>
+                <a href="#features">Features</a><br>
+                <a href="#testimonials">Testimonials</a><br>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <div class="footer-col">
+                <h4>For Care Providers</h4>
+                <a href="#">Midwife Portal</a><br>
+                <a href="#">Doctor Dashboard</a><br>
+                <a href="#">Hospital Integration</a><br>
+                <a href="#">Become a Partner</a>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <p><i class="fas fa-envelope"></i> hello@momind.com</p>
+                <p><i class="fas fa-phone-alt"></i> +1 (888) MOM-CARE</p>
+                <p>24/7 AI health companion</p>
+            </div>
+        </div>
+        <div class="copyright">
+            &copy; 2025 MoMind — Maternal Wellness Platform. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Floating Heart Back to Top -->
+    <div class="floating-heart" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if(target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

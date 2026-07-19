@@ -1,0 +1,352 @@
+{% extends 'basec.html' %}
+{% load static %}
+
+{% block content %}
+<div class="card-pink">
+    <div class="flex-between">
+        <div>
+            <h2><i class="fas fa-female"></i> Welcome, {{ user.username }}!</h2>
+            <p class="text-muted">Mother ID: <strong id="qrValue">{{ user.user_mother.mother_id }}</strong></p>
+        </div>
+        <button onclick="generateQR()" class="btn-outline-pink">
+            <i class="fas fa-qrcode"></i> Generate QR
+        </button>
+    </div>
+    {% if pregnancies and pregnancies|length > 1 %}
+    <div style="margin-top:0.75rem;">
+        <label for="pregSelect">Select pregnancy:</label>
+        <select id="pregSelect" class="form-group" onchange="onPregSelect()">
+            {% for p in pregnancies %}
+                <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
+                    Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    <div id="qrcode" style="margin-top: 1rem;"></div>
+</div>
+
+{% if warning %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-triangle"></i> Please add your partner and midwife for your account!
+</div>
+{% endif %}
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <i class="fas fa-calendar-week" style="font-size: 2rem; color: #e85d8f;"></i>
+        <h3>{{ pregnancy.get_pregnancy_week|default:"0" }}</h3>
+        <p>Weeks Pregnant</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-tint" style="font-size: 2rem; color: #e85d8f;"></i>
+        <h3>{{ daily_water|default:"0" }} ml</h3>
+        <p>Water Today</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-baby" style="font-size: 2rem; color: #e85d8f;"></i>
+        <h3>{{ recent_kicks|length|default:"0" }}</h3>
+        <p>Kick Sessions</p>
+    </div>
+</div>
+
+{% if not is_postpartum and pregnancy %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> You're in your pregnancy journey!
+    <a href="{% url 'dashboards:end_pregnancy' pregnancy.id %}" class="btn-pink" style="margin-left: 1rem;">
+        <i class="fas fa-check-circle"></i> I Have Delivered
+    </a>
+</div>
+{% endif %}
+
+{% if is_postpartum %}
+<div class="alert alert-success">
+    <i class="fas fa-baby-carriage"></i> Postpartum Phase - Baby is {{ baby.birth_date|timesince }} old
+    {% if pregnancy %}
+        <a href="{% url 'postpartum:postpartum_dashboard' %}?pregnancy={{ pregnancy.id }}" class="btn-pink" style="margin-left: 1rem;">Go to Postpartum Dashboard</a>
+    {% else %}
+        <a href="{% url 'postpartum:postpartum_dashboard' %}" class="btn-pink" style="margin-left: 1rem;">Go to Postpartum Dashboard</a>
+    {% endif %}
+    <a href="{% url 'dashboards:start_pregnancy' %}" class="btn-outline-pink" style="margin-left: 1rem;">Start Another Pregnancy</a>
+</div>
+{% endif %}
+
+<!-- Family Members -->
+<div class="card-pink">
+    <h3><i class="fas fa-heart"></i> Your Family Unit</h3>
+    <div class="grid-2">
+        <div>
+            <h4>Partner</h4>
+            {% if family.father %}
+                <p><i class="fas fa-check-circle" style="color: green;"></i> {{ family.father.user.get_full_name|default:family.father.user.username }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('FATHER')" class="btn-outline-pink">Change Father</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="FATHER">
+                        <button type="submit" class="btn-outline-pink">Remove Father</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('FATHER')" class="btn-outline-pink">+ Add Father</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Midwife</h4>
+            {% if family.midwife %}
+                <p><i class="fas fa-check-circle" style="color: green;"></i> {{ family.midwife.user.username }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink">Change Midwife</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="MIDWIFE">
+                        <button type="submit" class="btn-outline-pink">Remove Midwife</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('MIDWIFE')" class="btn-outline-pink">+ Link Midwife</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Doctor</h4>
+            {% if family.doctor %}
+                <p><i class="fas fa-check-circle" style="color: green;"></i> Dr. {{ family.doctor.user.last_name }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink">Change Doctor</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="DOCTOR">
+                        <button type="submit" class="btn-outline-pink">Remove Doctor</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('DOCTOR')" class="btn-outline-pink">+ Link Doctor</button>
+            {% endif %}
+        </div>
+        <div>
+            <h4>Hospital</h4>
+            {% if family.hospital %}
+                <p><i class="fas fa-check-circle" style="color: green;"></i> {{ family.hospital.name }}</p>
+                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink">Change Hospital</button>
+                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
+                        {% csrf_token %}
+                        <input type="hidden" name="family_id" value="{{ family.id }}">
+                        <input type="hidden" name="role" value="HOSPITAL">
+                        <button type="submit" class="btn-outline-pink">Remove Hospital</button>
+                    </form>
+                </div>
+            {% else %}
+                <button onclick="openModal('HOSPITAL')" class="btn-outline-pink">+ Link Hospital</button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if not is_postpartum and pregnancy %}
+<div class="card-pink">
+    <h3><i class="fas fa-baby"></i> Baby's Growth This Week</h3>
+    <p>Your baby is the size of a <strong>{{ baby_info.size }}</strong>!</p>
+    <ul>
+        <li>📏 Length: {{ baby_info.length }}</li>
+        <li>⚖️ Weight: {{ baby_info.weight }}</li>
+    </ul>
+    <a href="{% url 'ai_services:show_risk' pregnancy.id %}" class="btn-pink">
+        <i class="fas fa-brain"></i> Run AI Risk Assessment
+    </a>
+</div>
+{% endif %}
+
+<!-- Calendar Schedule -->
+<div class="calendar-wrapper">
+    <h3><i class="fas fa-calendar-alt"></i> Your Schedule</h3>
+    <div id="scheduleCalendar" style="min-height: 400px;"></div>
+    <div style="margin-top: 1rem;">
+        <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-pink">
+            <i class="fas fa-plus"></i> Add New Event
+        </a>
+    </div>
+</div>
+
+{% if hospital_queue_count and hospital_name %}
+<div class="card-pink">
+    <h3><i class="fas fa-user-clock"></i> Hospital Queue for {{ hospital_name }}</h3>
+    <p>There are <strong>{{ hospital_queue_count }}</strong> hospital clinic visits scheduled for today.</p>
+    <table class="table-modern" style="margin-top: 1rem; width: 100%;">
+        <thead>
+            <tr><th>Time</th><th>Patient</th><th>Visit</th></tr>
+        </thead>
+        <tbody>
+            {% for visit in hospital_queue %}
+            <tr>
+                <td>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</td>
+                <td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td>
+                <td>{{ visit.title }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% if hospital_queue_next %}
+    <p style="margin-top: 1rem;"><strong>Next in queue:</strong> {{ hospital_queue_next.pregnancy.mother.user.get_full_name|default:hospital_queue_next.pregnancy.mother.user.username }} at {{ hospital_queue_next.scheduled_time|time:"H:i"|default:"TBD" }}</p>
+    {% endif %}
+</div>
+{% elif family != 'none' and family.hospital %}
+<div class="card-pink">
+    <h3><i class="fas fa-user-clock"></i> Hospital Queue</h3>
+    <p>No clinic visits have been scheduled for today at {{ family.hospital.name }}.</p>
+</div>
+{% endif %}
+
+{% if available_clinics %}
+<div class="card-pink">
+    <h3><i class="fas fa-clinic-medical"></i> Available Hospital Clinics</h3>
+    <ul>
+        {% for clinic in available_clinics|slice:":3" %}
+            <li><strong>{{ clinic.name }}</strong> on {{ clinic.date }} at {{ clinic.time|time:"H:i"|default:"TBD" }} — {{ clinic.location }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'dashboards:clinic_directory' %}" class="btn-pink">See all clinics</a>
+</div>
+{% endif %}
+
+<script>
+    function onPregSelect() {
+    const sel = document.getElementById('pregSelect');
+    if (!sel) return;
+
+    const pid = sel.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('pregnancy', pid);
+    window.location.href = url.toString();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const events = [];
+
+    {% for event in schedule_events %}
+    events.push({
+        title: "{{ event.title|escapejs }}",
+        start: "{{ event.scheduled_date|date:'Y-m-d' }}",
+        description: "{{ event.notes|escapejs }}"
+    });
+    {% endfor %}
+
+    const calendarEl = document.getElementById('scheduleCalendar');
+
+    if (calendarEl) {
+        const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            headerToolbar: {
+                left: 'prev,next today',
+                center: 'title',
+                right: 'dayGridMonth,listWeek'
+            },
+            events: events,
+            eventColor: '#e85d8f',
+            height: 'auto'
+        });
+
+        calendar.render();
+    }
+});
+</script>
+
+<!-- Water Tracker -->
+<div class="card-pink">
+    <h3><i class="fas fa-tint"></i> Daily Water Intake</h3>
+    <progress value="{{ daily_water }}" max="2500" style="width: 100%; height: 20px; border-radius: 10px;"></progress>
+    <p>{{ daily_water }} / 2500 ml</p>
+    <form action="{% url 'dashboards:log_water' %}" method="POST">
+        {% csrf_token %}
+        <select name="amount" class="form-group">
+            <option value="250">1 Glass (250ml)</option>
+            <option value="500">Small Bottle (500ml)</option>
+            <option value="1000">Large Bottle (1000ml)</option>
+        </select>
+        <button type="submit" class="btn-pink" style="margin-top: 0.5rem;">Log Water</button>
+    </form>
+</div>
+
+<!-- Kick Counter -->
+<div class="card-pink">
+    <h3><i class="fas fa-baby-foot"></i> Kick Counter</h3>
+    <form action="{% url 'dashboards:log_kicks' %}" method="POST">
+        {% csrf_token %}
+        <input type="number" name="count" placeholder="Number of kicks" required>
+        <button type="submit" class="btn-pink" style="margin-top: 0.5rem;">Log Session</button>
+    </form>
+    
+    {% if recent_kicks %}
+    <h4 style="margin-top: 1rem;">Recent Sessions</h4>
+    <table class="table-modern">
+        <thead>
+            <tr><th>Date & Time</th><th>Kicks</th></tr>
+        </thead>
+        <tbody>
+            {% for kick in recent_kicks %}
+            <tr><td>{{ kick.session_start|date:"M d, H:i" }}</td><td>{{ kick.count }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<!-- Pregnancy Progress -->
+<div class="card-pink">
+    <h3><i class="fas fa-chart-line"></i> Pregnancy Progress</h3>
+    <a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Add Progress</a>
+    {% if progress_records %}
+    <table class="table-modern" style="margin-top: 1rem;">
+        <thead><tr><th>Week</th><th>Weight</th><th>BP</th><th>Baby HR</th></tr></thead>
+        <tbody>
+            {% for p in progress_records %}
+            <tr><td>{{ p.week }}</td><td>{{ p.weight }}</td><td>{{ p.bp_systolic }}/{{ p.bp_diastolic }}</td><td>{{ p.baby_heart_rate }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<!-- Fetal Health -->
+<div class="card-pink">
+    <h3><i class="fas fa-heartbeat"></i> Fetal Health</h3>
+    <a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Add Fetal Record</a>
+    {% if fetal_records %}
+    <table class="table-modern" style="margin-top: 1rem;">
+        <thead><tr><th>Week</th><th>Heart Rate</th><th>Movement</th></tr></thead>
+        <tbody>
+            {% for f in fetal_records %}
+            <tr><td>{{ f.week }}</td><td>{{ f.heart_rate }}</td><td>{{ f.movement_level }}</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<!-- Lab Tests -->
+<div class="card-pink">
+    <h3><i class="fas fa-flask"></i> Lab Tests</h3>
+    <a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Add Lab Test</a>
+    {% if lab_tests %}
+    <table class="table-modern" style="margin-top: 1rem;">
+        <thead><tr><th>Test</th><th>Result</th><th>Status</th></tr></thead>
+        <tbody>
+            {% for l in lab_tests %}
+            <tr>
+                <td>{{ l.test_name }}</td>
+                <td>{{ l.result_value }}</td>
+                <td>{% if l.is_abnormal %}⚠️ Abnormal{% else %}✅ Normal{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+
+<a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">View My Details</a>
+{% endblock %} 

@@ -1,0 +1,500 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<!-- Include Chart.js for high-fidelity data visualization -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Include Marked for AI markdown rendering -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+<div class="dashboard-container">
+
+    <!-- Top Profile & Summary Section -->
+    <div class="card-pink profile-header-card">
+        <div class="flex-between header-wrapper">
+            <h2><i class="fas fa-female"></i> {{ mother.user.get_full_name|default:mother.user.username }}</h2>
+            <div class="action-buttons">
+                {% if  not is_father %}
+                    {% if pregnancy %}
+                    <a href="{% url 'dashboards:add_visit_note' pregnancy.id %}" class="btn-pink">
+                    <i class="fas fa-plus"></i> Add Visit Note
+                </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+        {% if pregnancies and pregnancies|length > 1 %}
+        <div style="margin-top:0.5rem;">
+            <label for="pregSelectDetail">Select pregnancy:</label>
+            <select id="pregSelectDetail" onchange="onPregDetailSelect()">
+                {% for p in pregnancies %}
+                    <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
+                        #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+        
+        <div class="grid-4 style-grid">
+            <div class="info-group">
+                <p><strong>Blood Group:</strong> <span class="val">{{ mother_details.blood_group|default:'N/A' }}</span></p>
+                <p><strong>Height:</strong> <span class="val">{{ mother_details.height_cm|default:'N/A' }} cm</span></p>
+                <p><strong>Previous Pregnancies:</strong> <span class="val">{{ mother_details.previous_pregnancies|default:0 }}</span></p>
+            </div>
+            <div class="info-group">
+                <p><strong>Diabetes:</strong> <span class="val">{{ mother_details.has_diabetes|yesno:"Yes,No" }}</span></p>
+                <p><strong>Hypertension:</strong> <span class="val">{{ mother_details.has_hypertension|yesno:"Yes,No" }}</span></p>
+                <p><strong>Risk Status:</strong> 
+                    <span class="badge-risk {% if pregnancy.is_high_risk %}high{% else %}low{% endif %}">
+                        {{ pregnancy.is_high_risk|yesno:"High Risk,Normal" }}
+                    </span>
+                </p>
+            </div>
+            <div class="info-group">
+                <p><strong>Current Week:</strong> <span class="val-highlight">{{ pregnancy.get_pregnancy_week|default:'Postpartum' }}</span></p>
+                <p><strong>EDD:</strong> <span class="val">{{ pregnancy.expected_delivery_date|date:"d M Y"|default:'N/A' }}</span></p>
+            </div>
+            <div class="info-group ai-action-box">
+                <form id="riskForm" method="POST" action="{% url 'ai_services:risk_assessment' pregnancy.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-pink btn-brain">
+                        <i class="fas fa-brain"></i> Run AI Assessment
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Risk Modal Overlay -->
+    <div id="riskModal" class="modal-momind" style="display: none;">
+        <div class="modal-momind-content">
+            <div class="flex-between modal-header">
+                <h3>AI Risk Assessment</h3>
+                <span onclick="closeRiskModal()" class="close-modal">&times;</span>
+            </div>
+            <div id="modalBody" class="modal-body">Waiting for AI analysis...</div>
+        </div>
+    </div>
+
+    <!-- Dynamic Analytics Dashboard Grid (Weight, Lab Reports, and BP Tracking) -->
+    <div class="card-pink metrics-charts-section">
+        <h3><i class="fas fa-chart-heart"></i> Patient Health Analytics & Clinical Trends</h3>
+        <div class="grid-3 chart-grid">
+            <!-- 1. Weight Tracker Graph -->
+            <div class="chart-box">
+                <div class="chart-title">Weight Tracking Curve</div>
+                <div class="chart-container">
+                    <canvas id="weightTrendChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- 2. Lab Reports Abnormal vs Normal Graph -->
+            <div class="chart-box">
+                <div class="chart-title">Lab Diagnostics Status Summary</div>
+                <div class="chart-container">
+                    <canvas id="labStatusChart"></canvas>
+                </div>
+            </div>
+
+            <!-- 3. Blood Pressure Timeline Graph -->
+            <div class="chart-box">
+                <div class="chart-title">Blood Pressure Tracking (mmHg)</div>
+                <div class="chart-container">
+                    <canvas id="bpTrendChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Calendar Area -->
+    <div class="calendar-wrapper card-pink spec-cal">
+        <h3><i class="fas fa-calendar-alt"></i> Upcoming Schedule</h3>
+        <div id="scheduleCalendar" style="min-height: 350px;"></div>
+    </div>
+
+    <!-- History Tables Sub-Tabs Section -->
+    <div class="card-pink tabbed-card">
+        <div class="tabs-header-nav">
+            <button class="tab-btn active" onclick="showTab(event, 'vitals')">Vitals & Progress</button>
+            <button class="tab-btn" onclick="showTab(event, 'fetal')">Fetal Health</button>
+            <button class="tab-btn" onclick="showTab(event, 'lab')">Lab Tests & Uploaded Reports</button>
+            <button class="tab-btn" onclick="showTab(event, 'notes')">Visit Notes</button>
+        </div>
+        
+        <!-- Vitals Data View -->
+        <div id="vitals-tab" class="tab-content-pane">
+            <h3>Vitals Records History</h3>
+            {% if progress_records %}
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead><tr><th>Date</th><th>Week</th><th>Weight</th><th>BP (Systolic/Diastolic)</th><th>Baby HR</th></tr></thead>
+                    <tbody>
+                        {% for record in progress_records %}
+                        <tr>
+                            <td>{{ record.recorded_at|date:"d M Y" }}</td>
+                            <td><span class="badge-week">Week {{ record.week }}</span></td>
+                            <td>{{ record.weight|default:"-" }} kg</td>
+                            <td>{{ record.bp_systolic|default:"-" }}/{{ record.bp_diastolic|default:"-" }} mmHg</td>
+                            <td>{{ record.baby_heart_rate|default:"-" }} bpm</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">No progress records available.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Fetal Health Monitoring -->
+        <div id="fetal-tab" class="tab-content-pane" style="display: none;">
+            <h3>Fetal Vital Status Logs</h3>
+            {% if fetal_records %}
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead><tr><th>Date</th><th>Week</th><th>Heart Rate</th><th>Movement Level</th></tr></thead>
+                    <tbody>
+                        {% for record in fetal_records %}
+                        <tr>
+                            <td>{{ record.recorded_at|date:"d M Y" }}</td>
+                            <td><span class="badge-week">Week {{ record.week }}</span></td>
+                            <td>{{ record.heart_rate|default:"-" }} bpm</td>
+                            <td><span class="badge-movement {{ record.movement_level }}">{{ record.movement_level|title }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">No fetal records available.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Lab Diagnostics View with Download Engine -->
+        <div id="lab-tab" class="tab-content-pane" style="display: none;">
+            <h3>Lab Analysis Records & File Repository</h3>
+            {% if lab_tests %}
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead><tr><th>Test Name</th><th>Result Value</th><th>Normal Range</th><th>Status</th><th>Download Report Documents</th></tr></thead>
+                    <tbody>
+                        {% for test in lab_tests %}
+                        <tr>
+                            <td><strong>{{ test.test_name }}</strong></td>
+                            <td>{{ test.result_value }} {{ test.unit|default:"" }}</td>
+                            <td>{{ test.normal_range|default:"-" }}</td>
+                            <td>
+                                {% if test.is_abnormal %}
+                                <span class="status-alert abnormal"><i class="fas fa-exclamation-triangle"></i> Abnormal</span>
+                                {% else %}
+                                <span class="status-alert normal"><i class="fas fa-check-circle"></i> Normal</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <!-- Queries reverse ForeignKey lookup via Model related_name='attachments' -->
+                                {% if test.attachments.all %}
+                                    <div class="attachment-action-list">
+                                        {% for attachment in test.attachments.all %}
+                                        <a href="{{ attachment.file.url }}" class="btn-download-file" download title="Download official document entry">
+                                            <i class="fas fa-cloud-download-alt"></i> Download File ({{ forloop.counter }})
+                                        </a>
+                                        {% endfor %}
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted-italics">No reports attached</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="no-data">No lab tests recorded.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Medical Visit Notes Tracker -->
+        <div id="notes-tab" class="tab-content-pane" style="display: none;">
+            <h3>Clinical Practitioner Notes</h3>
+            {% if visit_notes %}
+            <div class="notes-timeline">
+                {% for note in visit_notes %}
+                <div class="note-timeline-item">
+                    <div class="note-meta">
+                        <span class="note-date"><i class="far fa-calendar-alt"></i> {{ note.visit_date|date:"d M Y" }}</span>
+                        <span class="note-author"><i class="far fa-user-md"></i> Provider: {{ note.recorded_by.get_full_name|default:note.recorded_by.username }}</span>
+                    </div>
+                    <div class="note-body-content">
+                        <p><strong>Findings:</strong> {{ note.findings }}</p>
+                        <p><strong>Notes:</strong> {{ note.notes }}</p>
+                        {% if note.recommendations %}
+                        <div class="recommendations-box">
+                            <strong><i class="fas fa-star-of-life"></i> Prescription/Advice:</strong> {{ note.recommendations }}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="no-data">No visit notes recorded.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Postpartum Block Context Component -->
+    {% if is_postpartum and babies %}
+    <div class="card-pink postpartum-section">
+        <h3><i class="fas fa-baby-carriage"></i> Postpartum & Newborn Growth Metrics</h3>
+        <div class="grid-2 baby-cards-grid">
+            {% for baby in babies %}
+            <div class="baby-profile-card">
+                <div class="flex-between card-inner-header">
+                    <h4>👶 {{ baby.name|default:"Unnamed Baby" }}</h4>
+                    <a href="{% url 'dashboards:babyai' baby.id %}" class="btn-outline-pink">AI Pediatric Review</a>
+                </div>
+                <div class="baby-metrics">
+                    <p><strong>Birth Date:</strong> {{ baby.birth_date|date:"d M Y" }}</p>
+                    <p><strong>Birth Weight:</strong> {{ baby.birth_weight_kg|default:"—" }} kg</p>
+                    <p><strong>Current Age Context:</strong> <span class="age-tag">{{ baby.get_age_display }}</span></p>
+                </div>
+                <a href="{% url 'dashboards:add_baby_development' pregnancy.id %}?baby_id={{ baby.id }}" class="btn-pink btn-block-btn">
+                    <i class="fas fa-plus-circle"></i> Log Development Record
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Interactive Engine Operations Scripting Section -->
+<script>
+// Tab Swapping Controller Module
+function showTab(event, tabName) {
+    const panes = document.getElementsByClassName('tab-content-pane');
+    for (let pane of panes) { pane.style.display = 'none'; }
+    
+    const buttons = document.getElementsByClassName('tab-btn');
+    for (let btn of buttons) { btn.classList.remove('active'); }
+    
+    document.getElementById(tabName + '-tab').style.display = 'block';
+    event.currentTarget.classList.add('active');
+}
+
+// AI Diagnostic Submission Engine
+const riskForm = document.getElementById("riskForm");
+if (riskForm) {
+    riskForm.addEventListener("submit", function(e) {
+        e.preventDefault();
+        const modal = document.getElementById("riskModal");
+        modal.style.display = "flex";
+        fetch(riskForm.action, {
+            method: "POST",
+            body: new FormData(riskForm),
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(res => res.json())
+        .then(data => {
+            const levelClass = data.risk_level === "low" ? "low" : data.risk_level === "medium" ? "medium" : "high";
+            document.getElementById("modalBody").innerHTML = `
+                <div class="ai-score-banner">
+                    <h3>Risk Assessment Index Score: <strong>${data.risk_score}</strong></h3>
+                    <p>Stratification Level Matrix: <span class="badge-risk ${levelClass}">${data.risk_level.toUpperCase()}</span></p>
+                </div>
+                <hr class="modal-divider">
+                <div id="aiExplanation" class="markdown-body"></div>
+            `;
+            document.getElementById("aiExplanation").innerHTML = marked.parse(data.explanation);
+        })
+        .catch(() => {
+            document.getElementById("modalBody").innerHTML = "<p class='error-txt'>CRITICAL ERROR: AI Evaluation pipeline failed.</p>";
+        });
+    });
+}
+function closeRiskModal() { document.getElementById("riskModal").style.display = "none"; }
+
+// Calendar Render Configuration
+const events = [];
+{% for event in schedule_events %}
+events.push({ title: "{{ event.title|escapejs }}", start: "{{ event.scheduled_date|date:'Y-m-d' }}" });
+{% endfor %}
+
+const calendarEl = document.getElementById('scheduleCalendar');
+if (calendarEl && typeof FullCalendar !== 'undefined') {
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
+        events: events,
+        eventColor: '#e85d8f',
+        height: 'auto'
+    });
+    calendar.render();
+}
+
+// --- ChartJS Core Analytics Implementation ---
+document.addEventListener("DOMContentLoaded", function() {
+    
+    // Data Extraction Arrays for Maternal Progress Tracking
+    const weeksLabel = [
+        {% for record in progress_records|dictsort:"week" %} "Wk {{ record.week }}", {% endfor %}
+    ];
+    const weightDataset = [
+        {% for record in progress_records|dictsort:"week" %} {{ record.weight|default:"null" }}, {% endfor %}
+    ];
+    const bpSystolicDataset = [
+        {% for record in progress_records|dictsort:"week" %} {{ record.bp_systolic|default:"null" }}, {% endfor %}
+    ];
+    const bpDiastolicDataset = [
+        {% for record in progress_records|dictsort:"week" %} {{ record.bp_diastolic|default:"null" }}, {% endfor %}
+    ];
+
+    // Realtime Client-Side Processing Counters for Lab Reports Summary
+    let normalLabsCount = 0;
+    let abnormalLabsCount = 0;
+    
+    {% for test in lab_tests %}
+        {% if test.is_abnormal %}
+            abnormalLabsCount++;
+        {% else %}
+            normalLabsCount++;
+        {% endif %}
+    {% endfor %}
+
+    // 1. Mother Weight Progression Timeline Chart
+    if(weeksLabel.length > 0) {
+        new Chart(document.getElementById('weightTrendChart'), {
+            type: 'line',
+            data: {
+                labels: weeksLabel,
+                datasets: [{
+                    label: 'Weight Gain (kg)',
+                    data: weightDataset,
+                    borderColor: '#e85d8f',
+                    backgroundColor: 'rgba(232, 93, 143, 0.08)',
+                    borderWidth: 3,
+                    tension: 0.3,
+                    fill: true,
+                    spanGaps: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+    }
+
+    // 2. Lab Reports Diagnostics Balance Chart (Normal vs Abnormal)
+    new Chart(document.getElementById('labStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Normal Reports', 'Abnormal Reports'],
+            datasets: [{
+                data: [normalLabsCount, abnormalLabsCount],
+                backgroundColor: ['#2d6a4f', '#da1e28'],
+                hoverOffset: 4,
+                borderWidth: 2,
+                borderColor: '#ffffff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+            },
+            cutout: '65%'
+        }
+    });
+
+    // 3. Blood Pressure Variance Timeline Chart
+    if(weeksLabel.length > 0) {
+        new Chart(document.getElementById('bpTrendChart'), {
+            type: 'line',
+            data: {
+                labels: weeksLabel,
+                datasets: [
+                    {
+                        label: 'Systolic',
+                        data: bpSystolicDataset,
+                        borderColor: '#ef233c',
+                        borderWidth: 2,
+                        tension: 0.15,
+                        spanGaps: true
+                    },
+                    {
+                        label: 'Diastolic',
+                        data: bpDiastolicDataset,
+                        borderColor: '#2b2d42',
+                        borderWidth: 2,
+                        tension: 0.15,
+                        spanGaps: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'top', labels: { boxWidth: 10 } } }
+            }
+        });
+    }
+});
+
+function onPregDetailSelect(){
+    const sel = document.getElementById('pregSelectDetail');
+    if(!sel) return;
+    const pid = sel.value;
+    const base = window.location.pathname;
+    // assume this view can accept ?pregnancy param and will render the selected pregnancy
+    const url = new URL(window.location.href);
+    url.searchParams.set('pregnancy', pid);
+    window.location.href = url.toString();
+}
+</script>
+
+<!-- UI Presentation Layer CSS Overrides -->
+<style>
+.dashboard-container { display: flex; flex-direction: column; gap: 1.5rem; font-family: 'Inter', sans-serif; color: #2d3748; }
+.card-pink { background: #ffffff; border: 1px solid #ffe0e8; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 14px rgba(232, 93, 143, 0.04); }
+.flex-between { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+.grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem; }
+.grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.25rem; }
+.style-grid { margin-top: 1.2rem; background: #fffcfd; padding: 1.25rem; border-radius: 12px; border: 1px dashed #ffd0dc; }
+.info-group p { margin: 0.5rem 0; font-size: 0.95rem; }
+.val { color: #4a5568; font-weight: 500; }
+.val-highlight { font-size: 1.25rem; color: #e85d8f; font-weight: 700; }
+.btn-pink { background: #e85d8f; color: white; border: none; padding: 0.65rem 1.25rem; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; transition: transform 0.1s, background 0.2s; }
+.btn-pink:hover { background: #d04b7c; }
+.btn-outline-pink { border: 2px solid #e85d8f; color: #e85d8f; padding: 0.4rem 1rem; border-radius: 6px; font-weight: 600; text-decoration: none; font-size: 0.85rem; }
+.btn-outline-pink:hover { background: #e85d8f; color: white; }
+.chart-box { background: #fffcfc; border: 1px solid #f7e1e6; border-radius: 12px; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.chart-title { font-weight: 700; font-size: 0.9rem; color: #762d49; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #fbe3e7; padding-bottom: 0.4rem; }
+.chart-container { min-height: 220px; position: relative; width: 100%; }
+.tabs-header-nav { display: flex; border-bottom: 2px solid #ffe0e8; margin-bottom: 1.5rem; gap: 0.25rem; overflow-x: auto; }
+.tab-btn { background: none; border: none; padding: 0.85rem 1.35rem; cursor: pointer; font-weight: 600; color: #a13e63; border-bottom: 3px solid transparent; white-space: nowrap; transition: all 0.2s; border-radius: 6px 6px 0 0; }
+.tab-btn.active { border-bottom-color: #e85d8f; color: #e85d8f; background: rgba(232, 93, 143, 0.04); }
+.table-responsive { overflow-x: auto; }
+.table-modern { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.95rem; }
+.table-modern th { background: #fff5f7; color: #a13e63; padding: 0.85rem 1rem; font-weight: 600; border-bottom: 2px solid #ffe0e8; }
+.table-modern td { padding: 0.9rem 1rem; border-bottom: 1px solid #fcedf1; vertical-align: middle; }
+.badge-week { background: #fff0f3; color: #c9184a; font-weight: 600; padding: 0.25rem 0.6rem; border-radius: 4px; font-size: 0.85rem; }
+.btn-download-file { background: #edf2f7; color: #2b6cb0; border: 1px solid #e2e8f0; padding: 0.45rem 0.8rem; border-radius: 6px; font-size: 0.85rem; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; transition: background 0.15s; }
+.btn-download-file:hover { background: #2b6cb0; color: white; border-color: #2b6cb0; }
+.status-alert { font-weight: 700; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.25rem; }
+.status-alert.normal { color: #234e36; background: #e6f4ea; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.status-alert.abnormal { color: #a80510; background: #fce8e6; padding: 0.25rem 0.5rem; border-radius: 4px; }
+.notes-timeline { display: flex; flex-direction: column; gap: 1.25rem; }
+.note-timeline-item { border-left: 3px solid #ffe0e8; padding-left: 1.25rem; margin-left: 0.25rem; }
+.note-meta { font-size: 0.85rem; color: #718096; margin-bottom: 0.5rem; display: flex; gap: 1.25rem; }
+.recommendations-box { background: #fffcfd; border: 1px solid #ffd0dc; border-left: 4px solid #e85d8f; padding: 0.75rem; margin-top: 0.6rem; font-size: 0.9rem; border-radius: 0 8px 8px 0; }
+.baby-profile-card { background: #fffcfd; border: 1px solid #fce8ec; border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem; }
+.modal-momind { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.45); z-index: 1000; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+.modal-momind-content { background: white; padding: 2rem; border-radius: 16px; max-width: 620px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+</style>
+{% endblock %}

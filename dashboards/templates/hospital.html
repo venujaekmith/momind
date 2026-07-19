@@ -1,0 +1,137 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink">
+    <div class="flex-between">
+        <div>
+            <h2><i class="fas fa-hospital"></i> Hospital Dashboard</h2>
+            <p>Welcome {{ user.user_hospital.name }} | ID: <strong id="qrValue">{{ user.user_hospital.hospital_id }}</strong></p>
+        </div>
+        <button onclick="generateQR()" class="btn-outline-pink">Generate QR</button>
+    </div>
+    <div id="qrcode" style="margin-top: 1rem;"></div>
+</div>
+
+<div class="card-pink">    <h3><i class="fas fa-door-open"></i> Family Assignments</h3>
+    {% if families %}
+        {% for family in families %}
+            <div class="card-pink" style="margin-bottom: 0.75rem;">
+                <strong>Family ID: {{ family.id }}</strong>
+                {% if family.mother %}<div>Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</div>{% endif %}
+                {% if family.father %}<div>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}</div>{% endif %}
+                <form method="POST" action="{% url 'dashboards:leave_family' family.id %}" style="margin-top:0.75rem; display:inline-block;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-outline-pink">Leave This Family</button>
+                </form>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No family assignments yet.</p>
+    {% endif %}
+</div>
+
+<div class="card-pink">    <div class="flex-between">
+        <h3><i class="fas fa-female"></i> Assigned Pregnancies</h3>
+        <a href="{% url 'dashboards:create_hospital_clinic' %}" class="btn-pink">+ Create Clinic Session</a>
+    </div>
+    {% for p in pregnancies %}
+    <div class="card-pink" style="margin-bottom: 1rem;">
+        <div class="flex-between">
+            <strong>Mother: {{ p.mother.user.username }}</strong>
+            <span>Pregnancy #{{ p.pregnancy_number }} • {{ p.status|capfirst }}</span>
+        </div>
+        <p>Week: {{ p.get_pregnancy_week|default:"—" }} • EDD: {{ p.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
+        <a href="{% url 'dashboards:add_schedule' p.id %}" class="btn-pink">Schedule Hospital Visit</a>
+    </div>
+    {% empty %}
+    <p>No pregnancies assigned.</p>
+    {% endfor %}
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-calendar-check"></i> Hospital Clinic Sessions</h3>
+    {% if hospital_clinics %}
+        {% for clinic in hospital_clinics %}
+        <div class="card-pink" style="margin-bottom: 0.5rem;">
+            <strong>{{ clinic.date }} {{ clinic.time|time:"H:i"|default:"TBD" }}</strong> - {{ clinic.name }}
+            <br><small>{{ clinic.location }} • Capacity: {{ clinic.capacity }} • {{ clinic.queue_count }} in queue</small>
+            <br><small>{{ clinic.description|truncatechars:100 }}</small>
+            <br><a href="{% url 'dashboards:edit_hospital_clinic' clinic.id %}">Edit clinic</a>
+        </div>
+
+        <div class="card-pink">
+    <h3><i class="fas fa-user-plus"></i> Assign Hospital Staff to Clinic</h3>
+    <form method="POST" action="{% url 'dashboards:assign_clinic_staff' clinic.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="staff_id">Staff ID</label>
+            <input type="text" name="staff_id" id="staff_id" placeholder="Enter staff ID" class="form-control" required>
+        </div>
+        <div class="d-grid gap-2 mt-2">
+            <button class="btn btn-secondary" type="submit">Add staff to clinic</button>
+        </div>
+    </form>
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-user-plus"></i> Add Patient to Clinic Queue</h3>
+    <form method="POST" action="{% url 'dashboards:add_clinic_appointment' clinic.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="pregnancy_id">Patient ID</label>
+            <input type="text" name="patientID" id="pregnancy_id" placeholder="Enter mother ID or username" class="form-control" required>
+        </div>
+   
+        <div class="d-grid gap-2 mt-2">
+            <button class="btn btn-secondary" type="submit">Add patient to queue</button>
+        </div>
+    </form>
+</div>
+        {% endfor %}
+    {% else %}
+        <p>No active hospital clinic sessions created yet.</p>
+    {% endif %}
+</div>
+
+<div class="card-pink">
+    <h3><i class="fas fa-user-md"></i> Hospital Staff</h3>
+    {% if hospital_staff %}
+        <ul>
+            {% for staff in hospital_staff %}
+                <li>{{ staff.user.get_full_name|default:staff.user.username }} ({{ staff.role_title|default:'Staff' }}) - {{ staff.staff_id }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No staff members assigned yet.</p>
+    {% endif %}
+    <p>Hospital staff are managed via the Hospital Staff role during registration.</p>
+</div>
+
+{% if hospital_clinics %}
+
+
+
+
+<div class="card-pink">
+    <h3><i class="fas fa-users"></i> Today's Hospital Clinic Queue</h3>
+    <p><strong>{{ today_queue_count }}</strong> people are scheduled for hospital clinic visits today.</p>
+    {% if today_queue_count %}
+    <table class="table-modern" style="width: 100%; margin-top: 1rem;">
+        <thead><tr><th>Time</th><th>Patient</th><th>Visit</th></tr></thead>
+        <tbody>
+            {% for visit in today_queue %}
+            <tr>
+                <td>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</td>
+                <td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td>
+                <td>{{ visit.title }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No hospital clinic visits are scheduled for today.</p>
+    {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>🏥 Hospital Communities</h2>
+            <p class="text-muted">Join your hospital's community forum to stay connected</p>
+        </div>
+        <div class="col-md-4 text-end">
+            {% if user.is_authenticated and user.user_hospital %}
+                <a href="{% url 'community:create_group' %}" class="btn btn-primary btn-lg">
+                    ➕ Create Group
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    {% if not user.is_authenticated or not user.user_hospital %}
+        <div class="alert alert-info">
+            💡 <strong>Tip:</strong> Hospital staff can create custom groups to organize discussions.
+            <a href="{% url 'accounts:login' %}" class="alert-link">Login as hospital staff</a> to get started.
+        </div>
+    {% endif %}
+
+    <!-- Groups List -->
+    {% if groups %}
+        <div class="row">
+            {% for group in groups %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h5 class="card-title">
+                                        <a href="{% url 'community:group_detail' group.pk %}" class="text-dark text-decoration-none">
+                                            {{ group.name }}
+                                        </a>
+                                    </h5>
+                                    <p class="text-muted small">
+                                        <strong>{{ group.hospital.name }}</strong>
+                                    </p>
+                                </div>
+                                {% if group.is_private %}
+                                    <span class="badge bg-warning">🔒 Private</span>
+                                {% else %}
+                                    <span class="badge bg-success">🌐 Public</span>
+                                {% endif %}
+                            </div>
+
+                            <p class="card-text">{{ group.description }}</p>
+
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <small class="text-muted">
+                                    👥 {{ group.members.count }} members
+                                </small>
+                                {% if user.is_authenticated %}
+                                    {% if user in group.members.values_list %}
+                                        <span class="badge bg-primary">✓ Member</span>
+                                    {% else %}
+                                        <a href="{% url 'community:join_group' group.pk %}" class="btn btn-sm btn-outline-primary">
+                                            Join
+                                        </a>
+                                    {% endif %}
+                                {% else %}
+                                    <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-primary">
+                                        Login to Join
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center">
+            <h5>📭 No community groups yet</h5>
+            <p>Hospital groups will appear here as they're created.</p>
+        </div>
+    {% endif %}
+
+    <!-- Info Section -->
+    <div class="row mt-5">
+        <div class="col-md-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h5>📚 What are Community Groups?</h5>
+                    <ul class="mb-0">
+                        <li><strong>Hospital Forums:</strong> Auto-created for each hospital</li>
+                        <li><strong>Custom Groups:</strong> Hospital staff can create specialized groups</li>
+                        <li><strong>Auto-Join:</strong> Mothers automatically join their hospital's group</li>
+                        <li><strong>Clinic Schedules:</strong> View appointment times and availability</li>
+                        <li><strong>Announcements:</strong> Stay updated with hospital news</li>
+                        <li><strong>Discussions:</strong> Connect with other community members</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    .card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+</style>
+
+{% endblock %}

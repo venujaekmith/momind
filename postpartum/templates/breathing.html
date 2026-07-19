@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ exercise.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h2>{{ exercise.title }}</h2>
+    <p class="lead">{{ exercise.description }}</p>
+    
+    <div class="my-5">
+        <div id="timer" class="display-1 fw-bold text-primary">{{ exercise.duration_seconds }}</div>
+        <button onclick="startBreathing()" class="btn btn-success btn-lg mt-3">
+            Start Exercise
+        </button>
+    </div>
+
+    <p><strong>Instructions:</strong> {{ exercise.instruction }}</p>
+</div>
+
+<script>
+let timeLeft = {{ exercise.duration_seconds }};
+let timer;
+
+function startBreathing() {
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').textContent = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            alert("Exercise completed! Well done 💕");
+        }
+    }, 1000);
+}
+</script>
+{% endblock %}

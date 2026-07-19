@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Stress Log{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h3 class="mb-4">Stress & Anxiety Log</h3>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        
+        <button type="submit" class="btn btn-warning btn-lg">Save Log</button>
+    </form>
+</div>
+{% endblock %}

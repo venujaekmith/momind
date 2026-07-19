@@ -1,0 +1,18 @@
+<h2>Select Role</h2>
+
+<form method="POST">
+  {% csrf_token %}
+
+  <select name="role">
+    <option value="MOTHER">Mother</option>
+    <option value="FATHER">Father</option>
+    <option value="MIDWIFE">Midwife</option>
+    <option value="DOCTOR">Doctor</option>
+    <option value="HOSPITAL">Hospital</option>
+    <option value="HOSPITAL_STAFF">Hospital Staff</option>
+  </select>
+
+  <input type="text" name="hospital_name" placeholder="Hospital name (only if hospital)" />
+
+  <button type="submit">Continue</button>
+</form>

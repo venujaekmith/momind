@@ -1,0 +1,17 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 600px; margin: 0 auto;">
+    <h2><i class="fas fa-calendar-alt"></i> Reschedule Visit</h2>
+    <p><strong>{{ event.title }}</strong> - Current: {{ event.scheduled_date }}</p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex-between" style="margin-top: 1rem;">
+            <a href="{% url 'dashboards:dashboard' %}" class="btn-outline-pink">Cancel</a>
+            <button type="submit" class="btn-pink">Save New Date</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

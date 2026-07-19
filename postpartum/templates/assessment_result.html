@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Assessment Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow">
+        <div class="card-header bg-{% if assessment.stress_score > 70 %}danger{% elif assessment.stress_score > 40 %}warning{% else %}success{% endif %} text-white">
+            <h4>Your Stress Level: <strong>{{ assessment.stress_score }} / 100</strong></h4>
+        </div>
+        <div class="card-body">
+            <h5>Insight:</h5>
+            <p>{{ assessment.insight }}</p>
+            
+            <h5>Recommendation:</h5>
+            <p class="lead">{{ assessment.recommendation }}</p>
+
+            <hr>
+            <h6>Your Answers:</h6>
+            <p><strong>Mood:</strong> {{ assessment.q1_mood }}/10</p>
+            <p><strong>Writing:</strong> {{ assessment.q4_writing|truncatewords:30 }}</p>
+        </div>
+        <div class="card-footer text-center">
+            <a href="{% url 'postpartum:dashboard' %}" class="btn btn-success">Back to Dashboard</a>
+            <a href="{% url 'postpartum:ai_stress_assessment' %}" class="btn btn-outline-primary">Take Again</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

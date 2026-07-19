@@ -1,0 +1,17 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 600px; margin: 0 auto;">
+    <h2><i class="fas fa-calendar-plus"></i> Add New Schedule / Task</h2>
+    <p>For Pregnancy: <strong>{{ pregnancy.mother.user.username }}</strong></p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="flex-between" style="margin-top: 1rem;">
+            <a href="{% url 'dashboards:dashboard' %}" class="btn-outline-pink">← Back</a>
+            <button type="submit" class="btn-pink">Save Schedule</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

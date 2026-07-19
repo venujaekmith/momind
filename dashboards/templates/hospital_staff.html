@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+  <h1>{{ user.user_hospital_staff.staff_id }}</h1>
+  <h1>Hospital Staff Dashboard - {{ hospital.name }}</h1>
+
+  <div class="row">
+    <div class="col-md-6">
+      <h3>Clinics</h3>
+      <ul class="list-group">
+        {% for clinic in assigned_clinics %}
+        <li class="list-group-item">
+          <strong>{{ clinic.name }}</strong> — {{ clinic.date }} {% if clinic.time %}{{ clinic.time }}{% endif %}
+          <div class="mt-2">
+            <a href="{% url 'dashboards:edit_hospital_clinic' clinic.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+          </div>
+          <div class="mt-2">
+            <form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" class="form-inline">{% csrf_token %}
+              <input type="text" name="message" placeholder="Announcement message" class="form-control mr-2">
+              <button class="btn btn-primary" type="submit">Send Announcement</button>
+            </form>
+          </div>
+        </li>
+        {% empty %}
+        <li class="list-group-item">No clinics scheduled.</li>
+        {% endfor %}
+      </ul>
+
+
+      <h4 class="mt-4">Create Group</h4>
+      <form method="post" action="{% url 'community:create_group_and_add_members' %}">{% csrf_token %}
+        {{ group_form.as_p }}
+        <div class="form-group">
+          <label>Members (comma-separated usernames)</label>
+          <input type="text" name="members" class="form-control">
+        </div>
+        <button class="btn btn-success" type="submit">Create Group</button>
+      </form>
+
+    </div>
+
+    <div class="col-md-6">
+      <h3>Upcoming Appointments</h3>
+      <table class="table">
+        <thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Clinic</th><th>Actions</th></tr></thead>
+        <tbody>
+          {% for appt in upcoming_appointments %}
+          <tr>
+            <td>{{ appt.scheduled_date }}</td>
+            <td>{{ appt.scheduled_time }}</td>
+            <td>{{ appt.pregnancy.mother.user.get_full_name }} ({{ appt.pregnancy.mother.user.username }})</td>
+            <td>{{ appt.clinic.name }}</td>
+            <td>
+              <form method="post" action="{% url 'community:reschedule_appointment' appt.id %}" class="form-inline">{% csrf_token %}
+                <input type="date" name="date" value="{{ appt.scheduled_date }}" class="form-control mr-1">
+                <input type="time" name="time" value="{{ appt.scheduled_time }}" class="form-control mr-1">
+                <select name="clinic_id" class="form-control mr-1">
+                  <option value="">Keep clinic</option>
+                  {% for clinic in clinics %}
+                    <option value="{{ clinic.id }}" {% if appt.clinic and appt.clinic.id == clinic.id %}selected{% endif %}>{{ clinic.name }} — {{ clinic.date }}</option>
+                  {% endfor %}
+                </select>
+                <button class="btn btn-sm btn-primary" type="submit">Update</button>
+              </form>
+            </td>
+          </tr>
+          {% empty %}
+          <tr><td colspan="5">No upcoming appointments.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h4 class="mt-4">Groups</h4>
+      <ul>
+        {% for group in groups %}
+        <li>
+          <a href="{% url 'community:group_detail' group.id %}">{{ group.name }}</a> — {{ group.description }}
+          (<a href="{% url 'community:group_detail' group.id %}">Manage</a>)
+        </li>
+        {% empty %}
+        <li>No groups yet.</li>
+        {% endfor %}
+      </ul>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

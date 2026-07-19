@@ -1,0 +1,69 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="card-pink" style="max-width: 800px; margin: 0 auto;">
+    <h2><i class="fas fa-baby-carriage"></i> End Pregnancy & Register Baby/Babies</h2>
+    <p><strong>Mother:</strong> {{ mother.user.get_full_name|default:mother.user.username }}</p>
+    
+    <form method="post" id="end-pregnancy-form">
+        {% csrf_token %}
+        
+        <h3>Pregnancy Outcome</h3>
+        <div class="card-pink">
+            {{ form.actual_delivery_date }}
+            {{ form.delivery_type }}
+            {{ form.baby_count }}
+        </div>
+        
+        <h3>👶 Baby Details</h3>
+        <div id="babies-container"></div>
+        
+        <div class="flex-between" style="margin-top: 1.5rem;">
+            <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Cancel</a>
+            <button type="submit" class="btn-pink">✅ End Pregnancy & Save All Babies</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function generateBabyForms() {
+    const count = parseInt(document.getElementById('id_baby_count').value) || 1;
+    const container = document.getElementById('babies-container');
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        container.innerHTML += `
+            <div class="card-pink" style="margin-top: 1rem;">
+                <h4>Baby ${i+1}</h4>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Baby Name:</label>
+                        <input type="text" name="baby_name_${i}" placeholder="e.g. Sahan">
+                    </div>
+                    <div class="form-group">
+                        <label>Gender:</label>
+                        <select name="baby_gender_${i}">
+                            <option value="unknown">Unknown</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Birth Weight (kg):</label>
+                        <input type="number" step="0.01" name="birth_weight_${i}" placeholder="2.85">
+                    </div>
+                    <div class="form-group">
+                        <label>Birth Height (cm):</label>
+                        <input type="number" step="0.1" name="birth_height_${i}" placeholder="48.5">
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    generateBabyForms();
+    document.getElementById('id_baby_count').addEventListener('change', generateBabyForms);
+});
+</script>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'based.html' %}
+
+{% block title %}Postpartum Dashboard - Māthru{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'postpartum:ai_dash' %}">GO</a>
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Welcome back, {{ user.first_name|default:user.username }} 💕</h2>
+
+    {% if pregnancies and pregnancies|length > 1 %}
+    <div class="text-center mb-3">
+        <label for="ppreg">Select pregnancy:</label>
+        <select id="ppreg" onchange="onPostPregSelect()">
+            {% for p in pregnancies %}
+                <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
+                    Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+
+    <!-- Postpartum Week -->
+    <div class="alert alert-info text-center">
+        <strong>Postpartum Week {{ profile.current_week }}</strong>
+    </div>
+
+    <!-- Today's Tip -->
+    {% if today_tip %}
+    <div class="card mb-4 border-success">
+        <div class="card-header bg-success text-white">
+            <h5>💡 Today's Tip (Week {{ today_tip.week }})</h5>
+        </div>
+        <div class="card-body">
+            <h6>{{ today_tip.title }}</h6>
+            <p>{{ today_tip.content }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <!-- Quick Mood Log -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">How are you feeling today?</div>
+                <div class="card-body text-center">
+                    <a href="{% url 'postpartum:log_mood' %}" class="btn btn-primary btn-lg w-100">
+                        Log Today's Mood
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Journal -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">Write in Journal</div>
+                <div class="card-body text-center">
+                    <a href="{% url 'postpartum:journal' %}" class="btn btn-outline-success btn-lg w-100">
+                        Open Journal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Breathing Exercises -->
+    <h5 class="mt-4 mb-3">🧘‍♀️ Quick Breathing Exercises</h5>
+    <div class="row">
+        {% for ex in breathing_exercises %}
+        <div class="col-md-4 mb-3">
+            <a href="{% url 'postpartum:breathing_exercise' ex.id %}" class="text-decoration-none">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6>{{ ex.title }}</h6>
+                        <small class="text-muted">{{ ex.duration_seconds }} seconds</small>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'postpartum:stress_log' %}" class="btn btn-warning mt-3">
+        Log Stress / Anxiety
+    </a>
+</div>
+
+
+<a href="{% url 'postpartum:ai_stress_assessment' %}">AI</a>
+
+<script>
+function onPostPregSelect(){
+    const sel = document.getElementById('ppreg');
+    if(!sel) return;
+    const pid = sel.value;
+    const url = new URL(window.location.href);
+    url.searchParams.set('pregnancy', pid);
+    window.location.href = url.toString();
+}
+</script>
+
+
+{% endblock %}

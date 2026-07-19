@@ -1,24 +1,5 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">Doctor Profile Details</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-
-                        {{ form.as_p }}
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Save Details
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block title %}Doctor profile{% endblock %}
+{% block content %}
+{% include 'profile_form.html' with profile_icon='fa-user-doctor' hero_title='Clinical care, better connected' hero_text='Complete your professional profile to collaborate across the maternal care journey.' form_title='Doctor profile details' form_subtitle='Add your designation and hospital affiliation.' submit_label='Save details' %}
+{% endblock %}

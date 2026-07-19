@@ -1,35 +1,45 @@
-{% extends 'base.html' %}
-
+{% extends 'postpartum/base.html' %}
 {% block title %}{{ exercise.title }}{% endblock %}
-
 {% block content %}
-<div class="container mt-5 text-center">
-    <h2>{{ exercise.title }}</h2>
-    <p class="lead">{{ exercise.description }}</p>
-    
-    <div class="my-5">
-        <div id="timer" class="display-1 fw-bold text-primary">{{ exercise.duration_seconds }}</div>
-        <button onclick="startBreathing()" class="btn btn-success btn-lg mt-3">
-            Start Exercise
-        </button>
-    </div>
-
-    <p><strong>Instructions:</strong> {{ exercise.instruction }}</p>
-</div>
-
+<header class="pp-page-header"><div><span class="pp-eyebrow">Guided breathing</span><h1>{{ exercise.title }}</h1><p>{{ exercise.description }}</p></div><a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-button pp-button-secondary"><i class="fas fa-arrow-left"></i> Back</a></header>
+<section class="pp-card" style="max-width:760px;margin:0 auto;text-align:center;">
+    <div class="breath-stage" id="breath-stage" aria-live="polite">Ready</div>
+    <div class="breath-orb" id="breath-orb"><span id="timer">{{ exercise.duration_seconds }}</span><small>seconds</small></div>
+    <div class="pp-progress-wrap" style="margin:1.5rem 0;"><div class="pp-progress" id="exercise-progress" style="width:0%"></div></div>
+    <p id="breath-cue" style="color:var(--pp-muted);">Press start and follow the breathing cue.</p>
+    <div class="pp-button-row" style="justify-content:center;"><button type="button" id="start-button" class="pp-button" onclick="toggleBreathing()"><i class="fas fa-play"></i> Start exercise</button><button type="button" class="pp-button pp-button-secondary" onclick="resetBreathing()"><i class="fas fa-rotate-left"></i> Reset</button></div>
+    <div class="pp-tip" style="margin-top:1.5rem;text-align:left;"><span class="pp-tip-icon"><i class="fas fa-list-check"></i></span><div><strong>Instructions</strong><p>{{ exercise.instruction }}</p></div></div>
+</section>
+{% endblock %}
+{% block extra_css %}
+.breath-stage { color:var(--pp-primary-dark); font-size:.75rem; font-weight:800; letter-spacing:.1em; text-transform:uppercase; }
+.breath-orb { width:190px; height:190px; display:flex; flex-direction:column; align-items:center; justify-content:center; margin:1rem auto; color:#fff; background:linear-gradient(135deg,var(--pp-primary),var(--pp-primary-dark)); border-radius:50%; box-shadow:0 18px 45px rgba(201,67,115,.28); transition:transform 4s ease-in-out, box-shadow 4s ease-in-out; }
+.breath-orb.inhale { transform:scale(1.13); box-shadow:0 24px 55px rgba(201,67,115,.35); }
+.breath-orb.exhale { transform:scale(.88); }
+.breath-orb span { font-size:3rem; font-weight:800; line-height:1; }.breath-orb small{opacity:.8;font-size:.7rem;text-transform:uppercase;}
+{% endblock %}
+{% block extra_js %}
 <script>
-let timeLeft = {{ exercise.duration_seconds }};
-let timer;
-
-function startBreathing() {
-    timer = setInterval(() => {
-        timeLeft--;
-        document.getElementById('timer').textContent = timeLeft;
-        if (timeLeft <= 0) {
-            clearInterval(timer);
-            alert("Exercise completed! Well done 💕");
-        }
-    }, 1000);
+const totalTime = {{ exercise.duration_seconds }};
+let timeLeft = totalTime, running = false, intervalId = null;
+const timerEl = document.getElementById('timer'), stageEl = document.getElementById('breath-stage'), cueEl = document.getElementById('breath-cue'), orbEl = document.getElementById('breath-orb'), startBtn = document.getElementById('start-button');
+function updatePhase() {
+    const elapsed = totalTime - timeLeft, phase = elapsed % 10;
+    orbEl.classList.remove('inhale','exhale');
+    if (phase < 4) { stageEl.textContent='Breathe in'; cueEl.textContent='Slowly inhale through your nose.'; orbEl.classList.add('inhale'); }
+    else if (phase < 6) { stageEl.textContent='Hold'; cueEl.textContent='Hold gently—without straining.'; }
+    else { stageEl.textContent='Breathe out'; cueEl.textContent='Slowly exhale and soften your shoulders.'; orbEl.classList.add('exhale'); }
 }
+function tick() {
+    timeLeft -= 1; timerEl.textContent = Math.max(timeLeft,0); document.getElementById('exercise-progress').style.width=((totalTime-timeLeft)/totalTime*100)+'%'; updatePhase();
+    if (timeLeft <= 0) { clearInterval(intervalId); running=false; stageEl.textContent='Complete'; cueEl.textContent='Well done. Notice how your body feels before moving on.'; orbEl.classList.remove('inhale','exhale'); startBtn.innerHTML='<i class="fas fa-rotate-left"></i> Start again'; }
+}
+function toggleBreathing() {
+    if (timeLeft <= 0) resetBreathing();
+    running = !running;
+    if (running) { updatePhase(); intervalId=setInterval(tick,1000); startBtn.innerHTML='<i class="fas fa-pause"></i> Pause'; }
+    else { clearInterval(intervalId); stageEl.textContent='Paused'; cueEl.textContent='Continue whenever you are ready.'; startBtn.innerHTML='<i class="fas fa-play"></i> Continue'; }
+}
+function resetBreathing() { clearInterval(intervalId); running=false; timeLeft=totalTime; timerEl.textContent=totalTime; stageEl.textContent='Ready'; cueEl.textContent='Press start and follow the breathing cue.'; orbEl.classList.remove('inhale','exhale'); document.getElementById('exercise-progress').style.width='0%'; startBtn.innerHTML='<i class="fas fa-play"></i> Start exercise'; }
 </script>
 {% endblock %}

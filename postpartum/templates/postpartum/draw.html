@@ -1,142 +1,41 @@
-{% extends "postpartum/base.html" %}
-{% block title %}Draw — Postpartum{% endblock %}
-{% block nav_draw %}active{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Draw your feelings{% endblock %}
+{% block nav_companion %}active{% endblock %}
 {% block extra_css %}
-.canvas-area { background:#fff; border:1px solid #e5e5e0; border-radius:10px; padding:1rem; }
-canvas { border:1px solid #e5e5e0; border-radius:6px; cursor:crosshair; display:block; width:100%; background:#fff; }
-.tools { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
-.swatch { width:26px; height:26px; border-radius:50%; border:2px solid transparent; cursor:pointer; transition:transform .1s; }
-.swatch:hover, .swatch.on { transform:scale(1.25); border-color:#1a1a18; }
+.canvas-card{padding:1rem;background:#fff;border:1px solid var(--pp-border);border-radius:17px;box-shadow:var(--pp-shadow)}.canvas-wrap{position:relative;overflow:hidden;border:2px solid #efc8d3;border-radius:12px;background:#fff}canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}.draw-tools{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin-top:.8rem}.swatch{width:30px;height:30px;padding:0;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #dab0bc;cursor:pointer;transition:.15s}.swatch:hover,.swatch.on{transform:scale(1.13);box-shadow:0 0 0 2px var(--pp-primary-dark)}.tool-separator{width:1px;height:28px;background:var(--pp-border)}.brush-size{display:flex;align-items:center;gap:.45rem;color:var(--pp-muted);font-size:.72rem}.brush-size input{accent-color:var(--pp-primary-dark)}@media(max-width:600px){.tool-separator{display:none}.draw-tools .pp-button{min-height:40px;padding:.55rem .7rem}}
 {% endblock %}
-
 {% block content %}
-<h2 style="font-size:16px; font-weight:500; margin-bottom:.75rem;">Draw how you're feeling</h2>
-<p style="font-size:13px; color:#888; margin-bottom:1rem;">There's no right or wrong. Just express yourself freely.</p>
-
-<div class="canvas-area">
-  <canvas id="c" width="700" height="320"></canvas>
-  <div class="tools">
-    <div class="swatch on"  style="background:#1a1a18" data-c="#1a1a18"  onclick="setC(this)"></div>
-    <div class="swatch" style="background:#D85A30" data-c="#D85A30" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#1D9E75" data-c="#1D9E75" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#378ADD" data-c="#378ADD" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#D4537E" data-c="#D4537E" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#BA7517" data-c="#BA7517" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#E24B4A" data-c="#E24B4A" onclick="setC(this)"></div>
-    <div class="swatch" style="background:#7F77DD" data-c="#7F77DD" onclick="setC(this)"></div>
-    <div style="display:flex;align-items:center;gap:6px;margin-left:4px;">
-      <span style="font-size:12px;color:#888;">Size</span>
-      <input type="range" id="sz" min="1" max="22" value="4" style="width:80px;">
+<header class="pp-page-header"><div><span class="pp-eyebrow">Creative reflection</span><h1>Draw how you feel</h1><p>There is no right or wrong. Use color, shape, and movement to express whatever is present.</p></div><a href="{% url 'postpartum:ai_dash' %}" class="pp-button pp-button-secondary"><i class="fas fa-arrow-left"></i> Companion</a></header>
+<div class="canvas-card">
+    <div class="canvas-wrap"><canvas id="drawing-canvas" width="900" height="440" aria-label="Drawing canvas"></canvas></div>
+    <div class="draw-tools" aria-label="Drawing tools">
+        <button type="button" class="swatch on" style="background:#3f2630" data-color="#3f2630" onclick="setColor(this)" aria-label="Dark plum"></button><button type="button" class="swatch" style="background:#e85d8f" data-color="#e85d8f" onclick="setColor(this)" aria-label="Pink"></button><button type="button" class="swatch" style="background:#e18a45" data-color="#e18a45" onclick="setColor(this)" aria-label="Orange"></button><button type="button" class="swatch" style="background:#49a579" data-color="#49a579" onclick="setColor(this)" aria-label="Green"></button><button type="button" class="swatch" style="background:#4e8ed1" data-color="#4e8ed1" onclick="setColor(this)" aria-label="Blue"></button><button type="button" class="swatch" style="background:#826dc7" data-color="#826dc7" onclick="setColor(this)" aria-label="Purple"></button>
+        <span class="tool-separator"></span><label class="brush-size" for="brush-size">Brush <input type="range" id="brush-size" min="1" max="24" value="5"></label>
+        <button type="button" class="pp-button pp-button-secondary" onclick="setEraser()" id="eraser-button"><i class="fas fa-eraser"></i> Eraser</button><button type="button" class="pp-button pp-button-secondary" onclick="undoDrawing()"><i class="fas fa-rotate-left"></i> Undo</button><button type="button" class="pp-button pp-button-danger" onclick="clearDrawing()"><i class="fas fa-trash"></i> Clear</button><button type="button" class="pp-button pp-button-secondary" onclick="downloadDrawing()"><i class="fas fa-download"></i> Save image</button><button type="button" class="pp-button" onclick="analyzeDrawing()" id="analyze-button"><i class="fas fa-sparkles"></i> Reflect on drawing</button>
     </div>
-    <button class="btn" onclick="setEraser()" id="eraser-btn" style="font-size:12px;padding:5px 10px;">Eraser</button>
-    <button class="btn" onclick="clearC()" style="font-size:12px;padding:5px 10px;">Clear</button>
-    <button class="btn btn-primary" onclick="analyze()" id="analyze-btn" style="font-size:12px;padding:5px 10px;">Analyze drawing</button>
-  </div>
 </div>
-
-<div id="result-card" style="display:none;" class="card" style="margin-top:1rem;">
-  <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Stress estimate from drawing</p>
-  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
-    <span style="font-size:28px; font-weight:500;" id="r-score">—</span>
-    <span class="badge" id="r-tag"></span>
-  </div>
-  <div class="stress-bar-wrap"><div class="stress-bar" id="r-bar" style="width:0%"></div></div>
-  <p style="font-size:13px; color:#666; margin-top:10px; line-height:1.6;" id="r-insight"></p>
-  <a href="{% url 'postpartum:wellness' %}" class="btn btn-primary" style="margin-top:12px; font-size:13px;">View wellness summary →</a>
-</div>
+<div id="drawing-error" class="pp-error" style="display:none;margin-top:.8rem;" role="alert"></div>
+<section id="result-card" class="pp-card" style="display:none;margin-top:1rem;">
+    <div class="pp-card-title"><div><i class="fas fa-heart-pulse"></i><h2>Reflection from your drawing</h2></div><span class="pp-badge" id="result-tag"></span></div><div class="pp-score"><strong id="result-score">—</strong><span>/ 100</span></div><div class="pp-progress-wrap"><div class="pp-progress" id="result-bar" style="width:0%"></div></div><p id="result-insight" style="margin:.9rem 0 0;"></p><div class="pp-button-row"><a href="{% url 'postpartum:wellness' %}" class="pp-button">View wellness summary <i class="fas fa-arrow-right"></i></a></div>
+</section>
+<div class="pp-safety-note"><i class="fas fa-palette"></i><span>Drawing analysis is reflective rather than diagnostic. Your image stays associated with your private account.</span></div>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-const canvas = document.getElementById('c');
-const ctx = canvas.getContext('2d');
-ctx.fillStyle = '#ffffff';
-ctx.fillRect(0, 0, canvas.width, canvas.height);
-ctx.lineCap = 'round';
-ctx.lineJoin = 'round';
-
-let drawing = false, erasing = false;
-let cur = '#1a1a18', lx = 0, ly = 0;
-
-function pos(e) {
-  const r = canvas.getBoundingClientRect();
-  const sx = canvas.width / r.width, sy = canvas.height / r.height;
-  if (e.touches) return {x:(e.touches[0].clientX-r.left)*sx, y:(e.touches[0].clientY-r.top)*sy};
-  return {x:(e.clientX-r.left)*sx, y:(e.clientY-r.top)*sy};
-}
-function draw(e) {
-  if (!drawing) return;
-  const p = pos(e);
-  ctx.beginPath(); ctx.moveTo(lx,ly); ctx.lineTo(p.x,p.y);
-  ctx.strokeStyle = erasing ? '#ffffff' : cur;
-  ctx.lineWidth = parseInt(document.getElementById('sz').value);
-  ctx.stroke();
-  lx=p.x; ly=p.y;
-}
-canvas.addEventListener('mousedown', e=>{drawing=true; const p=pos(e); lx=p.x; ly=p.y;});
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', ()=>drawing=false);
-canvas.addEventListener('mouseleave', ()=>drawing=false);
-canvas.addEventListener('touchstart', e=>{e.preventDefault();drawing=true;const p=pos(e);lx=p.x;ly=p.y;},{passive:false});
-canvas.addEventListener('touchmove', e=>{e.preventDefault();draw(e);},{passive:false});
-canvas.addEventListener('touchend', ()=>drawing=false);
-
-function setC(el) {
-  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));
-  el.classList.add('on');
-  cur = el.dataset.c;
-  erasing = false;
-  document.getElementById('eraser-btn').style.background='';
-}
-function setEraser() {
-  erasing = true;
-  document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('on'));
-  document.getElementById('eraser-btn').style.background='#f0f0eb';
-}
-function clearC() {
-  ctx.fillStyle='#ffffff';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-}
-
-async function analyze() {
-  const btn = document.getElementById('analyze-btn');
-  btn.textContent = 'Analyzing...';
-  btn.disabled = true;
-
-  const img = canvas.toDataURL('image/jpeg', 0.75).split(',')[1];
-
-  try {
-    const res = await fetch("{% url 'postpartum:analyze_drawing' %}", {
-      method: 'POST',
-      headers: {'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},
-      body: JSON.stringify({image_data: img})
-    });
-    const d = await res.json();
-    showResult(d);
-  } catch(e) {
-    alert('Could not analyze. Please try again.');
-  }
-  btn.textContent = 'Analyze drawing';
-  btn.disabled = false;
-}
-
-function showResult(d) {
-  const card = document.getElementById('result-card');
-  card.style.display = 'block';
-  document.getElementById('r-score').textContent = d.score;
-  const colors={low:'#1D9E75',moderate:'#BA7517',high:'#E24B4A'};
-  const bg={low:'#E1F5EE',moderate:'#FAEEDA',high:'#FCEBEB'};
-  const tc={low:'#085041',moderate:'#633806',high:'#501313'};
-  const tag=document.getElementById('r-tag');
-  tag.textContent=d.level+' stress';
-  tag.style.background=bg[d.level];
-  tag.style.color=tc[d.level];
-  const bar=document.getElementById('r-bar');
-  bar.style.width=d.score+'%';
-  bar.style.background=colors[d.level];
-  document.getElementById('r-insight').textContent=d.insight+' — '+d.recommendation;
-  card.scrollIntoView({behavior:'smooth'});
-}
+const canvas=document.getElementById('drawing-canvas'),ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.lineCap='round';ctx.lineJoin='round';let drawing=false,erasing=false,color='#3f2630',lastX=0,lastY=0,hasDrawing=false,history=[];
+function saveState(){if(history.length>=12)history.shift();history.push(ctx.getImageData(0,0,canvas.width,canvas.height))}
+function position(event){const rect=canvas.getBoundingClientRect(),point=event.touches?event.touches[0]:event;return{x:(point.clientX-rect.left)*(canvas.width/rect.width),y:(point.clientY-rect.top)*(canvas.height/rect.height)}}
+function begin(event){event.preventDefault();saveState();drawing=true;const p=position(event);lastX=p.x;lastY=p.y}
+function move(event){if(!drawing)return;event.preventDefault();const p=position(event);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.strokeStyle=erasing?'#fff':color;ctx.lineWidth=parseInt(document.getElementById('brush-size').value);ctx.stroke();lastX=p.x;lastY=p.y;hasDrawing=true}
+function end(){drawing=false}
+canvas.addEventListener('pointerdown',begin);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointerleave',end);
+function setColor(button){document.querySelectorAll('.swatch').forEach(item=>item.classList.remove('on'));button.classList.add('on');color=button.dataset.color;erasing=false;document.getElementById('eraser-button').classList.remove('active')}
+function setEraser(){erasing=true;document.querySelectorAll('.swatch').forEach(item=>item.classList.remove('on'))}
+function clearDrawing(){saveState();ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);hasDrawing=false}
+function undoDrawing(){const state=history.pop();if(state){ctx.putImageData(state,0,0);hasDrawing=true}}
+function downloadDrawing(){const link=document.createElement('a');link.download='momind-reflection.png';link.href=canvas.toDataURL('image/png');link.click()}
+function showDrawingError(text){const el=document.getElementById('drawing-error');el.textContent=text;el.style.display='block'}
+async function analyzeDrawing(){if(!hasDrawing){showDrawingError('Add something to the canvas before requesting a reflection.');return}const btn=document.getElementById('analyze-button');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Reflecting…';document.getElementById('drawing-error').style.display='none';const image=canvas.toDataURL('image/jpeg',.72).split(',')[1];try{const response=await fetch("{% url 'postpartum:analyze_drawing' %}",{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({image_data:image})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Could not reflect on this drawing.');showResult(data)}catch(error){showDrawingError(error.message||'Could not reflect on this drawing. Please try again.')}finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-sparkles"></i> Reflect on drawing'}}
+function showResult(data){const card=document.getElementById('result-card'),tag=document.getElementById('result-tag'),bar=document.getElementById('result-bar');card.style.display='block';document.getElementById('result-score').textContent=data.score;tag.textContent=data.level+' stress';tag.className='pp-badge '+data.level;bar.className='pp-progress '+data.level;bar.style.width=data.score+'%';document.getElementById('result-insight').textContent=data.insight+' — '+data.recommendation;card.scrollIntoView({behavior:'smooth'})}
 </script>
 {% endblock %}

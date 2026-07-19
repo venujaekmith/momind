@@ -1,21 +1,68 @@
-{% load static %}
-<link href="{% static 'core/select-theme.css' %}" rel="stylesheet">
+{% extends 'base.html' %}
 
-<h2>Select Role</h2>
+{% block title %}Choose user type{% endblock %}
 
-<form method="POST">
-  {% csrf_token %}
+{% block content %}
+<main class="account-page">
+    <section class="account-card account-card--wide" aria-labelledby="role-title">
+        <header class="role-page-heading">
+            <span class="account-hero-icon"><i class="fas fa-users"></i></span>
+            <span class="account-eyebrow">Personalize your experience</span>
+            <h1 id="role-title">How will you use MoMind?</h1>
+            <p>Choose the option that best describes you. This helps us prepare the right tools and profile fields.</p>
+        </header>
 
-  <select name="role">
-    <option value="MOTHER">Mother</option>
-    <option value="FATHER">Father</option>
-    <option value="MIDWIFE">Midwife</option>
-    <option value="DOCTOR">Doctor</option>
-    <option value="HOSPITAL">Hospital</option>
-    <option value="HOSPITAL_STAFF">Hospital Staff</option>
-  </select>
+        <form method="POST" class="role-form" id="role-form">
+            {% csrf_token %}
+            <div class="role-grid" role="radiogroup" aria-label="User type">
+                <label class="role-card">
+                    <input type="radio" name="role" value="MOTHER" required checked>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-person-pregnant"></i></span><span class="role-title">Mother</span><span class="role-description">Track pregnancy, health, visits, and wellness.</span></span>
+                </label>
+                <label class="role-card">
+                    <input type="radio" name="role" value="FATHER" required>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-person"></i></span><span class="role-title">Father</span><span class="role-description">Stay connected and support your family’s journey.</span></span>
+                </label>
+                <label class="role-card">
+                    <input type="radio" name="role" value="MIDWIFE" required>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-user-nurse"></i></span><span class="role-title">Midwife</span><span class="role-description">Coordinate maternal care in your service area.</span></span>
+                </label>
+                <label class="role-card">
+                    <input type="radio" name="role" value="DOCTOR" required>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-user-doctor"></i></span><span class="role-title">Doctor</span><span class="role-description">Review records and manage clinical care.</span></span>
+                </label>
+                <label class="role-card">
+                    <input type="radio" name="role" value="HOSPITAL" required>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-hospital"></i></span><span class="role-title">Hospital</span><span class="role-description">Register an organization and manage care services.</span></span>
+                </label>
+                <label class="role-card">
+                    <input type="radio" name="role" value="HOSPITAL_STAFF" required>
+                    <span class="role-card-content"><i class="fas fa-circle-check role-check"></i><span class="role-icon"><i class="fas fa-id-badge"></i></span><span class="role-title">Hospital staff</span><span class="role-description">Join a hospital team with your assigned role.</span></span>
+                </label>
+            </div>
 
-  <input type="text" name="hospital_name" placeholder="Hospital name (only if hospital)" />
+            <div class="account-field role-extra" id="hospital-name-field">
+                <label for="hospital-name">Hospital name</label>
+                <input type="text" id="hospital-name" name="hospital_name" placeholder="Enter the hospital name">
+                <small class="account-help">You can complete the remaining hospital information on the next screen.</small>
+            </div>
 
-  <button type="submit">Continue</button>
-</form>
+            <button type="submit" class="account-button role-submit">Continue <i class="fas fa-arrow-right"></i></button>
+        </form>
+    </section>
+</main>
+
+<script>
+    (function () {
+        const choices = document.querySelectorAll('input[name="role"]');
+        const hospitalField = document.getElementById('hospital-name-field');
+            function syncHospitalField() {
+                const selected = document.querySelector('input[name="role"]:checked');
+                const show = selected && selected.value === 'HOSPITAL';
+                hospitalField.classList.toggle('is-visible', Boolean(show));
+            }
+        choices.forEach(function (choice) { choice.addEventListener('change', syncHospitalField); });
+        syncHospitalField();
+    }());
+</script>
+{% endblock %}

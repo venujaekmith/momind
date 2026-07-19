@@ -1,22 +1,14 @@
-{% extends 'base.html' %}
-
-{% block title %}Log Mood{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Mood check-in{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <h3 class="text-center mb-4">How are you feeling today?</h3>
-            
-            <form method="POST">
-                {% csrf_token %}
-                {{ form.as_p }}
-                
-                <div class="d-grid">
-                    <button type="submit" class="btn btn-success btn-lg">Save Mood</button>
-                </div>
-            </form>
-        </div>
-    </div>
+<header class="pp-page-header"><div><span class="pp-eyebrow">Daily reflection</span><h1>How are you feeling today?</h1><p>There is no right answer. This private check-in helps you notice changes over time.</p></div></header>
+<div class="pp-main-grid">
+    <section class="pp-card">
+        <form method="POST" class="pp-form" novalidate>{% csrf_token %}{% include 'postpartum/form_fields.html' %}<div class="pp-button-row"><button type="submit" class="pp-button">Save mood check-in <i class="fas fa-check"></i></button><a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-button pp-button-secondary">Cancel</a></div></form>
+    </section>
+    <aside class="pp-card">
+        <div class="pp-card-title"><div><i class="fas fa-clock-rotate-left"></i><h2>Recent moods</h2></div><a href="{% url 'postpartum:wellness_history' %}">Full history</a></div>
+        <div class="pp-list">{% for mood in recent_moods %}<div class="pp-list-item"><div><strong>{{ mood.date|date:'F j' }}</strong><p>Energy {{ mood.energy_level }}/10{% if mood.sleep_hours %} · {{ mood.sleep_hours }}h sleep{% endif %}</p></div><span class="pp-list-value">{{ mood.mood_score }}</span></div>{% empty %}<div class="pp-empty"><i class="fas fa-face-smile"></i>Your first check-in starts your history.</div>{% endfor %}</div>
+    </aside>
 </div>
 {% endblock %}

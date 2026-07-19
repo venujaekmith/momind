@@ -1,27 +1,5 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-warning text-dark">
-                    <h4 class="mb-0">Hospital Registration</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-
-                        {{ form.as_p }}
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Register Hospital
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <p class="text-muted text-center mt-3">
-                Hospital accounts require admin verification
-            </p>
-        </div>
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block title %}Hospital profile{% endblock %}
+{% block content %}
+{% include 'profile_form.html' with profile_icon='fa-hospital' hero_title='Connect your care organization' hero_text='Register your hospital to coordinate services, staff, and maternal care in one place.' form_title='Hospital registration' form_subtitle='Complete the organization details below.' submit_label='Register hospital' verification_note='Hospital accounts require administrator verification before all features become available.' %}
+{% endblock %}

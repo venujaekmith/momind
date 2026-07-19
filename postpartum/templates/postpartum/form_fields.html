@@ -1,0 +1,14 @@
+{% if form.non_field_errors %}<div class="pp-error">{{ form.non_field_errors }}</div>{% endif %}
+{% for field in form %}
+<div class="pp-field">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    {% if field.name == 'mood_score' or field.name == 'energy_level' or field.name == 'stress_level' or field.name == 'q1_mood' %}
+    <div class="pp-scale">{{ field }}</div>
+    <div class="pp-scale-caption"><span>Low</span><span>High</span></div>
+    {% else %}
+    {{ field }}
+    {% endif %}
+    {% if field.help_text %}<small class="pp-help">{{ field.help_text|safe }}</small>{% endif %}
+    {% for error in field.errors %}<div class="pp-error">{{ error }}</div>{% endfor %}
+</div>
+{% endfor %}

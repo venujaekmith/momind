@@ -1,27 +1,5 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">Midwife Registration Details</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-
-                        {{ form.as_p }}
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Complete Registration
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            <p class="text-muted text-center mt-3">
-                Your profile will be reviewed for verification
-            </p>
-        </div>
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block title %}Midwife profile{% endblock %}
+{% block content %}
+{% include 'profile_form.html' with profile_icon='fa-user-nurse' hero_title='Care for every maternal journey' hero_text='Set up your professional profile so families and care teams can work with confidence.' form_title='Midwife registration details' form_subtitle='Provide your license and service-area information.' submit_label='Complete registration' verification_note='Your professional profile will be reviewed for verification.' %}
+{% endblock %}

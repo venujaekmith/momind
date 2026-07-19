@@ -1,17 +1,10 @@
-{% extends 'base.html' %}
-
-{% block title %}Journal{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Private journal{% endblock %}
+{% block nav_journal %}active{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <h3 class="mb-4">Dear Diary...</h3>
-    
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        
-        <button type="submit" class="btn btn-primary btn-lg">Save Entry</button>
-        <a href="{% url 'postpartum:postpartum_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
-    </form>
+<header class="pp-page-header"><div><span class="pp-eyebrow">A space of your own</span><h1>Private journal</h1><p>Write freely about recovery, parenthood, gratitude, frustration, or whatever is present.</p></div></header>
+<div class="pp-main-grid">
+    <section class="pp-card"><form method="POST" class="pp-form" novalidate>{% csrf_token %}{% include 'postpartum/form_fields.html' %}<div class="pp-button-row"><button type="submit" class="pp-button">Save private entry <i class="fas fa-lock"></i></button><a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-button pp-button-secondary">Back home</a></div></form></section>
+    <aside class="pp-card"><div class="pp-card-title"><div><i class="fas fa-book"></i><h2>Recent entries</h2></div></div><div class="pp-list">{% for entry in entries %}<article class="pp-list-item"><div><strong>{{ entry.title|default:'Untitled reflection' }}</strong><p>{{ entry.date|date:'F j' }}{% if entry.mood %} · Mood {{ entry.mood }}/10{% endif %}<br>{{ entry.content|truncatewords:18 }}</p></div></article>{% empty %}<div class="pp-empty"><i class="fas fa-pen"></i>Your saved reflections will appear here.</div>{% endfor %}</div></aside>
 </div>
 {% endblock %}

@@ -27,7 +27,7 @@ class PostpartumProfile(models.Model):
     
     def save(self, *args, **kwargs):
         if self.delivery_date:
-            self.current_week = (date.today() - self.delivery_date).days // 7
+            self.current_week = max(0, (date.today() - self.delivery_date).days // 7)
         super().save(*args, **kwargs)
 
     def __str__(self):

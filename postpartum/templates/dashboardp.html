@@ -1,106 +1,117 @@
-{% extends 'based.html' %}
-
-{% block title %}Postpartum Dashboard - Māthru{% endblock %}
+{% extends 'postpartum/base.html' %}
+{% block title %}Postpartum home{% endblock %}
+{% block nav_home %}active{% endblock %}
 
 {% block content %}
-
-<a href="{% url 'postpartum:ai_dash' %}">GO</a>
-
-<div class="container mt-4">
-    <h2 class="text-center mb-4">Welcome back, {{ user.first_name|default:user.username }} 💕</h2>
-
-    {% if pregnancies and pregnancies|length > 1 %}
-    <div class="text-center mb-3">
-        <label for="ppreg">Select pregnancy:</label>
-        <select id="ppreg" onchange="onPostPregSelect()">
-            {% for p in pregnancies %}
-                <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
-                    Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
-                </option>
-            {% endfor %}
-        </select>
+<section class="pp-hero">
+    <div>
+        <span class="pp-eyebrow">Your recovery companion</span>
+        <h1>Welcome back, {{ user.first_name|default:user.username }}</h1>
+        <p>Small check-ins can make recovery feel more manageable. Take a moment for yourself today.</p>
     </div>
-    {% endif %}
+    <div class="pp-week-badge"><strong>{{ profile.current_week }}</strong><span>Postpartum week</span></div>
+</section>
 
-    <!-- Postpartum Week -->
-    <div class="alert alert-info text-center">
-        <strong>Postpartum Week {{ profile.current_week }}</strong>
-    </div>
+{% if pregnancies and pregnancies|length > 1 %}
+<div class="pp-card pp-select-row" style="margin-bottom:1rem;">
+    <label for="ppreg">Viewing journey</label>
+    <select id="ppreg" onchange="onPostPregSelect()">
+        {% for p in pregnancies %}<option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>Pregnancy {{ p.pregnancy_number }} · {{ p.status|capfirst }}{% if p.actual_delivery_date %} · {{ p.actual_delivery_date|date:'M j, Y' }}{% endif %}</option>{% endfor %}
+    </select>
+</div>
+{% endif %}
 
-    <!-- Today's Tip -->
-    {% if today_tip %}
-    <div class="card mb-4 border-success">
-        <div class="card-header bg-success text-white">
-            <h5>💡 Today's Tip (Week {{ today_tip.week }})</h5>
-        </div>
-        <div class="card-body">
-            <h6>{{ today_tip.title }}</h6>
-            <p>{{ today_tip.content }}</p>
-        </div>
-    </div>
-    {% endif %}
-
-    <div class="row">
-        <!-- Quick Mood Log -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">How are you feeling today?</div>
-                <div class="card-body text-center">
-                    <a href="{% url 'postpartum:log_mood' %}" class="btn btn-primary btn-lg w-100">
-                        Log Today's Mood
-                    </a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Journal -->
-        <div class="col-md-6 mb-4">
-            <div class="card h-100">
-                <div class="card-header">Write in Journal</div>
-                <div class="card-body text-center">
-                    <a href="{% url 'postpartum:journal' %}" class="btn btn-outline-success btn-lg w-100">
-                        Open Journal
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Breathing Exercises -->
-    <h5 class="mt-4 mb-3">🧘‍♀️ Quick Breathing Exercises</h5>
-    <div class="row">
-        {% for ex in breathing_exercises %}
-        <div class="col-md-4 mb-3">
-            <a href="{% url 'postpartum:breathing_exercise' ex.id %}" class="text-decoration-none">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <h6>{{ ex.title }}</h6>
-                        <small class="text-muted">{{ ex.duration_seconds }} seconds</small>
-                    </div>
-                </div>
-            </a>
-        </div>
-        {% endfor %}
-    </div>
-
-    <a href="{% url 'postpartum:stress_log' %}" class="btn btn-warning mt-3">
-        Log Stress / Anxiety
-    </a>
+<div class="pp-stat-grid">
+    <div class="pp-stat"><span>Average mood</span><strong>{% if mood_summary.average_mood %}{{ mood_summary.average_mood|floatformat:1 }}{% else %}—{% endif %}</strong><small>out of 10</small></div>
+    <div class="pp-stat"><span>Average energy</span><strong>{% if mood_summary.average_energy %}{{ mood_summary.average_energy|floatformat:1 }}{% else %}—{% endif %}</strong><small>out of 10</small></div>
+    <div class="pp-stat"><span>Average sleep</span><strong>{% if mood_summary.average_sleep %}{{ mood_summary.average_sleep|floatformat:1 }}{% else %}—{% endif %}</strong><small>hours</small></div>
+    <div class="pp-stat"><span>Today’s check-in</span><strong>{% if mood_logged_today %}<i class="fas fa-check" style="color:var(--pp-success)"></i>{% else %}—{% endif %}</strong><small>{% if mood_logged_today %}Completed{% else %}Not logged{% endif %}</small></div>
 </div>
 
+{% if today_tip %}
+<div class="pp-tip" style="margin-bottom:1rem;">
+    <span class="pp-tip-icon"><i class="fas fa-lightbulb"></i></span>
+    <div><strong>{{ today_tip.title }}</strong><p>{{ today_tip.content }}</p></div>
+</div>
+{% endif %}
 
-<a href="{% url 'postpartum:ai_stress_assessment' %}">AI</a>
+<div class="pp-main-grid">
+    <div class="pp-stack">
+        <section class="pp-grid pp-grid-2">
+            <a href="{% url 'postpartum:log_mood' %}" class="pp-action-card">
+                <span class="pp-action-icon"><i class="fas fa-face-smile"></i></span>
+                <strong>{% if mood_logged_today %}Update today’s mood{% else %}How are you feeling?{% endif %}</strong>
+                <p>Record your mood, sleep, and energy in a gentle daily check-in.</p>
+                <span class="pp-action-link">Open mood check-in <i class="fas fa-arrow-right"></i></span>
+            </a>
+            <a href="{% url 'postpartum:journal' %}" class="pp-action-card">
+                <span class="pp-action-icon"><i class="fas fa-book-open"></i></span>
+                <strong>Write privately</strong>
+                <p>Capture thoughts, small wins, worries, or anything you need to release.</p>
+                <span class="pp-action-link">Open journal <i class="fas fa-arrow-right"></i></span>
+            </a>
+            <a href="{% url 'postpartum:stress_log' %}" class="pp-action-card">
+                <span class="pp-action-icon"><i class="fas fa-wave-square"></i></span>
+                <strong>Track stress</strong>
+                <p>Notice triggers and remember which coping strategies helped.</p>
+                <span class="pp-action-link">Log stress <i class="fas fa-arrow-right"></i></span>
+            </a>
+            <a href="{% url 'postpartum:ai_stress_assessment' %}" class="pp-action-card">
+                <span class="pp-action-icon"><i class="fas fa-brain"></i></span>
+                <strong>Guided wellbeing check</strong>
+                <p>Answer a short reflection and receive a supportive recommendation.</p>
+                <span class="pp-action-link">Start check <i class="fas fa-arrow-right"></i></span>
+            </a>
+        </section>
+
+        <section class="pp-card">
+            <div class="pp-card-title"><div><i class="fas fa-wind"></i><h2>Breathing exercises</h2></div></div>
+            <p class="pp-card-subtitle">A short guided pause when you need to reset.</p>
+            {% if breathing_exercises %}
+            <div class="pp-grid pp-grid-3">
+                {% for ex in breathing_exercises %}
+                <a href="{% url 'postpartum:breathing_exercise' ex.id %}" class="pp-list-item" style="text-decoration:none;">
+                    <div><strong>{{ ex.title }}</strong><p>{{ ex.duration_seconds }} seconds</p></div><span class="pp-list-value"><i class="fas fa-play"></i></span>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}<div class="pp-empty"><i class="fas fa-wind"></i>No breathing exercises have been added yet.</div>{% endif %}
+        </section>
+    </div>
+
+    <aside class="pp-stack">
+        {% if latest_ai_assessment %}
+        <section class="pp-card">
+            <div class="pp-card-title"><div><i class="fas fa-sparkles"></i><h2>Latest guided check</h2></div></div>
+            <div class="pp-score"><strong>{{ latest_ai_assessment.stress_score }}</strong><span>/ 100</span></div>
+            <div class="pp-progress-wrap"><div class="pp-progress {% if latest_ai_assessment.stress_score > 70 %}high{% elif latest_ai_assessment.stress_score > 40 %}moderate{% else %}low{% endif %}" style="width:{{ latest_ai_assessment.stress_score }}%"></div></div>
+            <p class="pp-card-subtitle" style="margin:.8rem 0 0;">{{ latest_ai_assessment.recommendation|truncatewords:24 }}</p>
+        </section>
+        {% endif %}
+
+        <section class="pp-card">
+            <div class="pp-card-title"><div><i class="fas fa-clock-rotate-left"></i><h2>Recent activity</h2></div><a href="{% url 'postpartum:wellness_history' %}">View all</a></div>
+            <div class="pp-list">
+                {% for mood in recent_moods|slice:':3' %}<div class="pp-list-item"><div><strong>Mood check-in</strong><p>{{ mood.date|date:'M j' }} · Energy {{ mood.energy_level }}/10</p></div><span class="pp-list-value">{{ mood.mood_score }}</span></div>{% empty %}
+                <div class="pp-empty"><i class="fas fa-seedling"></i>Your check-in history will appear here.</div>{% endfor %}
+            </div>
+        </section>
+
+        <section class="pp-card">
+            <div class="pp-card-title"><div><i class="fas fa-comments"></i><h2>Support companion</h2></div></div>
+            <p class="pp-card-subtitle">Talk or draw when words are difficult, then view your wellness summary.</p>
+            <a href="{% url 'postpartum:ai_dash' %}" class="pp-button pp-button-block">Open companion <i class="fas fa-arrow-right"></i></a>
+        </section>
+    </aside>
+</div>
 
 <script>
-function onPostPregSelect(){
-    const sel = document.getElementById('ppreg');
-    if(!sel) return;
-    const pid = sel.value;
+function onPostPregSelect() {
+    const selected = document.getElementById('ppreg');
+    if (!selected) return;
     const url = new URL(window.location.href);
-    url.searchParams.set('pregnancy', pid);
+    url.searchParams.set('pregnancy', selected.value);
     window.location.href = url.toString();
 }
 </script>
-
-
 {% endblock %}

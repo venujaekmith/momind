@@ -1,0 +1,12 @@
+{% extends 'postpartum/base.html' %}
+{% block title %}Postpartum profile{% endblock %}
+{% block nav_profile %}active{% endblock %}
+{% block content %}
+<header class="pp-page-header"><div><span class="pp-eyebrow">Personalize your journey</span><h1>Postpartum profile</h1><p>Keep delivery information current so recovery timing and weekly guidance stay relevant.</p></div></header>
+{% if pregnancies and pregnancies|length > 1 %}<div class="pp-card pp-select-row" style="margin-bottom:1rem;"><label for="profile-pregnancy">Profile for</label><select id="profile-pregnancy" onchange="switchProfile(this.value)">{% for item in pregnancies %}<option value="{{ item.id }}" {% if pregnancy and item.id == pregnancy.id %}selected{% endif %}>Pregnancy {{ item.pregnancy_number }} · {{ item.status|capfirst }}</option>{% endfor %}</select></div>{% endif %}
+<div class="pp-main-grid">
+    <section class="pp-card"><form method="POST" class="pp-form" novalidate>{% csrf_token %}{% if pregnancy %}<input type="hidden" name="pregnancy" value="{{ pregnancy.id }}">{% endif %}{% include 'postpartum/form_fields.html' %}<button type="submit" class="pp-button">Save profile <i class="fas fa-check"></i></button></form></section>
+    <aside class="pp-card"><div class="pp-card-title"><div><i class="fas fa-calendar-heart"></i><h2>Recovery timeline</h2></div></div><div class="pp-score"><strong>{{ profile.current_week }}</strong><span>weeks postpartum</span></div><p class="pp-card-subtitle" style="margin:0;">Calculated from the delivery date. Every recovery is different; this timeline is only for organizing your experience.</p></aside>
+</div>
+<script>function switchProfile(id){const url=new URL(window.location.href);url.searchParams.set('pregnancy',id);window.location.href=url.toString();}</script>
+{% endblock %}

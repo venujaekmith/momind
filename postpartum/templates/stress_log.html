@@ -1,16 +1,9 @@
-{% extends 'base.html' %}
-
-{% block title %}Stress Log{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Stress check-in{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <h3 class="mb-4">Stress & Anxiety Log</h3>
-    
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        
-        <button type="submit" class="btn btn-warning btn-lg">Save Log</button>
-    </form>
+<header class="pp-page-header"><div><span class="pp-eyebrow">Notice patterns</span><h1>Stress and anxiety check-in</h1><p>Record what happened and what helped. Even partial notes can reveal useful patterns later.</p></div></header>
+<div class="pp-main-grid">
+    <section class="pp-card"><form method="POST" class="pp-form" novalidate>{% csrf_token %}{% include 'postpartum/form_fields.html' %}<div class="pp-button-row"><button type="submit" class="pp-button">Save check-in <i class="fas fa-check"></i></button><a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-button pp-button-secondary">Cancel</a></div></form></section>
+    <aside class="pp-card"><div class="pp-card-title"><div><i class="fas fa-clock-rotate-left"></i><h2>Recent stress logs</h2></div><a href="{% url 'postpartum:wellness_history' %}">Full history</a></div><div class="pp-list">{% for log in recent_logs %}<div class="pp-list-item"><div><strong>{{ log.date|date:'F j' }}</strong><p>{{ log.trigger|default:'No trigger noted'|truncatewords:8 }}</p></div><span class="pp-list-value">{{ log.stress_level }}</span></div>{% empty %}<div class="pp-empty"><i class="fas fa-seedling"></i>No stress logs yet.</div>{% endfor %}</div></aside>
 </div>
 {% endblock %}

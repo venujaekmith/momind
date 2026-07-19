@@ -1,23 +1,15 @@
-{% extends 'base.html' %}
-
-{% block title %}AI Stress Check-in{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Guided wellbeing check{% endblock %}
+{% block nav_companion %}active{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <h2 class="text-center mb-4">🧠 AI Postpartum Stress Assessment</h2>
-    <p class="text-center text-muted">Answer honestly. This will help identify your stress level.</p>
-
-    <form method="POST">
-        {% csrf_token %}
-        <div class="card">
-            <div class="card-body">
-                {{ form.as_p }}
-            </div>
-        </div>
-
-        <div class="text-center mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">Analyze My Stress Level</button>
-        </div>
-    </form>
+<header class="pp-page-header"><div><span class="pp-eyebrow">Guided reflection</span><h1>Postpartum wellbeing check</h1><p>Reflect on mood, rest, and the thoughts you have been carrying. Your answers are used to create a supportive summary.</p></div></header>
+<div class="pp-main-grid">
+    <section class="pp-card">
+        <form method="POST" class="pp-form" novalidate>{% csrf_token %}{% include 'postpartum/form_fields.html' %}<button type="submit" class="pp-button pp-button-block">Create my wellbeing summary <i class="fas fa-sparkles"></i></button></form>
+    </section>
+    <aside class="pp-stack">
+        <div class="pp-card"><div class="pp-card-title"><div><i class="fas fa-lock"></i><h2>A private check-in</h2></div></div><p class="pp-card-subtitle" style="margin:0;">Answer honestly and at your own pace. This result is a wellbeing reflection, not a diagnosis.</p></div>
+        <div class="pp-safety-note" style="margin:0;"><i class="fas fa-circle-exclamation"></i><span>If you are having thoughts of harming yourself or your baby, contact a trusted person and qualified emergency or healthcare service now.</span></div>
+    </aside>
 </div>
 {% endblock %}

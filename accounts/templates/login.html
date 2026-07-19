@@ -1,296 +1,41 @@
 {% extends 'base.html' %}
 
-{% block body_class %}login-screen{% endblock %}
-
-{% block extra_head %}
-<style>
-    .login-screen {
-        min-height: 100vh;
-        color: #3f2630;
-        background: radial-gradient(circle at 8% 9%, rgba(232, 93, 143, 0.18), transparent 27%), radial-gradient(circle at 92% 91%, rgba(255, 184, 203, 0.25), transparent 30%), linear-gradient(145deg, #fff1f5 0%, #ffffff 48%, #fde6ed 100%);
-        font-family: 'Inter', Arial, sans-serif;
-    }
-
-    .login-screen .navbar {
-        position: relative;
-        z-index: 2;
-        padding: 0.85rem max(1rem, 4vw) !important;
-        background: rgba(255, 255, 255, 0.9) !important;
-        border-bottom: 1px solid rgba(232, 93, 143, 0.18);
-        box-shadow: 0 7px 24px rgba(126, 42, 75, 0.08);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-    }
-
-    .login-screen .navbar-brand {
-        color: #a13e63 !important;
-        font-size: 1.2rem;
-        font-weight: 750;
-        letter-spacing: -0.02em;
-    }
-
-    .login-screen .navbar-brand::before {
-        content: "♥";
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 34px;
-        height: 34px;
-        margin-right: 0.55rem;
-        color: #ffffff;
-        background: linear-gradient(135deg, #e85d8f, #cc4677);
-        border-radius: 10px;
-        box-shadow: 0 5px 13px rgba(204, 70, 119, 0.22);
-    }
-
-    .login-screen .navbar .btn-light {
-        color: #a13e63;
-        background: #fff5f8;
-        border: 1px solid #efb0c3;
-        border-radius: 999px;
-        font-weight: 700;
-    }
-
-    .login-screen > .container {
-        width: 100%;
-        max-width: none;
-        padding: 0;
-        margin-top: 0 !important;
-    }
-
-    .login-page-shell {
-        min-height: calc(100vh - 70px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 2rem 1.25rem;
-    }
-
-    .login-card {
-        width: min(100%, 920px);
-        display: grid;
-        grid-template-columns: minmax(280px, 0.9fr) minmax(340px, 1.1fr);
-        overflow: hidden;
-        background: #ffffff;
-        border: 1px solid #efb0c3;
-        border-radius: 24px;
-        box-shadow: 0 24px 65px rgba(126, 42, 75, 0.17);
-    }
-
-    .login-welcome {
-        position: relative;
-        overflow: hidden;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        padding: 2.4rem;
-        color: #ffffff;
-        background: linear-gradient(145deg, #e85d8f 0%, #cc4677 58%, #963654 100%);
-    }
-
-    .login-welcome::before,
-    .login-welcome::after {
-        content: "";
-        position: absolute;
-        border: 1px solid rgba(255, 255, 255, 0.16);
-        border-radius: 50%;
-    }
-
-    .login-welcome::before { width: 230px; height: 230px; right: -105px; top: -95px; }
-    .login-welcome::after { width: 170px; height: 170px; left: -80px; bottom: -85px; }
-
-    .login-welcome-icon {
-        position: relative;
-        z-index: 1;
-        width: 56px;
-        height: 56px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 1.25rem;
-        color: #b83b6e;
-        background: #ffffff;
-        border-radius: 17px;
-        font-size: 1.4rem;
-        box-shadow: 0 9px 24px rgba(91, 23, 50, 0.24);
-    }
-
-    .login-welcome h1 {
-        position: relative;
-        z-index: 1;
-        margin: 0 0 0.75rem;
-        color: #ffffff;
-        font-size: clamp(1.75rem, 4vw, 2.4rem);
-        font-weight: 750;
-        letter-spacing: -0.035em;
-    }
-
-    .login-welcome p {
-        position: relative;
-        z-index: 1;
-        margin: 0;
-        color: rgba(255, 255, 255, 0.88);
-        line-height: 1.7;
-    }
-
-    .login-form-panel {
-        padding: 2.4rem;
-    }
-
-    .login-form-panel h2 {
-        margin: 0 0 0.35rem;
-        color: #743149;
-        font-size: 1.55rem;
-        font-weight: 750;
-    }
-
-    .login-subtitle {
-        margin: 0 0 1.5rem;
-        color: #806572;
-    }
-
-    .messages-container {
-        display: grid;
-        gap: 0.6rem;
-        margin-bottom: 1rem;
-    }
-
-    .login-screen .messages-container .alert {
-        padding: 0.75rem 0.9rem;
-        margin: 0;
-        color: #743149;
-        background: #fff0f4;
-        border: 1px solid #efb0c3;
-        border-left: 4px solid #e85d8f;
-        border-radius: 10px;
-        font-size: 0.86rem;
-    }
-
-    .login-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1.15rem;
-    }
-
-    .login-field label {
-        display: block;
-        margin-bottom: 0.5rem;
-        color: #5f2940;
-        font-size: 0.9rem;
-        font-weight: 700;
-    }
-
-    .login-input-wrap {
-        display: flex;
-        align-items: center;
-        gap: 0.7rem;
-        padding: 0 0.9rem;
-        background: #fffafb;
-        border: 2px solid #efb0c3;
-        border-radius: 12px;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    }
-
-    .login-input-wrap:focus-within {
-        background: #ffffff;
-        border-color: #cc4677;
-        box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.13);
-    }
-
-    .login-input-wrap i {
-        color: #d2628b;
-    }
-
-    .login-input-wrap input {
-        width: 100%;
-        min-width: 0;
-        min-height: 50px;
-        padding: 0.75rem 0;
-        color: #3f2630;
-        background: transparent;
-        border: 0;
-        outline: none;
-        font: inherit;
-    }
-
-    .login-input-wrap input::placeholder { color: #a48792; }
-
-    .login-submit {
-        min-height: 50px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.55rem;
-        margin-top: 0.25rem;
-        color: #ffffff;
-        background: linear-gradient(135deg, #e85d8f, #cc4677);
-        border: 0;
-        border-radius: 12px;
-        font-weight: 750;
-        cursor: pointer;
-        box-shadow: 0 8px 20px rgba(204, 70, 119, 0.25);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .login-submit:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 12px 25px rgba(204, 70, 119, 0.32);
-    }
-
-    @media (max-width: 760px) {
-        .login-page-shell { padding: 1rem; }
-        .login-card { grid-template-columns: 1fr; border-radius: 18px; }
-        .login-welcome { padding: 1.6rem; }
-        .login-welcome p { max-width: 540px; }
-        .login-form-panel { padding: 1.6rem; }
-    }
-</style>
-{% endblock %}
+{% block title %}Log in{% endblock %}
+{% block nav_action %}<a href="{% url 'accounts:register' %}" class="account-nav-button">Create account</a>{% endblock %}
 
 {% block content %}
-<main class="login-page-shell">
-    <section class="login-card" aria-labelledby="loginTitle">
-        <div class="login-welcome">
-            <span class="login-welcome-icon"><i class="fas fa-heart"></i></span>
+<main class="account-page">
+    <section class="account-card account-card--compact" aria-labelledby="login-title">
+        <div class="account-hero">
+            <span class="account-hero-icon"><i class="fas fa-heart"></i></span>
             <h1>Welcome back</h1>
             <p>Continue your maternal wellness journey with your family and trusted care team.</p>
         </div>
 
-        <div class="login-form-panel">
-            <h2 id="loginTitle">Sign in to MoMind</h2>
-            <p class="login-subtitle">Enter your account details to continue.</p>
+        <div class="account-panel">
+            <header class="account-panel-header">
+                <span class="account-eyebrow">Secure access</span>
+                <h2 id="login-title">Sign in to MoMind</h2>
+                <p>Enter your account details to continue.</p>
+            </header>
 
-            {% if messages %}
-            <div class="messages-container" role="status">
-                {% for message in messages %}
-                <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">{{ message }}</div>
-                {% endfor %}
-            </div>
-            {% endif %}
-
-            <form method="POST" class="login-form">
+            <form method="POST" class="account-form">
                 {% csrf_token %}
-                <div class="login-field">
+                <div class="account-field">
                     <label for="loginUsername">Username</label>
-                    <div class="login-input-wrap">
-                        <i class="fas fa-user"></i>
-                        <input type="text" id="loginUsername" name="username" placeholder="Enter your username" autocomplete="username" required>
-                    </div>
+                    <input type="text" id="loginUsername" name="username" placeholder="Enter your username" autocomplete="username" required autofocus>
                 </div>
-
-                <div class="login-field">
+                <div class="account-field">
                     <label for="loginPassword">Password</label>
-                    <div class="login-input-wrap">
-                        <i class="fas fa-lock"></i>
-                        <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                    </div>
+                    <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required>
                 </div>
-
-                <button type="submit" class="login-submit"><span>Login</span><i class="fas fa-arrow-right"></i></button>
+                <button type="submit" class="account-button"><span>Log in</span><i class="fas fa-arrow-right"></i></button>
             </form>
+
+            <div class="account-footer-links">
+                <span>New to MoMind? <a href="{% url 'accounts:register' %}">Create an account</a></span>
+            </div>
         </div>
-        <a href="{% url 'accounts:register' %}">Don't have an account? Sign up</a>
-        <a href="">Forgot your password?</a>
     </section>
 </main>
 {% endblock %}

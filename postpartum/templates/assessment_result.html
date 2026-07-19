@@ -1,29 +1,21 @@
-{% extends 'base.html' %}
-
-{% block title %}Assessment Result{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Wellbeing result{% endblock %}
+{% block nav_companion %}active{% endblock %}
 {% block content %}
-<div class="container mt-5">
-    <div class="card shadow">
-        <div class="card-header bg-{% if assessment.stress_score > 70 %}danger{% elif assessment.stress_score > 40 %}warning{% else %}success{% endif %} text-white">
-            <h4>Your Stress Level: <strong>{{ assessment.stress_score }} / 100</strong></h4>
-        </div>
-        <div class="card-body">
-            <h5>Insight:</h5>
-            <p>{{ assessment.insight }}</p>
-            
-            <h5>Recommendation:</h5>
-            <p class="lead">{{ assessment.recommendation }}</p>
-
-            <hr>
-            <h6>Your Answers:</h6>
-            <p><strong>Mood:</strong> {{ assessment.q1_mood }}/10</p>
-            <p><strong>Writing:</strong> {{ assessment.q4_writing|truncatewords:30 }}</p>
-        </div>
-        <div class="card-footer text-center">
-            <a href="{% url 'postpartum:dashboard' %}" class="btn btn-success">Back to Dashboard</a>
-            <a href="{% url 'postpartum:ai_stress_assessment' %}" class="btn btn-outline-primary">Take Again</a>
-        </div>
-    </div>
+<header class="pp-page-header"><div><span class="pp-eyebrow">Your reflection</span><h1>Wellbeing check result</h1><p>Use this as a prompt for self-care or a conversation with someone you trust.</p></div></header>
+<div class="pp-main-grid">
+    <section class="pp-card">
+        <div class="pp-card-title"><div><i class="fas fa-chart-simple"></i><h2>Current stress estimate</h2></div><span class="pp-badge {% if assessment.stress_score > 70 %}high{% elif assessment.stress_score > 40 %}moderate{% else %}low{% endif %}">{% if assessment.stress_score > 70 %}High{% elif assessment.stress_score > 40 %}Moderate{% else %}Low{% endif %}</span></div>
+        <div class="pp-score"><strong>{{ assessment.stress_score }}</strong><span>/ 100</span></div>
+        <div class="pp-progress-wrap"><div class="pp-progress {% if assessment.stress_score > 70 %}high{% elif assessment.stress_score > 40 %}moderate{% else %}low{% endif %}" style="width:{{ assessment.stress_score }}%"></div></div>
+        <div class="pp-tip" style="margin-top:1.2rem;"><span class="pp-tip-icon"><i class="fas fa-heart"></i></span><div><strong>What your answers suggest</strong><p>{{ assessment.insight }}</p></div></div>
+        <div class="pp-card" style="margin-top:1rem;background:#fffafb;box-shadow:none;"><div class="pp-card-title"><div><i class="fas fa-seedling"></i><h3>A gentle next step</h3></div></div><p style="margin:0;">{{ assessment.recommendation }}</p></div>
+        <div class="pp-button-row"><a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-button">Back to postpartum home</a><a href="{% url 'postpartum:ai_stress_assessment' %}" class="pp-button pp-button-secondary">Take again</a></div>
+    </section>
+    <aside class="pp-card">
+        <div class="pp-card-title"><div><i class="fas fa-clipboard-list"></i><h2>Your check-in</h2></div></div>
+        <div class="pp-list"><div class="pp-list-item"><div><strong>Mood</strong><p>How you rated today</p></div><span class="pp-list-value">{{ assessment.q1_mood }}</span></div><div class="pp-list-item"><div><strong>Sleep</strong><p>Hours in the last 24 hours</p></div><span class="pp-list-value">{{ assessment.q2_sleep|default:'—' }}</span></div>{% if assessment.q4_writing %}<div class="pp-list-item"><div><strong>What was on your mind</strong><p>{{ assessment.q4_writing|truncatewords:35 }}</p></div></div>{% endif %}</div>
+        <div class="pp-safety-note"><i class="fas fa-shield-heart"></i><span>This reflection cannot diagnose postpartum depression or anxiety. Share persistent or worsening concerns with a qualified professional.</span></div>
+    </aside>
 </div>
 {% endblock %}

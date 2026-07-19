@@ -1,46 +1,27 @@
-{% extends "postpartum/base.html" %}
-{% block title %}Dashboard — Postpartum{% endblock %}
-{% block nav_home %}active{% endblock %}
-
+{% extends 'postpartum/base.html' %}
+{% block title %}Support companion{% endblock %}
+{% block nav_companion %}active{% endblock %}
 {% block content %}
-<h2 style="font-size:18px; font-weight:500; margin-bottom:1rem;">Welcome back, {{ request.user.first_name|default:request.user.username }}</h2>
+<header class="pp-page-header"><div><span class="pp-eyebrow">Express and reflect</span><h1>Your support companion</h1><p>Choose the way that feels easiest today—talk, draw, or complete a guided wellbeing check.</p></div><a href="{% url 'postpartum:wellness' %}" class="pp-button pp-button-secondary"><i class="fas fa-chart-pie"></i> Wellness summary</a></header>
 
 {% if assessment and assessment.overall_score %}
-<div class="card" style="margin-bottom:1rem;">
-  <p style="font-size:12px; color:#888; text-transform:uppercase; letter-spacing:.05em; margin-bottom:8px;">Latest wellness score</p>
-  <div style="display:flex; align-items:baseline; gap:10px; margin-bottom:6px;">
-    <span style="font-size:32px; font-weight:500;">{{ assessment.overall_score }}</span>
-    <span class="badge level-{{ assessment.level }}">{{ assessment.level }} stress</span>
-  </div>
-  <div class="stress-bar-wrap"><div class="stress-bar bar-{{ assessment.level }}" style="width:{{ assessment.overall_score }}%"></div></div>
-  {% if assessment.recommendation %}
-  <p style="font-size:13px; color:#666; margin-top:10px; line-height:1.6;">{{ assessment.recommendation }}</p>
-  {% endif %}
-</div>
+<section class="pp-card" style="margin-bottom:1rem;">
+    <div class="pp-card-title"><div><i class="fas fa-heart-pulse"></i><h2>Latest companion wellness estimate</h2></div><span class="pp-badge {{ assessment.level }}">{{ assessment.level }} stress</span></div>
+    <div class="pp-score"><strong>{{ assessment.overall_score }}</strong><span>/ 100</span></div>
+    <div class="pp-progress-wrap"><div class="pp-progress {{ assessment.level }}" style="width:{{ assessment.overall_score }}%"></div></div>
+    {% if assessment.recommendation %}<p class="pp-card-subtitle" style="margin:.9rem 0 0;">{{ assessment.recommendation }}</p>{% endif %}
+</section>
 {% endif %}
 
-<div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem;">
-  <a href="{% url 'postpartum:chat' %}" class="card" style="display:block; cursor:pointer; transition:border-color .15s;" onmouseover="this.style.borderColor='#1D9E75'" onmouseout="this.style.borderColor='#e5e5e0'">
-    <div style="font-size:22px; margin-bottom:8px;">💬</div>
-    <div style="font-weight:500; font-size:14px;">Chat with companion</div>
-    <div style="font-size:12px; color:#888; margin-top:4px;">Talk about how you're feeling</div>
-  </a>
-  <a href="{% url 'postpartum:draw' %}" class="card" style="display:block; cursor:pointer; transition:border-color .15s;" onmouseover="this.style.borderColor='#1D9E75'" onmouseout="this.style.borderColor='#e5e5e0'">
-    <div style="font-size:22px; margin-bottom:8px;">🎨</div>
-    <div style="font-weight:500; font-size:14px;">Draw your feelings</div>
-    <div style="font-size:12px; color:#888; margin-top:4px;">Express yourself visually</div>
-  </a>
+<div class="pp-grid pp-grid-3" style="margin-bottom:1rem;">
+    <a href="{% url 'postpartum:chat' %}" class="pp-action-card"><span class="pp-action-icon"><i class="fas fa-comments"></i></span><strong>Talk with companion</strong><p>Share what is on your mind in a warm, private conversation.</p><span class="pp-action-link">Start talking <i class="fas fa-arrow-right"></i></span></a>
+    <a href="{% url 'postpartum:draw' %}" class="pp-action-card"><span class="pp-action-icon"><i class="fas fa-palette"></i></span><strong>Draw your feelings</strong><p>Use color and shape when emotions are difficult to put into words.</p><span class="pp-action-link">Open canvas <i class="fas fa-arrow-right"></i></span></a>
+    <a href="{% url 'postpartum:ai_stress_assessment' %}" class="pp-action-card"><span class="pp-action-icon"><i class="fas fa-clipboard-question"></i></span><strong>Guided check</strong><p>Complete a structured reflection about mood, sleep, and thoughts.</p><span class="pp-action-link">Begin reflection <i class="fas fa-arrow-right"></i></span></a>
 </div>
 
-{% if conversations %}
-<div class="card">
-  <p style="font-size:13px; font-weight:500; margin-bottom:10px;">Recent conversations</p>
-  {% for conv in conversations %}
-  <a href="{% url 'postpartum:chat' %}?conv={{ conv.id }}" style="display:flex; align-items:center; justify-content:space-between; padding:8px 0; border-bottom:1px solid #f0f0eb; font-size:13px; color:#444;">
-    <span>Session on {{ conv.created_at|date:"M d, g:i a" }}</span>
-    <span style="color:#bbb;">{{ conv.messages.count }} messages →</span>
-  </a>
-  {% endfor %}
-</div>
-{% endif %}
+<section class="pp-card">
+    <div class="pp-card-title"><div><i class="fas fa-clock-rotate-left"></i><h2>Recent conversations</h2></div><a href="{% url 'postpartum:chat' %}">New conversation</a></div>
+    <div class="pp-list">{% for conv in conversations %}<a href="{% url 'postpartum:chat' %}?conv={{ conv.id }}" class="pp-list-item" style="text-decoration:none;"><div><strong>{{ conv.created_at|date:'F j, Y' }}</strong><p>{{ conv.created_at|date:'g:i a' }} · {{ conv.messages.count }} messages</p></div><span class="pp-list-value"><i class="fas fa-arrow-right"></i></span></a>{% empty %}<div class="pp-empty"><i class="fas fa-comments"></i>Your conversations will appear here.</div>{% endfor %}</div>
+</section>
+<div class="pp-safety-note"><i class="fas fa-shield-heart"></i><span>The companion offers reflection and general support, not medical advice or diagnosis. Contact a qualified healthcare professional for persistent or serious concerns.</span></div>
 {% endblock %}

@@ -1,26 +1,5 @@
-
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Father Profile Details</h4>
-                </div>
-                <div class="card-body">
-                    <form method="POST" novalidate>
-                        {% csrf_token %}
-
-                        {{ form.as_p }}
-
-                        <div class="d-grid gap-2 mt-4">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                Save & Continue
-                            </button>
-                            <a href="{% url 'dashboards:dashboard' %}">Link Later</a>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+{% extends 'base.html' %}
+{% block title %}Father profile{% endblock %}
+{% block content %}
+{% include 'profile_form.html' with profile_icon='fa-person' hero_title='Support that stays connected' hero_text='Connect with the mother you support to follow the family care journey together.' form_title='Father profile details' form_subtitle='Link a mother’s profile now, or complete this step later.' submit_label='Save and continue' allow_skip=True %}
+{% endblock %}

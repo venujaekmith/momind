@@ -1,29 +1,44 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth.decorators import login_required
-from .models import (
-    PostpartumProfile, MoodEntry, JournalEntry, 
-    BreathingExercise, DailyTip, StressLog
-)
-from django.utils import timezone
-from dashboards.models import Pregnancy
-from .forms import MoodForm, JournalForm, StressForm
-from .models import AIStressAssessment
-from .forms import AIStressAssessmentForm
-from ai_services.services.postpartum_ai import PostpartumAIService
-import random
 import json
 import re
-import os
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
-from django.conf import settings
-from groq import Groq
-from .models import Conversation, Message, DrawingSession, StressAssessment
 
-client = Groq(api_key=settings.GROQ_API_KEY)
+from django.conf import settings
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Avg
+from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
+from django.utils import timezone
+from django.views.decorators.http import require_POST
+from groq import Groq
+
+from ai_services.services.postpartum_ai import PostpartumAIService
+from dashboards.models import Pregnancy
+from .forms import (
+    AIStressAssessmentForm,
+    JournalForm,
+    MoodForm,
+    PostpartumProfileForm,
+    StressForm,
+)
+from .models import (
+    AIStressAssessment,
+    BreathingExercise,
+    Conversation,
+    DailyTip,
+    DrawingSession,
+    JournalEntry,
+    Message,
+    MoodEntry,
+    PostpartumProfile,
+    StressAssessment,
+    StressLog,
+)
+
+try:
+    client = Groq(api_key=settings.GROQ_API_KEY) if settings.GROQ_API_KEY else None
+except Exception:
+    client = None
 
 
 CHAT_SYSTEM_PROMPT = """You are a warm, gentle postpartum support companion. Your role is to have a natural, caring conversation with a new mother about her day, feelings, sleep, baby, body, and current life situation.
@@ -112,7 +127,7 @@ def ai_stress_assessment(request):
 
 @login_required
 def assessment_result(request, assessment_id):
-    assessment = AIStressAssessment.objects.get(id=assessment_id, user=request.user)
+    assessment = get_object_or_404(AIStressAssessment, id=assessment_id, user=request.user)
     return render(request, 'assessment_result.html', {'assessment': assessment})
 
 @login_required
@@ -122,11 +137,15 @@ def postpartum_dashboard(request):
     pregnancy = None
     profile = None
 
+    pregnancies = Pregnancy.objects.filter(
+        mother__user=request.user,
+        status__in=['delivered', 'completed'],
+    ).order_by('-created_at')
+
     if pregnancy_id:
-        try:
-            pregnancy = Pregnancy.objects.get(id=pregnancy_id, mother__user=request.user)
-        except Pregnancy.DoesNotExist:
-            pregnancy = None
+        pregnancy = pregnancies.filter(id=pregnancy_id).first()
+    elif pregnancies.exists():
+        pregnancy = pregnancies.first()
 
     if pregnancy:
         profile, created = PostpartumProfile.objects.get_or_create(
@@ -142,9 +161,17 @@ def postpartum_dashboard(request):
         if not profile:
             profile = PostpartumProfile.objects.create(user=request.user)
 
-    recent_moods = MoodEntry.objects.filter(user=request.user)[:7]
+    mood_queryset = MoodEntry.objects.filter(user=request.user).order_by('-date', '-created_at')
+    recent_moods = mood_queryset[:7]
+    recent_stress = StressLog.objects.filter(user=request.user).order_by('-date', '-id')[:3]
+    recent_journals = JournalEntry.objects.filter(user=request.user)[:3]
     today_tip = DailyTip.objects.filter(week=profile.current_week).first()
     breathing = BreathingExercise.objects.all()[:3]
+    mood_summary = mood_queryset.aggregate(
+        average_mood=Avg('mood_score'),
+        average_energy=Avg('energy_level'),
+        average_sleep=Avg('sleep_hours'),
+    )
 
     context = {
         'profile': profile,
@@ -152,27 +179,36 @@ def postpartum_dashboard(request):
         'today_tip': today_tip,
         'breathing_exercises': breathing,
         'pregnancy': pregnancy,
+        'recent_stress': recent_stress,
+        'recent_journals': recent_journals,
+        'mood_summary': mood_summary,
+        'mood_logged_today': mood_queryset.filter(date=timezone.localdate()).exists(),
+        'latest_ai_assessment': AIStressAssessment.objects.filter(user=request.user).first(),
     }
-    # Include user's pregnancies for UI selection
-    try:
-        context['pregnancies'] = Pregnancy.objects.filter(mother__user=request.user).order_by('-created_at')
-    except Exception:
-        context['pregnancies'] = []
+    context['pregnancies'] = pregnancies
     return render(request, 'dashboardp.html', context)
 
 
 @login_required
 def log_mood(request):
+    today_entry = MoodEntry.objects.filter(
+        user=request.user,
+        date=timezone.localdate(),
+    ).order_by('-created_at').first()
     if request.method == "POST":
-        form = MoodForm(request.POST)
+        form = MoodForm(request.POST, instance=today_entry)
         if form.is_valid():
             mood = form.save(commit=False)
             mood.user = request.user
             mood.save()
+            messages.success(request, "Your mood check-in was saved.")
             return redirect('postpartum:postpartum_dashboard')
     else:
-        form = MoodForm()
-    return render(request, 'log_mood.html', {'form': form})
+        form = MoodForm(instance=today_entry)
+    return render(request, 'log_mood.html', {
+        'form': form,
+        'recent_moods': MoodEntry.objects.filter(user=request.user).order_by('-date', '-created_at')[:5],
+    })
 
 
 @login_required
@@ -183,18 +219,19 @@ def journal(request):
             entry = form.save(commit=False)
             entry.user = request.user
             entry.save()
-            return redirect('postpartum:dashboard')
+            messages.success(request, "Your journal entry was saved privately.")
+            return redirect('postpartum:journal')
     else:
         form = JournalForm()
-    return render(request, 'journal.html', {'form': form})
+    return render(request, 'journal.html', {
+        'form': form,
+        'entries': JournalEntry.objects.filter(user=request.user)[:8],
+    })
 
 
 @login_required
 def breathing_exercise(request, exercise_id=None):
-    if exercise_id:
-        exercise = BreathingExercise.objects.get(id=exercise_id)
-    else:
-        exercise = BreathingExercise.objects.first()
+    exercise = get_object_or_404(BreathingExercise, id=exercise_id)
     return render(request, 'breathing.html', {'exercise': exercise})
 
 
@@ -206,10 +243,81 @@ def stress_log(request):
             log = form.save(commit=False)
             log.user = request.user
             log.save()
-            return redirect('postpartum:dashboard')
+            messages.success(request, "Your stress check-in was saved.")
+            return redirect('postpartum:stress_log')
     else:
         form = StressForm()
-    return render(request, 'stress_log.html', {'form': form})
+    return render(request, 'stress_log.html', {
+        'form': form,
+        'recent_logs': StressLog.objects.filter(user=request.user).order_by('-date', '-id')[:6],
+    })
+
+
+@login_required
+def profile_settings(request):
+    pregnancy_id = request.GET.get('pregnancy') or request.POST.get('pregnancy')
+    pregnancy = None
+    pregnancies = Pregnancy.objects.filter(
+        mother__user=request.user,
+        status__in=['delivered', 'completed'],
+    ).order_by('-created_at')
+    if pregnancy_id:
+        pregnancy = pregnancies.filter(id=pregnancy_id).first()
+    elif pregnancies.exists():
+        pregnancy = pregnancies.first()
+
+    if pregnancy:
+        profile, _ = PostpartumProfile.objects.get_or_create(
+            pregnancy=pregnancy,
+            defaults={
+                'user': request.user,
+                'delivery_date': pregnancy.actual_delivery_date,
+            },
+        )
+    else:
+        profile = PostpartumProfile.objects.filter(user=request.user).order_by('-id').first()
+        if not profile:
+            profile = PostpartumProfile.objects.create(user=request.user)
+
+    if request.method == 'POST':
+        form = PostpartumProfileForm(request.POST, instance=profile)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Your postpartum profile was updated.")
+            target = reverse('postpartum:profile_settings')
+            if pregnancy:
+                target = f'{target}?pregnancy={pregnancy.id}'
+            return redirect(target)
+    else:
+        form = PostpartumProfileForm(instance=profile)
+
+    return render(request, 'profile_settings.html', {
+        'form': form,
+        'profile': profile,
+        'pregnancy': pregnancy,
+        'pregnancies': pregnancies,
+    })
+
+
+@login_required
+def wellness_history(request):
+    mood_entries = MoodEntry.objects.filter(user=request.user).order_by('-date', '-created_at')[:30]
+    stress_entries = StressLog.objects.filter(user=request.user).order_by('-date', '-id')[:30]
+    journal_entries = JournalEntry.objects.filter(user=request.user)[:12]
+    summaries = MoodEntry.objects.filter(user=request.user).aggregate(
+        average_mood=Avg('mood_score'),
+        average_energy=Avg('energy_level'),
+        average_sleep=Avg('sleep_hours'),
+    )
+    summaries['average_stress'] = StressLog.objects.filter(user=request.user).aggregate(
+        value=Avg('stress_level')
+    )['value']
+    return render(request, 'wellness_history.html', {
+        'mood_entries': mood_entries,
+        'stress_entries': stress_entries,
+        'journal_entries': journal_entries,
+        'summaries': summaries,
+    })
 
 
 def _parse_stress_data(text):
@@ -255,6 +363,7 @@ def chat_view(request):
     return render(request, 'postpartum/chat.html', {
         'conversation': conversation,
         'messages': messages,
+        'assessment': StressAssessment.objects.filter(user=request.user, conversation=conversation).first(),
     })
 
 
@@ -265,12 +374,12 @@ def _force_stress_assessment(conversation):
     messages = conversation.messages.all()
     history = [{"role": msg.role, "content": msg.content} for msg in messages]
 
+    if not client:
+        return None
     try:
         response = client.chat.completions.create(
             model="openai/gpt-oss-120b",   # or a stronger model like llama-3.3-70b
-            messages=history + [
-                {"role": "system", "content": STRESS_EXTRACTION_PROMPT}
-            ],
+            messages=[{"role": "system", "content": STRESS_EXTRACTION_PROMPT}] + history,
             temperature=0.5,
             max_tokens=600,
         )
@@ -288,12 +397,19 @@ def _force_stress_assessment(conversation):
 @login_required
 @require_POST
 def send_message(request):
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'error': 'Invalid request data'}, status=400)
     conv_id = data.get('conversation_id')
     user_text = data.get('message', '').strip()
 
     if not user_text:
         return JsonResponse({'error': 'Empty message'}, status=400)
+    if not conv_id:
+        return JsonResponse({'error': 'Conversation is required'}, status=400)
+    if len(user_text) > 4000:
+        return JsonResponse({'error': 'Message is too long'}, status=400)
 
     conversation = get_object_or_404(Conversation, id=conv_id, user=request.user)
 
@@ -305,19 +421,22 @@ def send_message(request):
                for msg in conversation.messages.all()]
 
     # Call Groq for normal response
-    response = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=history,
-        temperature=0.7,
-        max_tokens=1000,
-    )
-    raw_reply = response.choices[0].message.content
-
-    # Save full reply
-    Message.objects.create(conversation=conversation, role='assistant', content=raw_reply)
+    try:
+        if not client:
+            raise RuntimeError('AI service unavailable')
+        response = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[{'role': 'system', 'content': CHAT_SYSTEM_PROMPT}] + history,
+            temperature=0.7,
+            max_tokens=1000,
+        )
+        raw_reply = response.choices[0].message.content
+    except Exception:
+        raw_reply = "I’m here with you. What feels most important to talk about right now—your rest, recovery, the baby, or something else?"
 
     stress = _parse_stress_data(raw_reply)
     clean_reply = _clean_text(raw_reply)
+    Message.objects.create(conversation=conversation, role='assistant', content=clean_reply)
 
     result = {'reply': clean_reply, 'stress': None}
 
@@ -327,11 +446,14 @@ def send_message(request):
         stress = _force_stress_assessment(conversation)
 
     # Save assessment if we have stress data
-    if stress:
-        score = max(10, min(95, int(stress.get('score', 50))))
-        level = stress.get('level', 'moderate')
-        insight = stress.get('insight', '')
-        recommendation = stress.get('recommendation', '')
+    if isinstance(stress, dict):
+        try:
+            score = max(10, min(95, int(stress.get('score', 50))))
+        except (TypeError, ValueError):
+            score = 50
+        level = 'high' if score > 65 else ('moderate' if score > 35 else 'low')
+        insight = str(stress.get('insight', ''))
+        recommendation = str(stress.get('recommendation', ''))
         
         assessment, _ = StressAssessment.objects.get_or_create(
             user=request.user,
@@ -355,52 +477,47 @@ def send_message(request):
 @login_required
 @require_POST
 def analyze_drawing(request):
-    data = json.loads(request.body)
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'error': 'Invalid request data'}, status=400)
     image_b64 = data.get('image_data', '')
 
     if not image_b64:
         return JsonResponse({'error': 'No image data'}, status=400)
+    if len(image_b64) > 3_000_000:
+        return JsonResponse({'error': 'Drawing is too large'}, status=400)
 
     # Strip data URL prefix if present
     if image_b64.startswith('data:'):
         image_b64 = image_b64.split(',', 1)[1]
 
     # Groq Vision Call
-    response = client.chat.completions.create(
-        model="meta-llama/llama-4-scout-17b-16e-instruct",  # Strong vision model
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": DRAW_SYSTEM_PROMPT,
-                    },
-                    {
-                        "type": "image_url",
-                        "image_url": {
-                            "url": f"data:image/jpeg;base64,{image_b64}"
-                        },
-                    },
-                ],
-            }
-        ],
-        temperature=0.5,
-        max_tokens=800,
-    )
-
-    raw = response.choices[0].message.content.strip()
-    raw = re.sub(r'```json|```', '', raw).strip()
+    try:
+        if not client:
+            raise RuntimeError('AI service unavailable')
+        response = client.chat.completions.create(
+            model="meta-llama/llama-4-scout-17b-16e-instruct",
+            messages=[{"role": "user", "content": [
+                {"type": "text", "text": DRAW_SYSTEM_PROMPT},
+                {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_b64}"}},
+            ]}],
+            temperature=0.5,
+            max_tokens=800,
+        )
+        raw = re.sub(r'```json|```', '', response.choices[0].message.content.strip()).strip()
+        result = json.loads(raw)
+    except Exception:
+        result = PostpartumAIService().analyze_drawing(image_b64)
 
     try:
-        result = json.loads(raw)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Could not parse analysis'}, status=500)
-
-    score = max(10, min(95, int(result.get('score', 50))))
-    level = result.get('level', 'moderate')
-    insight = result.get('insight', '')
-    recommendation = result.get('recommendation', '')
+        score = max(10, min(95, int(result.get('score', 50))))
+    except (AttributeError, TypeError, ValueError):
+        score = 50
+        result = {}
+    level = 'high' if score > 65 else ('moderate' if score > 35 else 'low')
+    insight = str(result.get('insight', ''))
+    recommendation = str(result.get('recommendation', ''))
 
     # Save drawing session
     drawing = DrawingSession.objects.create(
@@ -432,8 +549,8 @@ def analyze_drawing(request):
     })
 
 
-# Other views remain the same...
 @login_required
+@require_POST
 def new_conversation(request):
     Conversation.objects.filter(user=request.user, is_active=True).update(is_active=False)
     conversation = Conversation.objects.create(user=request.user)

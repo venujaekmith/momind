@@ -7,7 +7,7 @@
             <h2><i class="fas fa-male"></i> Welcome, {{ user.username }}!</h2>
             <p>ID: <strong id="qrValue">{{ user.user_father.father_id }}</strong></p>
         </div>
-        <button onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
+        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
     </div>
     <div id="qrcode" style="margin-top: 1rem; display: none;"></div>
 </div>
@@ -56,7 +56,7 @@
                     </form>
                 </div>
             {% else %}
-                <button onclick="openModal('MOTHER')" class="btn-outline-pink">+ Add Mother</button>
+                <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink">+ Add Mother</button>
             {% endif %}
         </div>
         <div>
@@ -73,7 +73,7 @@
                     </form>
                 </div>
             {% else %}
-                <button onclick="openModal('MIDWIFE')" class="btn-outline-pink">+ Link Midwife</button>
+                <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink">+ Link Midwife</button>
             {% endif %}
         </div>
         <div>
@@ -90,7 +90,7 @@
                     </form>
                 </div>
             {% else %}
-                <button onclick="openModal('DOCTOR')" class="btn-outline-pink">+ Link Doctor</button>
+                <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink">+ Link Doctor</button>
             {% endif %}
         </div>
         <div>
@@ -107,7 +107,7 @@
                     </form>
                 </div>
             {% else %}
-                <button onclick="openModal('HOSPITAL')" class="btn-outline-pink">+ Link Hospital</button>
+                <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink">+ Link Hospital</button>
             {% endif %}
         </div>
     </div>

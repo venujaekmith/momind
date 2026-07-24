@@ -12,7 +12,7 @@
             <h2><i class="fas fa-user-md"></i> Welcome, Midwife {{ user.get_full_name|default:user.username }}!</h2>
             <p>ID: <strong id="qrValue">{{ user.user_midwife.midwife_id }}</strong> | Status: {% if user.user_midwife.is_verified %}✅ Verified{% else %}⏳ Pending{% endif %}</p>
         </div>
-        <button onclick="generateQR()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Generate QR</button>
+        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
     </div>
     <div id="qrcode" style="margin-top: 1rem;"></div>
 </div>
@@ -108,9 +108,61 @@
     {% endfor %}
 </div>
 
+<div class="card-pink">
+    <h3><i class="fas fa-user-doctor"></i> Upcoming Doctor Schedules</h3>
+    <p class="text-muted">Doctor appointments for mothers currently assigned to you.</p>
+    {% if doctor_schedules %}
+    <div class="table-responsive" style="margin-top: 1rem;">
+        <table class="table-modern">
+            <thead>
+                <tr>
+                    <th>Date and time</th>
+                    <th>Mother</th>
+                    <th>Appointment</th>
+                    <th>Doctor / creator</th>
+                    <th>Location</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appointment in doctor_schedules %}
+                <tr>
+                    <td>
+                        <strong>{{ appointment.scheduled_date|date:"d M, Y" }}</strong>
+                        <br><small>{{ appointment.scheduled_time|time:"H:i"|default:"Time not set" }}</small>
+                    </td>
+                    <td>
+                        {{ appointment.pregnancy.mother.user.get_full_name|default:appointment.pregnancy.mother.user.username }}
+                        <br><small>Pregnancy #{{ appointment.pregnancy.pregnancy_number }}</small>
+                    </td>
+                    <td>
+                        <strong>{{ appointment.title }}</strong>
+                        {% if appointment.notes %}<br><small>{{ appointment.notes|truncatechars:90 }}</small>{% endif %}
+                    </td>
+                    <td>
+                        {% if appointment.created_by %}
+                            {{ appointment.created_by.get_full_name|default:appointment.created_by.username }}
+                        {% else %}
+                            Not specified
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if appointment.clinic %}{{ appointment.clinic.name }}{% endif %}
+                        {% if appointment.clinic and appointment.location %}<br>{% endif %}
+                        {{ appointment.location|default:"Not specified" }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+        <p style="margin-top: 1rem;">No upcoming doctor appointments for your assigned mothers.</p>
+    {% endif %}
+</div>
+
 <!-- Calendar -->
 <div class="calendar-wrapper">
-    <h3><i class="fas fa-calendar-alt"></i> My Upcoming Visits</h3>
+    <h3><i class="fas fa-calendar-alt"></i> Midwife Visits and Doctor Schedules</h3>
     <div id="visitsCalendar" style="min-height: 400px;"></div>
 </div>
 
@@ -120,7 +172,16 @@ const visitEvents = [];
 visitEvents.push({
     title: "{{ visit.title|escapejs }} - {{ visit.pregnancy.mother.user.username }}",
     start: "{{ visit.scheduled_date|date:'Y-m-d' }}",
-    description: "{{ visit.notes|escapejs }}"
+    description: "{{ visit.notes|escapejs }}",
+    color: "#9b59b6"
+});
+{% endfor %}
+{% for appointment in doctor_schedules %}
+visitEvents.push({
+    title: "Doctor: {{ appointment.title|escapejs }} - {{ appointment.pregnancy.mother.user.username|escapejs }}",
+    start: "{{ appointment.scheduled_date|date:'Y-m-d' }}{% if appointment.scheduled_time %}T{{ appointment.scheduled_time|time:'H:i:s' }}{% endif %}",
+    description: "{{ appointment.notes|escapejs }}",
+    color: "#2878b5"
 });
 {% endfor %}
 
@@ -130,7 +191,6 @@ if (calendarEl) {
         initialView: 'dayGridMonth',
         headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
         events: visitEvents,
-        eventColor: '#9b59b6',
         height: 'auto'
     });
     calendar.render();

@@ -19,8 +19,8 @@
     <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
     
     <!-- QR Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.10/html5-qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     
     <style>
         /* ===== CUSTOM PROPERTIES ===== */
@@ -1369,6 +1369,11 @@
                     <textarea name="note" id="id_note" rows="3" placeholder="Add a short message to the recipient (optional)" class="form-control"></textarea>
                 </div>
                 <div id="reader" style="width:100%; min-height:200px; border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 0.5rem;"></div>
+                <p id="qrScannerStatus" class="text-muted" role="status" aria-live="polite" style="margin:0.75rem 0 0;"></p>
+                <div class="form-group" style="margin-top:0.75rem;">
+                    <label for="qrImageInput">Camera unavailable? Choose a QR image</label>
+                    <input type="file" id="qrImageInput" accept="image/*" class="form-control">
+                </div>
                 <div class="flex-between" style="margin-top: 1.25rem;">
                     <button type="button" onclick="closeModal()" class="btn-outline-pink">Cancel</button>
                     <button type="submit" class="btn-pink"><i class="fas fa-link"></i> Link Account</button>
@@ -1395,52 +1400,106 @@
     
     <script>
         let html5QrCode = null;
+        let qrScanLocked = false;
+
+        function setQrScannerStatus(message, isError = false) {
+            const status = document.getElementById('qrScannerStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#b42318' : '';
+        }
+
+        function normaliseScannedId(value) {
+            return String(value || '').trim().replace(/^FAMQR:/i, '');
+        }
+
+        function handleQrScan(decodedText) {
+            if (qrScanLocked) return;
+            const targetInput = document.getElementById('target_id');
+            const scannedId = normaliseScannedId(decodedText);
+            if (!targetInput || !scannedId) {
+                setQrScannerStatus('The QR code did not contain a valid member ID.', true);
+                return;
+            }
+
+            qrScanLocked = true;
+            targetInput.value = scannedId;
+            setQrScannerStatus(`Member ID ${scannedId} scanned successfully.`);
+            stopQrScanner().finally(() => {
+                document.querySelector('#linkModal form')?.requestSubmit();
+            });
+        }
+
+        async function stopQrScanner() {
+            if (!html5QrCode) return;
+            try {
+                if (html5QrCode.isScanning) await html5QrCode.stop();
+                html5QrCode.clear();
+            } catch (error) {
+                console.debug('QR scanner cleanup:', error);
+            }
+            html5QrCode = null;
+        }
         
         function openModal(role) {
             const modal = document.getElementById('linkModal');
             document.getElementById('modalRole').value = role;
             document.getElementById('modalTitle').innerText = "Link " + role.charAt(0) + role.slice(1).toLowerCase();
             document.getElementById('idLabel').innerText = role + " ID Number";
+            document.getElementById('target_id').value = '';
+            const imageInput = document.getElementById('qrImageInput');
+            if (imageInput) imageInput.value = '';
+            qrScanLocked = false;
             modal.style.display = 'flex';
-            setTimeout(startScanner, 300);
+            setQrScannerStatus('Requesting camera access…');
+            setTimeout(startScanner, 150);
         }
         
-        function closeModal() {
+        async function closeModal() {
             const modal = document.getElementById('linkModal');
             modal.style.display = 'none';
-            if (html5QrCode && html5QrCode.stop) {
-                html5QrCode.stop();
+            await stopQrScanner();
+        }
+        
+        async function startScanner() {
+            const readerElement = document.getElementById("reader");
+            if (!readerElement) return;
+
+            if (typeof Html5Qrcode === 'undefined') {
+                setQrScannerStatus('QR scanner could not load. Enter the ID manually or refresh the page.', true);
+                return;
+            }
+
+            await stopQrScanner();
+            readerElement.innerHTML = '';
+            html5QrCode = new Html5Qrcode('reader');
+
+            try {
+                await html5QrCode.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1 },
+                    handleQrScan,
+                    () => {}
+                );
+                setQrScannerStatus('Point the camera at the QR code.');
+            } catch (error) {
+                console.error('Camera error:', error);
+                setQrScannerStatus(
+                    'Camera access failed. Allow camera permission, use HTTPS or localhost, or choose a QR image below.',
+                    true
+                );
             }
         }
         
-        function startScanner() {
-            const readerElement = document.getElementById("reader");
-            if (!readerElement) return;
-            
-            html5QrCode = new Html5Qrcode("reader");
-            Html5Qrcode.getCameras().then(devices => {
-                if (!devices || devices.length === 0) {
-                    alert("No camera found");
-                    return;
-                }
-                const cameraId = devices[0].id;
-                html5QrCode.start(cameraId, { fps: 10, qrbox: 250 }, (decodedText) => {
-                    document.getElementById("target_id").value = decodedText;
-                    if (html5QrCode) {
-                        html5QrCode.stop().then(() => {
-                            document.querySelector("#linkModal form").submit();
-                        });
-                    }
-                });
-            }).catch(err => {
-                console.error("Camera error:", err);
-            });
-        }
-        
         function renderQRCode(container, value) {
-            if (!container || !value) return;
+            if (!container || !value) return false;
             container.innerHTML = "";
+            if (typeof QRCode === 'undefined') {
+                container.textContent = 'QR generator could not load. Refresh the page and try again.';
+                return false;
+            }
             new QRCode(container, { text: value, width: 220, height: 220 });
+            return true;
         }
 
         function showQRCodeModal() {
@@ -1449,9 +1508,18 @@
             const modal = document.getElementById("qrModal");
             const container = document.getElementById("qrcodeModalContainer");
             const text = document.getElementById("qrModalText");
+            if (!value) {
+                if (container) container.textContent = 'No member ID is available for this account.';
+                if (modal) modal.style.display = 'flex';
+                return;
+            }
             renderQRCode(container, value);
             if (text) text.innerText = `ID: ${value}`;
             if (modal) modal.style.display = 'flex';
+        }
+
+        function generateQR() {
+            showQRCodeModal();
         }
 
         function closeQRModal() {
@@ -1460,6 +1528,26 @@
             if (modal) modal.style.display = 'none';
             if (container) container.innerHTML = '';
         }
+
+        document.getElementById('qrImageInput')?.addEventListener('change', async function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            if (typeof Html5Qrcode === 'undefined') {
+                setQrScannerStatus('QR scanner could not load. Enter the ID manually.', true);
+                return;
+            }
+
+            await stopQrScanner();
+            html5QrCode = new Html5Qrcode('reader');
+            setQrScannerStatus('Reading QR image…');
+            try {
+                const decodedText = await html5QrCode.scanFile(file, true);
+                handleQrScan(decodedText);
+            } catch (error) {
+                console.error('QR image scan error:', error);
+                setQrScannerStatus('No readable QR code was found in that image.', true);
+            }
+        });
 
         function formatAIOutput(text) {
             text = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");

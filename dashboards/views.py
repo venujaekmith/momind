@@ -347,12 +347,25 @@ def midwife_dashboard(request):
         scheduled_date__lte=timezone.now().date() + timedelta(weeks=8)
     ).select_related('pregnancy__mother__user').order_by('scheduled_date')
 
+    # Doctor appointments for mothers who are assigned to this midwife.  Scope the
+    # query through all_pregnancies so a midwife cannot see unrelated schedules.
+    doctor_schedules = ScheduleEvent.objects.filter(
+        pregnancy__in=all_pregnancies,
+        event_type="doctor_appointment",
+        scheduled_date__gte=timezone.now().date(),
+    ).select_related(
+        'pregnancy__mother__user',
+        'created_by',
+        'clinic',
+    ).order_by('scheduled_date', 'scheduled_time')
+
     context = {
         "families": Family.objects.filter(midwife=midwife),
         "active_pregnancies": active_pregnancies,
         "postpartum_pregnancies": postpartum_pregnancies,
         "all_pregnancies": all_pregnancies,
         "upcoming_visits": upcoming_visits,
+        "doctor_schedules": doctor_schedules,
         "total_active": active_pregnancies.count(),
         "total_postpartum": postpartum_pregnancies.count(),
         "total_pregnancies": all_pregnancies.count(),
@@ -1489,4 +1502,3 @@ Give a helpful, personalized, and caring response.
 
     except Exception as e:
         return f"⚠️ AI service is temporarily unavailable. Please try again later. ({str(e)})"
-    

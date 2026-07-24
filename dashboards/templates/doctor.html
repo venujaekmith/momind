@@ -12,7 +12,7 @@
             <h2><i class="fas fa-user-md"></i> Doctor Dashboard</h2>
             <p>Welcome Dr. {{ user.username }} | ID: <strong id="qrValue">{{ user.user_doctor.doctor_id }}</strong></p>
         </div>
-        <button onclick="generateQR()" class="btn-outline-pink">Generate QR</button>
+        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
     </div>
     <div id="qrcode" style="margin-top: 1rem;"></div>
 </div>

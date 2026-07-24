@@ -5,7 +5,7 @@ class MultipleFileInput(forms.ClearableFileInput):
     allow_multiple_selected = True
 
 class VisitOverrideForm(forms.Form):
-    date = forms.DateField()
+    date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
 
 class MultipleFileField(forms.FileField):
 
@@ -39,6 +39,10 @@ class PregnancyForm(forms.ModelForm):
             "pre_pregnancy_weight",
             "is_high_risk",
         ]
+        widgets = {
+            "last_menstrual_period": forms.DateInput(attrs={'type': 'date'}),
+            "expected_delivery_date": forms.DateInput(attrs={'type': 'date'}),
+        }
 
 class PregnancyProgressForm(forms.ModelForm):
     class Meta:
@@ -58,6 +62,9 @@ class LabTestForm(forms.ModelForm):
         model = LabTest
         fields = "__all__"
         exclude = ["pregnancy","id","recorded_by"]
+        widgets = {
+            "taken_date": forms.DateInput(attrs={'type': 'date'}),
+        }
 
 
 # In forums.py
@@ -104,6 +111,9 @@ class EndPregnancyForm(forms.ModelForm):
     class Meta:
         model = Pregnancy
         fields = ['actual_delivery_date']
+        widgets = {
+            'actual_delivery_date': forms.DateInput(attrs={'type': 'date'}),
+        }
 
     delivery_type = forms.ChoiceField(
         choices=[

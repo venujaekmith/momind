@@ -1,0 +1,125 @@
+:root {
+    --ui-primary: #d94f82;
+    --ui-primary-dark: #a93662;
+    --ui-heading: #442b35;
+    --ui-text: #67515a;
+    --ui-muted: #8a737c;
+    --ui-bg: #fff7f9;
+    --ui-surface: #ffffff;
+    --ui-border: #efd0d9;
+    --ui-radius: 14px;
+    --ui-shadow: 0 10px 28px rgba(104, 42, 67, .09);
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { max-width: 100%; overflow-x: hidden; }
+body {
+    max-width: 100%;
+    margin: 0;
+    overflow-x: hidden;
+    color: var(--ui-text);
+    background: var(--ui-bg);
+    font-family: Inter, Arial, sans-serif;
+    line-height: 1.5;
+}
+img, svg, video, canvas { max-width: 100%; height: auto; }
+input, select, textarea, button { max-width: 100%; font: inherit; }
+textarea { resize: vertical; }
+a { overflow-wrap: anywhere; }
+
+.container {
+    width: min(100% - 2rem, 1200px);
+    margin-inline: auto;
+    padding-block: 1.5rem;
+}
+.row { display: flex; flex-wrap: wrap; margin: -.75rem; }
+.row > [class*="col-"] { min-width: 0; padding: .75rem; }
+.col-md-6 { flex: 0 0 50%; max-width: 50%; }
+
+.card, .list-group-item {
+    min-width: 0;
+    padding: 1.15rem;
+    background: var(--ui-surface);
+    border: 1px solid var(--ui-border);
+    border-radius: var(--ui-radius);
+    box-shadow: var(--ui-shadow);
+}
+.card { margin-bottom: 1rem; }
+.list-group { display: grid; gap: .75rem; margin: 0; padding: 0; list-style: none; }
+.list-group-item { margin: 0; overflow-wrap: anywhere; }
+
+form p { margin: 0 0 1rem; }
+label { display: inline-block; margin-bottom: .35rem; color: var(--ui-heading); font-weight: 650; }
+.form-control,
+form input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+form select,
+form textarea {
+    width: 100%;
+    min-height: 44px;
+    padding: .65rem .8rem;
+    color: var(--ui-heading);
+    background: #fff;
+    border: 1px solid #dfb8c5;
+    border-radius: 9px;
+    outline: 0;
+}
+form textarea { min-height: 100px; }
+form input:focus, form select:focus, form textarea:focus {
+    border-color: var(--ui-primary);
+    box-shadow: 0 0 0 3px rgba(217, 79, 130, .14);
+}
+.form-inline { display: flex; align-items: end; flex-wrap: wrap; gap: .55rem; }
+.form-inline .form-control { flex: 1 1 150px; width: auto; }
+
+.btn, button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .4rem;
+    min-height: 42px;
+    padding: .6rem 1rem;
+    color: #fff;
+    background: var(--ui-primary);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    cursor: pointer;
+    text-decoration: none;
+}
+.btn-sm { min-height: 34px; padding: .4rem .7rem; font-size: .875rem; }
+.btn-success { background: #31845f; }
+.btn-outline-secondary { color: #654b55; background: #fff; border-color: #cdb9c0; }
+
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: .7rem; border-bottom: 1px solid var(--ui-border); text-align: left; vertical-align: top; }
+th { color: var(--ui-heading); white-space: nowrap; }
+td { overflow-wrap: anywhere; }
+
+.d-inline { display: inline; }
+.mt-2 { margin-top: .5rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mr-1, .mr-2 { margin-right: 0 !important; }
+
+@media (max-width: 768px) {
+    .container { width: min(100% - 1rem, 1200px); padding-block: 1rem; }
+    .row { margin: 0; gap: 1rem; }
+    .row > [class*="col-"], .col-md-6 { flex: 0 0 100%; max-width: 100%; padding: 0; }
+    .card, .list-group-item { padding: 1rem; }
+    .form-inline { align-items: stretch; flex-direction: column; }
+    .form-inline .form-control, .form-inline .btn, .form-inline button { width: 100%; }
+    table {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    table thead, table tbody { min-width: 640px; }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: clamp(1.5rem, 8vw, 2rem); }
+    h2 { font-size: 1.35rem; }
+    .btn, button { width: 100%; }
+    form.d-inline .btn, form.d-inline button { width: auto; }
+}

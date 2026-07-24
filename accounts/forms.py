@@ -48,6 +48,10 @@ class MotherDetailsForm(forms.ModelForm):
             "home_latitude",
             "home_longitude",
         ]
+        widgets = {
+            "home_latitude": forms.HiddenInput(),
+            "home_longitude": forms.HiddenInput(),
+        }
 
 class FatherDetailsForm(forms.ModelForm):
     class Meta:

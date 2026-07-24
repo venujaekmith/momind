@@ -1,6 +1,11 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+{% include 'dashboard_role_theme.html' %}
+{% endblock %}
+
 {% block content %}
+<div class="role-dashboard-page father-dashboard-page">
 <div class="card-pink">
     <div class="flex-between">
         <div>
@@ -169,6 +174,7 @@
 {% endif %}
 
 {% endif %}
+</div>
 
 <script>
 const events = [];

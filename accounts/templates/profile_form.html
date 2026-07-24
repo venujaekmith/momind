@@ -17,12 +17,16 @@
                 {% csrf_token %}
                 {% if form.non_field_errors %}<div class="account-error">{{ form.non_field_errors }}</div>{% endif %}
                 {% for field in form %}
+                {% if field.is_hidden %}
+                {{ field }}
+                {% else %}
                 <div class="account-field">
                     <label for="{{ field.id_for_label }}">{{ field.label }}</label>
                     {{ field }}
                     {% if field.help_text %}<small class="account-help">{{ field.help_text|safe }}</small>{% endif %}
                     {% for error in field.errors %}<div class="account-error">{{ error }}</div>{% endfor %}
                 </div>
+                {% endif %}
                 {% endfor %}
 
                 <div class="account-button-row">
@@ -37,3 +41,27 @@
         </div>
     </section>
 </main>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const latitudeInput = document.getElementById('id_home_latitude');
+    const longitudeInput = document.getElementById('id_home_longitude');
+    if (!latitudeInput || !longitudeInput || !navigator.geolocation) return;
+
+    navigator.geolocation.getCurrentPosition(
+        function (position) {
+            latitudeInput.value = position.coords.latitude.toFixed(7);
+            longitudeInput.value = position.coords.longitude.toFixed(7);
+        },
+        function () {
+            // Location is optional; registration remains available if access
+            // is denied, unavailable, or the request times out.
+        },
+        {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 300000
+        }
+    );
+});
+</script>

@@ -90,6 +90,10 @@ This project depends on the packages listed in `req.txt`, including:
 - `/ai/` — AI services endpoints
 - `/postpartum/` — postpartum workflows
 
+
+## future enhancements
+full hospital flow (q manegment smart scheduling)
+
 ## License
 
 Add license information here if applicable.

@@ -1,14 +1,14 @@
 {% extends 'basec.html' %}
 
 {% block content %}
-<div class="card-pink" style="max-width: 800px; margin: 0 auto;">
+<div class="card-pink page-shell--form">
     <h2><i class="fas fa-baby"></i> Add Baby Development Record</h2>
     <p><strong>Baby:</strong> {{ baby }} | <strong>Current Age:</strong> {{ baby_age }}</p>
     
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
-        <div class="flex-between" style="margin-top: 1.5rem;">
+        <div class="form-actions">
             <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Cancel</a>
             <button type="submit" class="btn-pink"><i class="fas fa-save"></i> Save Development Record</button>
         </div>

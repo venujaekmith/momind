@@ -93,7 +93,6 @@ This project depends on the packages listed in `req.txt`, including:
 
 ## future enhancements
 full hospital flow (q manegment smart scheduling)
+smart postpartum manegment system
+more engagement features on dashboard such as
 
-## License
-
-Add license information here if applicable.

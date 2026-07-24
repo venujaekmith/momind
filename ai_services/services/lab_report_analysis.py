@@ -50,8 +50,19 @@ class LabReportAnalysisService:
         }
 
     def _build_context(self, lab_test: LabTest) -> Dict[str, Any]:
-        attachments = list(lab_test.attachments.all().order_by("uploaded_at"))
+        # An unsaved lab can still be analyzed (for example during form
+        # validation), but Django cannot query its reverse relation yet.
+        attachments = (
+            list(lab_test.attachments.all().order_by("uploaded_at"))
+            if lab_test.pk
+            else []
+        )
         attachment_text = self._collect_attachment_text(attachments)
+        pregnancy = None
+        if getattr(lab_test, "pregnancy_id", None):
+            pregnancy = lab_test.pregnancy
+        mother = getattr(pregnancy, "mother", None)
+        user = getattr(mother, "user", None)
         return {
             "test_name": lab_test.test_name,
             "result_value": lab_test.result_value,
@@ -61,8 +72,12 @@ class LabReportAnalysisService:
             "taken_date": lab_test.taken_date,
             "attachment_text": attachment_text,
             "attachment_count": len(attachments),
-            "pregnancy_week": getattr(lab_test.pregnancy, "get_pregnancy_week", lambda: None)(),
-            "mother_name": getattr(lab_test.pregnancy.mother.user, "get_full_name", lambda: lab_test.pregnancy.mother.user.username)(),
+            "pregnancy_week": getattr(pregnancy, "get_pregnancy_week", lambda: None)(),
+            "mother_name": (
+                user.get_full_name() or user.username
+                if user
+                else ""
+            ),
         }
 
     def _collect_attachment_text(self, attachments: List[LabAttachment]) -> str:

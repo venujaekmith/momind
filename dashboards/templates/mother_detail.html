@@ -305,7 +305,13 @@ if (riskForm) {
             body: new FormData(riskForm),
             headers: { "X-Requested-With": "XMLHttpRequest" }
         })
-        .then(res => res.json())
+        .then(async res => {
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || "AI assessment could not be completed.");
+            }
+            return data;
+        })
         .then(data => {
             const levelClass = data.risk_level === "low" ? "low" : data.risk_level === "medium" ? "medium" : "high";
             document.getElementById("modalBody").innerHTML = `
@@ -316,12 +322,21 @@ if (riskForm) {
                 <hr class="modal-divider">
                 <div id="aiExplanation" class="markdown-body"></div>
             `;
-            document.getElementById("aiExplanation").innerHTML = marked.parse(data.explanation);
+            const explanation = data.explanation || "Assessment completed. No detailed explanation is available.";
+            document.getElementById("aiExplanation").innerHTML =
+                typeof marked !== "undefined" ? marked.parse(explanation) : explanation;
         })
-        .catch(() => {
-            document.getElementById("modalBody").innerHTML = "<p class='error-txt'>CRITICAL ERROR: AI Evaluation pipeline failed.</p>";
+        .catch(error => {
+            document.getElementById("modalBody").innerHTML =
+                `<div class="alert alert-danger"><i class="fas fa-circle-exclamation"></i><span>${escapeHtml(error.message)}</span></div>`;
         });
     });
+}
+
+function escapeHtml(value) {
+    const element = document.createElement("div");
+    element.textContent = String(value || "");
+    return element.innerHTML;
 }
 function closeRiskModal() { document.getElementById("riskModal").style.display = "none"; }
 

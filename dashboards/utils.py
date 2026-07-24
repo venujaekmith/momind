@@ -5,6 +5,7 @@ from django.utils import timezone
 
 def get_baby_size_info(week):
     data = {
+        0:  {"size": "Poppy seed", "length": "Less than 0.1 cm", "weight": "Less than 1g"},
         # --- FIRST TRIMESTER ---
         1:  {"size": "Poppy seed", "length": "0.1 cm", "weight": "Less than 1g"},
         2:  {"size": "Poppy seed", "length": "0.1 cm", "weight": "Less than 1g"},
@@ -52,8 +53,14 @@ def get_baby_size_info(week):
         40: {"size": "Pumpkin", "length": "51.2 cm", "weight": "3.4kg"},
     }
     
-    # Return the exact week info or a default placeholder
-    return data.get(week, {"size": "Growing...", "length": "N/A", "weight": "N/A"})
+    if week is None:
+        return None
+
+    # Use the nearest supported comparison for boundary weeks.
+    supported_week = max(0, min(int(week), 40))
+    info = data[supported_week].copy()
+    info["week"] = week
+    return info
 
 
 

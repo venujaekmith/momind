@@ -3,7 +3,7 @@ from django.http import JsonResponse
 from django.views import View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from dashboards.models import Pregnancy, RiskAssessment, LabTest
 from .services.risk_assessment import AdvancedPregnancyRiskService
 from .services.postpartum_ai import PostpartumAIService
@@ -30,7 +30,7 @@ class RiskAssessmentView(View):
             service = AdvancedPregnancyRiskService()
             assessment = service.calculate_risk(pregnancy)
 
-            return JsonResponse({
+            result = {
                 "success": True,
                 "risk_score": assessment.risk_score,
                 "risk_level": assessment.risk_level,
@@ -40,7 +40,11 @@ class RiskAssessmentView(View):
                 "model_version": assessment.prediction_model_version,
                 "lab_report_summary": assessment.factors.get("lab_report_summary"),
                 "lab_report_analysis": assessment.factors.get("lab_report_analysis"),
-            })
+            }
+
+            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+                return JsonResponse(result)
+            return redirect("ai_services:show_risk", pregnancy_id=pregnancy.id)
 
         except Exception as e:
             return JsonResponse({

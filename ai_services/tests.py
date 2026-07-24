@@ -33,3 +33,5 @@ class LabReportAnalysisServiceTests(SimpleTestCase):
         self.assertTrue(analysis["plain_language"])
         self.assertIn("recommendations", analysis)
         self.assertIn("urgency", analysis)
+
+        self.assertEqual(analysis["urgency"], "monitor")

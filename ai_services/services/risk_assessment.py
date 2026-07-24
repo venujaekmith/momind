@@ -1,9 +1,10 @@
 # ai_service/services/risk_assessment.py
 import uuid
-import numpy as np
 import pandas as pd
 import xgboost as xgb
 from datetime import timedelta
+from pathlib import Path
+from django.conf import settings
 from django.utils import timezone
 from django.db import transaction
 
@@ -26,16 +27,17 @@ class AdvancedPregnancyRiskService:
         self.lab_analysis_service = LabReportAnalysisService()
 
     def _load_or_train_model(self):
+        model_path = Path(settings.BASE_DIR) / "ai_services" / "models" / "risk_model.json"
         try:
             model = xgb.Booster()
-            model.load_model('ai_service/models/risk_model.json')
+            model.load_model(str(model_path))
             return model
         except Exception:
-            X = np.random.rand(2000, 12)
-            y = np.random.randint(0, 4, 2000)
-            dtrain = xgb.DMatrix(X, label=y)
-            params = {'objective': 'multi:softmax', 'num_class': 4, 'max_depth': 6}
-            return xgb.train(params, dtrain, num_boost_round=100)
+            # Do not train a random model during a web request. Apart from
+            # delaying every assessment, random labels make results unstable.
+            # _predict_with_ml provides a deterministic fallback until a
+            # versioned model is deployed at model_path.
+            return None
 
     def calculate_risk(self, pregnancy: Pregnancy):
         with transaction.atomic():
@@ -92,17 +94,17 @@ class AdvancedPregnancyRiskService:
         latest_stress = StressLog.objects.filter(user=mother.user).order_by('-date').first()
 
         return {
-            "age": getattr(details, 'age', 28) if details else 28,
+            "age": (getattr(details, 'age', None) or 28) if details else 28,
             "gestational_week": pregnancy.get_pregnancy_week() or 0,
             "bmi": self._calculate_bmi(details, pregnancy.pre_pregnancy_weight),
             "has_diabetes": int(getattr(details, 'has_diabetes', False)),
             "has_hypertension": int(getattr(details, 'has_hypertension', False)),
-            "previous_pregnancies": getattr(details, 'previous_pregnancies', 0),
-            "bp_systolic": latest_progress.bp_systolic if latest_progress else 0,
-            "bp_diastolic": latest_progress.bp_diastolic if latest_progress else 0,
-            "fetal_heart_rate": latest_fetal.heart_rate if latest_fetal else 0,
+            "previous_pregnancies": (getattr(details, 'previous_pregnancies', None) or 0) if details else 0,
+            "bp_systolic": (latest_progress.bp_systolic or 0) if latest_progress else 0,
+            "bp_diastolic": (latest_progress.bp_diastolic or 0) if latest_progress else 0,
+            "fetal_heart_rate": (latest_fetal.heart_rate or 0) if latest_fetal else 0,
             "movement_level_low": int(latest_fetal.movement_level == "low" if latest_fetal else False),
-            "weight_gain": round((latest_weight.weight - pregnancy.pre_pregnancy_weight), 2)
+            "weight_gain": round(float(latest_weight.weight) - float(pregnancy.pre_pregnancy_weight), 2)
                           if latest_weight and pregnancy.pre_pregnancy_weight else 0.0,
             "abnormal_lab_count": LabTest.objects.filter(
                 pregnancy=pregnancy, is_abnormal=True).count(),
@@ -118,6 +120,21 @@ class AdvancedPregnancyRiskService:
             "previous_pregnancies", "bp_systolic", "bp_diastolic", "fetal_heart_rate",
             "movement_level_low", "weight_gain", "abnormal_lab_count"
         ]
+
+        if self.ml_model is None:
+            score = 0.0
+            score += 30 if features["has_hypertension"] else 0
+            score += 25 if features["has_diabetes"] else 0
+            score += 25 if features["bp_systolic"] >= 140 else 0
+            score += 15 if (features["bp_diastolic"] or 0) >= 90 else 0
+            score += 25 if features["movement_level_low"] else 0
+            score += min(20, features["abnormal_lab_count"] * 10)
+            score += 10 if features["age"] < 18 or features["age"] >= 35 else 0
+            score = min(100.0, score)
+            level = self._determine_risk_level(score)
+            probabilities = [0.0, 0.0, 0.0, 0.0]
+            probabilities[["low", "medium", "high", "critical"].index(level)] = 1.0
+            return score, level, probabilities
 
         df = pd.DataFrame([features])[feature_order]
 
@@ -138,7 +155,7 @@ class AdvancedPregnancyRiskService:
         score = 0.0
         factors = []
 
-        if features["bp_systolic"] >= 140:
+        if (features["bp_systolic"] or 0) >= 140:
             score += 35
             factors.append("High Blood Pressure")
         if features["movement_level_low"]:

@@ -122,9 +122,26 @@
 {% if not is_postpartum and pregnancy %}
 <div class="card-pink">
     <h3><i class="fas fa-baby"></i> Baby's Growth</h3>
-    <p>Week: {{ pregnancy.get_pregnancy_week }}</p>
     {% if baby_info %}
-    <p>Baby is size of a <strong>{{ baby_info.size }}</strong></p>
+    <div class="grid-3">
+        <div class="stat-card">
+            <i class="fas fa-seedling stat-icon"></i>
+            <div class="stat-number">{{ baby_info.size }}</div>
+            <div class="stat-label">Size at week {{ baby_info.week }}</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-ruler-vertical stat-icon"></i>
+            <div class="stat-number">{{ baby_info.length }}</div>
+            <div class="stat-label">Approximate length</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-weight-scale stat-icon"></i>
+            <div class="stat-number">{{ baby_info.weight }}</div>
+            <div class="stat-label">Approximate weight</div>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Growth estimates will appear after pregnancy dates are added.</p>
     {% endif %}
 </div>
 

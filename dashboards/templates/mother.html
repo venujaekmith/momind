@@ -262,11 +262,28 @@
 {% if not is_postpartum and pregnancy %}
 <div class="card-pink">
     <h3><i class="fas fa-baby"></i> Baby's Growth This Week</h3>
-    <p>Your baby is the size of a <strong>{{ baby_info.size }}</strong>!</p>
-    <ul>
-        <li>📏 Length: {{ baby_info.length }}</li>
-        <li>⚖️ Weight: {{ baby_info.weight }}</li>
-    </ul>
+    {% if baby_info %}
+    <div class="grid-3">
+        <div class="stat-card">
+            <i class="fas fa-seedling stat-icon"></i>
+            <div class="stat-number">{{ baby_info.size }}</div>
+            <div class="stat-label">Comparable size</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-ruler-vertical stat-icon"></i>
+            <div class="stat-number">{{ baby_info.length }}</div>
+            <div class="stat-label">Approximate length</div>
+        </div>
+        <div class="stat-card">
+            <i class="fas fa-weight-scale stat-icon"></i>
+            <div class="stat-number">{{ baby_info.weight }}</div>
+            <div class="stat-label">Approximate weight</div>
+        </div>
+    </div>
+    <p class="text-muted">Week {{ baby_info.week }} estimates are general guides; individual growth varies.</p>
+    {% else %}
+    <p class="text-muted">Add the last menstrual period to display this week's baby growth estimate.</p>
+    {% endif %}
     <a href="{% url 'ai_services:show_risk' pregnancy.id %}" class="btn-pink">
         <i class="fas fa-brain"></i> Run AI Risk Assessment
     </a>

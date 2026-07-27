@@ -37,7 +37,7 @@
 {% if not is_postpartum and pregnancy %}
 <div class="alert alert-info">
     {% if pregnancy %}
-        <a href="{% url 'dashboards:end_pregnancy' pregnancy.id %}" class="btn-pink">I Have Delivered - End Pregnancy</a>
+        <a href="{% url 'dashboards:end_pregnancy' pregnancy.id %}" class="btn-pink">Delivered - End Pregnancy</a>
         <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Mother Details</a>
     {% endif %}
 </div>

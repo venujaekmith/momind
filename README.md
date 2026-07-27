@@ -61,6 +61,29 @@ python3 manage.py runserver
 
 6. Open the app in your browser at `http://127.0.0.1:8000/`.
 
+## Demo data
+
+Create or refresh a realistic test data set with:
+
+```bash
+python3 manage.py seed_demo
+```
+
+The command is safe to run repeatedly and does not remove existing accounts. It
+creates these role-specific demo logins:
+
+- `demo_mother`
+- `demo_postpartum`
+- `demo_father`
+- `demo_midwife`
+- `demo_doctor`
+- `demo_hospital`
+- `demo_staff`
+
+The default password for every demo login is `MomindDemo2026!`. Use
+`python3 manage.py seed_demo --password "your-password"` to choose a different
+demo password.
+
 ## Notes
 
 - The project currently uses SQLite by default (`db.sqlite3`).
@@ -95,4 +118,3 @@ This project depends on the packages listed in `req.txt`, including:
 full hospital flow (q manegment smart scheduling)
 smart postpartum manegment system
 more engagement features on dashboard such as
-

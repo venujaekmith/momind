@@ -4,7 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Maternal Support</title>
+    <title>MoMind | Maternal Support</title>
+    <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
     <link href="{% static 'core/select-theme.css' %}" rel="stylesheet">
 
     <style>
@@ -38,7 +39,7 @@
             text-decoration: none;
         }
 
-        body > h1,
+        .community-brand,
         body > hr,
         body > main {
             width: min(100% - 2rem, 1200px);
@@ -46,10 +47,34 @@
             margin-right: auto;
         }
 
-        body > h1 { margin-top: 1.5rem; }
+        .community-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            color: #743149;
+        }
+
+        .community-brand img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+        }
+
+        .community-brand h1 {
+            margin: 0;
+            font-size: 1.8rem;
+        }
+
+        .community-brand p {
+            margin: 0.15rem 0 0;
+            color: #9a6076;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
 
         @media (max-width: 600px) {
-            body > h1,
+            .community-brand,
             body > hr,
             body > main { width: min(100% - 1rem, 1200px); }
         }
@@ -57,7 +82,13 @@
 </head>
 <body>
 
-<h1>Maternal Support Platform</h1>
+<header class="community-brand">
+    <img src="{% static 'core/images/momind-logo.png' %}" alt="">
+    <div>
+        <h1>MoMind</h1>
+        <p>Maternal Support Platform</p>
+    </div>
+</header>
 
 <hr>
 

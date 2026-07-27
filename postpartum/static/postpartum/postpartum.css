@@ -21,7 +21,7 @@ button, input, select, textarea { font: inherit; }
 
 .pp-header { position: sticky; top: 0; z-index: 20; min-height: 72px; display: flex; align-items: center; gap: 1.25rem; padding: .7rem max(1rem, 4vw); background: rgba(255,255,255,.92); border-bottom: 1px solid rgba(232,93,143,.18); box-shadow: 0 6px 24px rgba(126,42,75,.08); backdrop-filter: blur(15px); }
 .pp-brand { display: inline-flex; align-items: center; gap: .65rem; color: var(--pp-plum); text-decoration: none; flex-shrink: 0; }
-.pp-brand-icon { width: 40px; height: 40px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--pp-primary), var(--pp-primary-dark)); border-radius: 12px; box-shadow: 0 6px 14px rgba(201,67,115,.25); }
+.pp-brand-icon { width: 40px; height: 40px; display: block; object-fit: contain; flex-shrink: 0; filter: drop-shadow(0 5px 8px rgba(126,42,75,.18)); }
 .pp-brand strong, .pp-brand small { display: block; }
 .pp-brand strong { font-size: 1.14rem; line-height: 1.1; letter-spacing: -.03em; }
 .pp-brand small { margin-top: .12rem; color: #ad6881; font-size: .66rem; font-weight: 600; }

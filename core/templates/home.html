@@ -1,9 +1,11 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>MoMind - Care Beyond Birth | Empowering Mothers Together</title>
+    <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <!-- Font Awesome 6 -->
@@ -38,6 +40,19 @@
             top: 0;
             z-index: 1000;
             border-bottom: 1px solid rgba(232, 93, 143, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .logo img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            flex-shrink: 0;
         }
 
         .logo h1 {
@@ -368,6 +383,18 @@
             font-size: 1.1rem;
         }
 
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .footer-brand img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+
         .footer-col p, .footer-col a {
             color: #d4b9c4;
             text-decoration: none;
@@ -451,8 +478,11 @@
     <!-- Navigation -->
     <nav class="navbar">
         <div class="logo">
-            <h1>🌸 MoMind</h1>
-            <p>care beyond birth, empowering mothers, together</p>
+            <img src="{% static 'core/images/momind-logo.png' %}" alt="MoMind logo">
+            <div>
+                <h1>MoMind</h1>
+                <p>care beyond birth, empowering mothers, together</p>
+            </div>
         </div>
         <div class="nav-links">
             <a href="#home">Home</a>
@@ -579,7 +609,7 @@
     <footer id="contact" class="footer">
         <div class="footer-content">
             <div class="footer-col">
-                <h4>🌸 MoMind</h4>
+                <h4 class="footer-brand"><img src="{% static 'core/images/momind-logo.png' %}" alt="">MoMind</h4>
                 <p>Care beyond birth, empowering mothers, together.</p>
                 <div class="social-links">
                     <a href="#"><i class="fab fa-facebook"></i></a>

@@ -51,12 +51,10 @@ body.account-screen {
 .account-brand-mark {
     width: 40px;
     height: 40px;
-    display: grid;
-    place-items: center;
-    color: #fff;
-    background: linear-gradient(135deg, var(--mm-primary), var(--mm-primary-dark));
-    border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(204, 70, 119, .24);
+    display: block;
+    object-fit: contain;
+    flex-shrink: 0;
+    filter: drop-shadow(0 5px 8px rgba(126, 42, 75, .18));
 }
 
 .account-brand strong { display: block; font-size: 1.2rem; line-height: 1.1; letter-spacing: -.03em; }

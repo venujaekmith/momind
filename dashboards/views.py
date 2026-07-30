@@ -16,6 +16,8 @@ from postpartum.models import *
 import json
 from django.conf import settings
 from django.urls import reverse
+from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_POST
 
 from groq import Groq
 
@@ -46,7 +48,10 @@ def mother_dashboard(request):
     if not Pregnancy.objects.filter(mother=mother_profile).exists():
         return redirect ("dashboards:start_pregnancy")
 
-    mother_details = MotherDetails.objects.get(mother=mother_profile)
+    mother_details, _ = MotherDetails.objects.get_or_create(
+        mother=mother_profile,
+        defaults={"user": request.user},
+    )
     form = MotherDetailsForm(instance=mother_details)
     # Allow selecting a pregnancy via query param ?pregnancy=<id>
     pregnancy_id = request.GET.get('pregnancy')
@@ -176,50 +181,19 @@ def mother_dashboard(request):
     return render(request, "mother.html", context)
 
 
-def clear_previous_pregnancy_data(pregnancy):
-    """Clear the previous pregnancy's related data before starting a new one."""
-    if not pregnancy:
-        return
-
-    pregnancy.progress.all().delete()
-    pregnancy.fetal_records.all().delete()
-    pregnancy.lab_tests.all().delete()
-    pregnancy.schedule_events.all().delete()
-    pregnancy.trimester_tasks.all().delete()
-    pregnancy.visit_notes.all().delete()
-    pregnancy.risks.all().delete()
-    pregnancy.vaccinations.all().delete()
-    pregnancy.midwife_visits.all().delete()
-    pregnancy.milestones.all().delete()
-    pregnancy.babies.all().delete()
-    pregnancy.alerts.all().delete()
-    pregnancy.medication_set.all().delete()
-
-    if hasattr(pregnancy, 'trimester_plan') and pregnancy.trimester_plan:
-        pregnancy.trimester_plan.delete()
-
-    PostpartumProfile.objects.filter(pregnancy=pregnancy).delete()
-
-
 @login_required
 def start_pregnancy(request):
+    if request.user.role != "MOTHER" or not hasattr(request.user, "user_mother"):
+        return HttpResponseForbidden("Only mothers can start a pregnancy.")
     mother_profile = request.user.user_mother
 
     if Pregnancy.objects.filter(mother=mother_profile, is_active=True).exists():
         messages.warning(request, "You already have an active pregnancy. Please complete it before starting a new one.")
         return redirect("dashboards:dashboard")
 
-    previous_pregnancy = Pregnancy.objects.filter(
-        mother=mother_profile,
-        status__in=["delivered", "completed"]
-    ).order_by('-created_at').first()
-
     if request.method == "POST":
         form = PregnancyForm(request.POST)
         if form.is_valid():
-            if previous_pregnancy:
-                clear_previous_pregnancy_data(previous_pregnancy)
-
             obj = form.save(commit=False)
             obj.mother = mother_profile
             obj.pregnancy_number = Pregnancy.objects.filter(mother=mother_profile).count() + 1
@@ -315,17 +289,34 @@ def father_dashboard(request):
         'unread_count': notif_data['unread_count'],
         })
 
+@login_required
+@require_POST
 def log_water(request):
-    if request.method == "POST":
-        amount = request.POST.get('amount')
-        WaterIntake.objects.create(mother=request.user.user_mother, amount_ml=amount)
+    if request.user.role != "MOTHER" or not hasattr(request.user, "user_mother"):
+        return HttpResponseForbidden("Only mothers can log water intake.")
+    try:
+        amount = int(request.POST.get('amount', 0))
+    except (TypeError, ValueError):
+        amount = 0
+    if not 1 <= amount <= 10000:
+        messages.error(request, "Enter a water amount between 1 and 10,000 ml.")
+        return redirect('dashboards:dashboard')
+    WaterIntake.objects.create(mother=request.user.user_mother, amount_ml=amount)
     return redirect('dashboards:dashboard')
 
 @login_required
+@require_POST
 def log_kicks(request):
-    if request.method == "POST":
-        count = request.POST.get('count')
-        KickCount.objects.create(mother=request.user.user_mother, count=count)
+    if request.user.role != "MOTHER" or not hasattr(request.user, "user_mother"):
+        return HttpResponseForbidden("Only mothers can log fetal movement.")
+    try:
+        count = int(request.POST.get('count', 0))
+    except (TypeError, ValueError):
+        count = 0
+    if not 1 <= count <= 1000:
+        messages.error(request, "Enter a kick count between 1 and 1,000.")
+        return redirect('dashboards:dashboard')
+    KickCount.objects.create(mother=request.user.user_mother, count=count)
     return redirect('dashboards:dashboard')
 
 
@@ -381,11 +372,8 @@ def midwife_dashboard(request):
 @login_required
 def midwife_mother_detail(request, pregnancy_id):
     pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
-    
-    # Security check (uncomment if needed)
-    # if not can_edit_pregnancy(request.user, pregnancy):
-    #     messages.error(request, "You are not authorized.")
-    #     return redirect('dashboards:dashboard')
+    if not can_access_pregnancy(request.user, pregnancy):
+        return HttpResponseForbidden("You are not authorized to view this pregnancy.")
 
     # === Antenatal Records ===
     progress_records = PregnancyProgress.objects.filter(pregnancy=pregnancy).order_by('-recorded_at')
@@ -459,6 +447,8 @@ def midwife_mother_detail(request, pregnancy_id):
 @login_required
 def add_baby_development(request, pregnancy_id):
     pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
+    if not can_edit_pregnancy(request.user, pregnancy):
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
     baby_id = request.GET.get('baby_id')
     
     if baby_id:
@@ -493,7 +483,9 @@ def add_baby_development(request, pregnancy_id):
 
 @login_required
 def add_visit_note(request, pregnancy_id):
-    pregnancy = Pregnancy.objects.get(id=pregnancy_id)
+    pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
+    if not can_edit_pregnancy(request.user, pregnancy):
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
     
     if request.method == "POST":
         VisitNote.objects.create(
@@ -634,16 +626,24 @@ def clinic_directory(request):
 @login_required
 def clinic_detail(request, clinic_id):
     clinic = get_object_or_404(Clinics, id=clinic_id, is_active=True)
-    appointments = ScheduleEvent.objects.filter(
-        clinic=clinic,
-        event_type="hospital_clinic",
-        scheduled_date=clinic.date
-    ).select_related('pregnancy__mother__user').order_by('scheduled_time')
+    can_manage = (
+        clinic.hospital.user_id == request.user.id
+        or clinic.staff.filter(user=request.user, is_active=True).exists()
+        or request.user.is_staff
+    )
+    appointments = ScheduleEvent.objects.none()
+    if can_manage:
+        appointments = ScheduleEvent.objects.filter(
+            clinic=clinic,
+            event_type="hospital_clinic",
+            scheduled_date=clinic.date
+        ).select_related('pregnancy__mother__user').order_by('scheduled_time')
 
     return render(request, "clinic_detail.html", {
         "clinic": clinic,
         "appointments": appointments,
         "queue_count": appointments.count(),
+        "can_manage": can_manage,
     })
 
 
@@ -765,6 +765,7 @@ def add_clinic_appointment(request, clinic_id):
     return redirect('dashboards:dashboard')
 
 
+@login_required
 def dashboard(request):
     role = request.user.role
     
@@ -918,17 +919,27 @@ def leave_family(request, family_id):
     return redirect('dashboards:dashboard')
 
 
+@login_required
+@require_POST
 def link_member_view(request):
     # When a user requests to link someone to their family we create a Link_notification
     # and notify the target user. The actual Family row is updated only after the
     # target accepts via the `respond_link_request` view.
-    if request.method == "POST":
-        role_to_add = request.POST.get('role')  # e.g., 'MIDWIFE'
-        target_id = request.POST.get('target_id')  # e.g., 'MID-12345'
+    if request.user.role not in {"MOTHER", "FATHER"}:
+        return HttpResponseForbidden("Only parents can manage a family.")
+    role_to_add = request.POST.get('role')
+    target_id = request.POST.get('target_id')
+    valid_roles = {"MIDWIFE", "DOCTOR", "HOSPITAL"}
+    if request.user.role == "MOTHER":
+        valid_roles.add("FATHER")
+    else:
+        valid_roles.add("MOTHER")
+    if role_to_add not in valid_roles or not target_id:
+        messages.error(request, "Select a valid family role and member ID.")
+        return redirect('dashboards:dashboard')
 
-        # Resolve the target user from the provided role and id
-        target_user = None
-        try:
+    target_user = None
+    try:
             if role_to_add == 'MIDWIFE':
                 profile = MidwifeProfile.objects.get(midwife_id=target_id)
                 target_user = profile.user
@@ -944,48 +955,47 @@ def link_member_view(request):
             elif role_to_add == 'FATHER':
                 profile = FatherProfile.objects.get(father_id=target_id)
                 target_user = profile.user
-        except ObjectDoesNotExist:
-            messages.error(request, f"No {role_to_add.lower()} found with ID: {target_id}")
-            return redirect('dashboards:dashboard')
+    except ObjectDoesNotExist:
+        messages.error(request, f"No {role_to_add.lower()} found with ID: {target_id}")
+        return redirect('dashboards:dashboard')
 
-        # Optional free-text note supplied by requester
-        user_note = request.POST.get('note', '')
+    user_note = request.POST.get('note', '').strip()[:1000]
 
-        # Create a link request record (store both identifier and note)
-        link_req = Link_notification.objects.create(
+    link_req, created = Link_notification.objects.get_or_create(
             linker=request.user,
-            linker_type=request.user.role,
             link=target_user,
             link_type=role_to_add,
-            note=user_note,
             member_identifier=str(target_id),
             accepted=False,
+            defaults={"linker_type": request.user.role, "note": user_note},
         )
+    if not created:
+        messages.info(request, "A link request is already pending for this member.")
+        return redirect('dashboards:dashboard')
 
         # Create a user-visible notification for the target
-        try:
-            accept_url = request.build_absolute_uri(reverse('dashboards:respond_link_request', args=[link_req.id]))
-        except Exception:
-            accept_url = ''
+    accept_url = request.build_absolute_uri(
+        reverse('dashboards:respond_link_request', args=[link_req.id])
+    )
 
-        message_text = f"{request.user.get_full_name() or request.user.username} has requested to link you to their family as {role_to_add.lower()}"
-        if user_note:
-            message_text += f" — Message: {user_note}"
-        if accept_url:
-            message_text += f". Reply here: {accept_url}"
+    message_text = f"{request.user.get_full_name() or request.user.username} has requested to link you to their family as {role_to_add.lower()}"
+    if user_note:
+        message_text += f" — Message: {user_note}"
+    message_text += f". Reply here: {accept_url}"
 
-        Notification.objects.create(
+    Notification.objects.create(
             user=target_user,
             title="Family Link Request",
             message=message_text,
         )
 
-        messages.success(request, f"Link request sent to {target_user.get_full_name() or target_user.username}.")
+    messages.success(request, f"Link request sent to {target_user.get_full_name() or target_user.username}.")
 
     return redirect('dashboards:dashboard')
 
 
 @login_required
+@require_POST
 def respond_link_request(request, link_id):
     """Accept or decline a pending family link request."""
     link_req = get_object_or_404(Link_notification, id=link_id)
@@ -994,15 +1004,15 @@ def respond_link_request(request, link_id):
     if request.user != link_req.link:
         messages.error(request, "You are not authorized to respond to this request.")
         return redirect('dashboards:dashboard')
+    if link_req.accepted:
+        messages.info(request, "This request has already been accepted.")
+        return redirect('dashboards:dashboard')
 
-    action = request.POST.get('action') if request.method == 'POST' else None
+    action = request.POST.get('action')
     if action == 'accept':
         member_id = link_req.member_identifier or ''
         # Perform the actual linking using the original requester as the family owner
         success, message = add_member_to_family(link_req.linker, link_req.link_type, member_id, request)
-        print(success)
-        print("===")
-        print(message)
         if success:
             link_req.accepted = True
             link_req.save()
@@ -1028,14 +1038,12 @@ def respond_link_request(request, link_id):
             messages.error(request, message)
 
     elif action == 'decline':
-        # Keep record but do not link
-        link_req.accepted = False
-        link_req.save()
         Notification.objects.create(
             user=link_req.linker,
             title="Link Request Declined",
             message=f"{request.user.get_full_name() or request.user.username} declined your family link request.",
         )
+        link_req.delete()
         messages.info(request, "Link request declined.")
 
     else:
@@ -1045,16 +1053,29 @@ def respond_link_request(request, link_id):
 
     return redirect('dashboards:dashboard')
 
-def can_edit_pregnancy(user, pregnancy):
+def can_access_pregnancy(user, pregnancy):
+    if not user.is_authenticated:
+        return False
+    if user.is_staff:
+        return True
+    if user.role == "MOTHER":
+        return pregnancy.mother_id == getattr(getattr(user, "user_mother", None), "id", None)
+    family = Family.objects.filter(mother=pregnancy.mother)
+    if user.role == "FATHER":
+        return family.filter(father__user=user).exists()
     if user.role == "MIDWIFE":
-        return True
+        return family.filter(midwife__user=user).exists()
     if user.role == "DOCTOR":
-        return True
+        return family.filter(doctor__user=user).exists()
     if user.role == "HOSPITAL":
-        return True
-    if user.role in ["MOTHER", "FATHER"]:
-        return True
+        return family.filter(hospital__user=user).exists()
+    if user.role == "HOSPITAL_STAFF":
+        return family.filter(hospital__staff_members__user=user, hospital__staff_members__is_active=True).exists()
     return False
+
+
+def can_edit_pregnancy(user, pregnancy):
+    return can_access_pregnancy(user, pregnancy) and user.role != "FATHER"
 
 
 @login_required
@@ -1077,11 +1098,18 @@ def end_pregnancy(request, id):
             pregnancy.end_pregnancy(actual_date)
 
             # Create Postpartum Profile for Mother
-            PostpartumProfile.objects.create(
-                user=pregnancy.mother.user,
-                delivery_date=actual_date,
-                delivery_type=delivery_type,
-                baby_count=baby_count
+            PostpartumProfile.objects.update_or_create(
+                pregnancy=pregnancy,
+                defaults={
+                    "user": pregnancy.mother.user,
+                    "delivery_date": actual_date,
+                    "delivery_type": (
+                        delivery_type
+                        if delivery_type in {"normal", "c_section", "other"}
+                        else "other"
+                    ),
+                    "baby_count": baby_count,
+                },
             )
 
             # Create Baby Profiles
@@ -1119,10 +1147,10 @@ def end_pregnancy(request, id):
 
 @login_required
 def add_pregnancy_progress(request, pregnancy_id):
-    pregnancy = Pregnancy.objects.get(id=pregnancy_id)
+    pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
 
     if not can_edit_pregnancy(request.user, pregnancy):
-        return redirect("dashboards:dashboard")
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
 
     if request.method == "POST":
         form = PregnancyProgressForm(request.POST)
@@ -1149,10 +1177,10 @@ def add_pregnancy_progress(request, pregnancy_id):
 #fetal health view
 @login_required
 def add_fetal_health(request, pregnancy_id):
-    pregnancy = Pregnancy.objects.get(id=pregnancy_id)
+    pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
 
     if not can_edit_pregnancy(request.user, pregnancy):
-        return redirect("dashboards:dashboard")
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
 
     if request.method == "POST":
         form = FetalHealthForm(request.POST)
@@ -1177,10 +1205,10 @@ def add_fetal_health(request, pregnancy_id):
 
 @login_required
 def add_lab_test(request, pregnancy_id):
-    pregnancy = Pregnancy.objects.get(id=pregnancy_id)
+    pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
 
     if not can_edit_pregnancy(request.user, pregnancy):
-        return redirect("dashboards:dashboard")
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
 
     if request.method == "POST":
         form = LabTestForm(request.POST, request.FILES)
@@ -1322,7 +1350,7 @@ def create_midwife_visits_for_pregnancy(pregnancy, midwife):
 
 @login_required
 def reschedule_event(request, event_id):
-    event = ScheduleEvent.objects.get(id=event_id)
+    event = get_object_or_404(ScheduleEvent, id=event_id)
     
     if not can_edit_pregnancy(request.user, event.pregnancy):
         messages.error(request, "You don't have permission to reschedule this visit.")
@@ -1346,9 +1374,9 @@ def reschedule_event(request, event_id):
 
 @login_required
 def add_schedule_event(request, pregnancy_id):
-    pregnancy = Pregnancy.objects.get(id=pregnancy_id)
+    pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
     if not can_edit_pregnancy(request.user, pregnancy):
-        return redirect("dashboards:dashboard")
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
 
     if request.method == "POST":
         form = ScheduleEventForm(request.POST)
@@ -1366,19 +1394,25 @@ def add_schedule_event(request, pregnancy_id):
 
 
 @login_required
+@require_POST
 def complete_event(request, event_id):
-    event = ScheduleEvent.objects.get(id=event_id)
+    event = get_object_or_404(ScheduleEvent, id=event_id)
     if can_edit_pregnancy(request.user, event.pregnancy):
         event.mark_completed()
         messages.success(request, f"{event.title} marked as completed!")
+    else:
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
     return redirect("dashboards:dashboard")
 
 
 @login_required
+@require_POST
 def complete_task(request, task_id):
-    task = TrimesterTask.objects.get(id=task_id)
+    task = get_object_or_404(TrimesterTask, id=task_id)
     if can_edit_pregnancy(request.user, task.pregnancy):
         task.mark_completed()
+    else:
+        return HttpResponseForbidden("You are not authorized to update this pregnancy.")
     return redirect("dashboards:dashboard")
 
 
@@ -1389,6 +1423,8 @@ def update_pregnancy_with_schedule(request, pregnancy):
 @login_required
 def babyai(request, id):
     baby = get_object_or_404(BabyProfile, id=id)
+    if not can_access_pregnancy(request.user, baby.pregnancy):
+        return HttpResponseForbidden("You are not authorized to view this baby's records.")
     
     # Get recent development records
     records = BabyDevelopmentRecord.objects.filter(baby=baby).order_by('-recorded_at')[:8]
@@ -1451,7 +1487,11 @@ def prepare_baby_context(baby, records):
 
 def get_groq_baby_response(context, user_query="", is_summary=False):
     """Call Groq API"""
-    client = Groq(api_key=settings.GROQ_API_KEY)
+    if not settings.GROQ_API_KEY:
+        return (
+            "AI guidance is temporarily unavailable. You can still review the saved "
+            "development records and discuss any concerns with your pediatric care team."
+        )
 
     system_prompt = """You are a warm, experienced pediatric nurse and early childhood development expert. 
     Give practical, encouraging, and evidence-based advice. Always remind parents to consult their doctor for medical concerns."""
@@ -1489,6 +1529,7 @@ Give a helpful, personalized, and caring response.
 """
 
     try:
+        client = Groq(api_key=settings.GROQ_API_KEY)
         completion = client.chat.completions.create(
             model="openai/gpt-oss-120b",   # Excellent balance of quality and speed
             messages=[
@@ -1500,5 +1541,8 @@ Give a helpful, personalized, and caring response.
         )
         return completion.choices[0].message.content.strip()
 
-    except Exception as e:
-        return f"⚠️ AI service is temporarily unavailable. Please try again later. ({str(e)})"
+    except Exception:
+        return (
+            "AI guidance is temporarily unavailable. Please try again later or discuss "
+            "any concerns with your pediatric care team."
+        )

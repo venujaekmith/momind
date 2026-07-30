@@ -5,9 +5,29 @@ from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from dashboards.models import Pregnancy, RiskAssessment, LabTest
+from accounts.models import Family
 from .services.risk_assessment import AdvancedPregnancyRiskService
 from .services.postpartum_ai import PostpartumAIService
 from .services.lab_report_analysis import LabReportAnalysisService
+
+
+def has_pregnancy_access(user, pregnancy):
+    if user.is_staff:
+        return True
+    if getattr(user, "role", None) == "MOTHER":
+        return getattr(user, "user_mother", None) == pregnancy.mother
+    family = Family.objects.filter(mother=pregnancy.mother)
+    filters = {
+        "FATHER": {"father__user": user},
+        "MIDWIFE": {"midwife__user": user},
+        "DOCTOR": {"doctor__user": user},
+        "HOSPITAL": {"hospital__user": user},
+        "HOSPITAL_STAFF": {
+            "hospital__staff_members__user": user,
+            "hospital__staff_members__is_active": True,
+        },
+    }.get(getattr(user, "role", None))
+    return bool(filters and family.filter(**filters).exists())
 
 
 @method_decorator(login_required, name='dispatch')
@@ -53,13 +73,7 @@ class RiskAssessmentView(View):
             }, status=400)
 
     def _has_permission(self, user, pregnancy):
-        """Basic permission logic"""
-        # Mother herself
-        if hasattr(user, 'user_mother') and user.user_mother == pregnancy.mother:
-            return True
-        # Midwife / Doctor linked to mother
-        # Add more logic as needed
-        return user.is_staff or user.role in ['MIDWIFE', 'DOCTOR']
+        return has_pregnancy_access(user, pregnancy)
 
 
 @login_required
@@ -67,14 +81,7 @@ def analyze_lab_report(request, lab_test_id):
     lab_test = get_object_or_404(LabTest, id=lab_test_id)
     pregnancy = lab_test.pregnancy
     user = request.user
-    allowed_roles = {"MIDWIFE", "DOCTOR", "HOSPITAL", "HOSPITAL_STAFF"}
-    has_access = (
-        (hasattr(user, "user_mother") and user.user_mother == pregnancy.mother)
-        or getattr(user, "role", None) in allowed_roles
-        or user.is_staff
-    )
-
-    if not has_access:
+    if not has_pregnancy_access(user, pregnancy):
         return JsonResponse({
             "success": False,
             "error": "You do not have permission to access this lab report."
@@ -110,6 +117,11 @@ def calculate_risk(request, pregnancy_id):
 
     try:
         pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
+        if not has_pregnancy_access(request.user, pregnancy):
+            return JsonResponse({
+                "success": False,
+                "error": "You do not have permission to access this pregnancy.",
+            }, status=403)
         service = AdvancedPregnancyRiskService()
         assessment = service.calculate_risk(pregnancy)
 
@@ -131,6 +143,11 @@ class ShowRiskView(View):
     """GET - Show Risk Dashboard"""
     def get(self, request, pregnancy_id):
         pregnancy = get_object_or_404(Pregnancy, id=pregnancy_id)
+        if not has_pregnancy_access(request.user, pregnancy):
+            return JsonResponse({
+                "success": False,
+                "error": "You do not have permission to access this pregnancy.",
+            }, status=403)
 
         # Get or create latest risk assessment
         latest_assessment = RiskAssessment.objects.filter(

@@ -1,122 +1,508 @@
-{% extends 'basec.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ post.title }}  MoMind</title>
 
-{% block extra_head %}
-{% include 'community/forum_theme.html' %}
-{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-{% block content %}
+    <style>
+        * { box-sizing: border-box; }
 
-<div class="forum-page forum-detail-page">
-    <div class="forum-hero">
-        <div class="forum-title-wrap">
-            <span class="forum-hero-icon"><i class="fas fa-comments"></i></span>
-            <div>
-                <h2>Community Discussion</h2>
-                <p>Read the conversation and share your support.</p>
-            </div>
-        </div>
-        <div class="forum-actions">
-            <a href="{% url 'community:forum_home' %}" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Back to Forum</a>
-        </div>
-    </div>
-    <div class="card mb-4">
-        <div class="card-body">
+        :root {
+            /* ---- MoMind brand palette ---- */
+            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
+            --pink: #E7B3AE;          /* Dusty Rose        */
+            --peach: #F2C8BC;         /* Muted Peach       */
+            --coral: #D98C7A;         /* Soft Coral        */
+            --lilac: #D9C6E8;         /* Soft Lilac        */
+            --sage: #B8C9B1;          /* Muted Sage        */
+            --teal: #A8D5CF;          /* Soft Teal         */
+            --card-bg: #FFF8F5;       /* Warm Ivory        */
+            --text-dark: #3E3A39;     /* Deep Charcoal     */
+            --text-gray: #7A716D;     /* Warm Gray         */
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        /* ---------- Page shell ---------- */
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 55%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 700px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        /* ---------- Shared glass card ---------- */
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            overflow: hidden;
+        }
+
+        /* ---------- Shared buttons ---------- */
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 14px 22px;
+            border: none;
+            border-radius: 14px;
+            font-size: .92rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 12px 24px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -10px rgba(217,140,122,.65);
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1.5px solid var(--accent-2);
+            color: var(--accent-2);
+            background: transparent;
+            font-size: .78rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s ease, color .2s ease;
+        }
+        .btn-outline:hover {
+            background: var(--accent-2);
+            color: #fff;
+        }
+
+        /* ---------- Alerts ---------- */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 13px 16px;
+            border-radius: 14px;
+            margin-bottom: 1.2rem;
+            font-size: .87rem;
+            line-height: 1.5;
+        }
+        .alert i { font-size: .95rem; flex-shrink: 0; margin-top: 2px; }
+        .alert-info {
+            background: #f2f0fb;
+            color: #5b5480;
+            border: 1px solid rgba(157,120,194,.25);
+        }
+        .alert-info i { color: #9d78c2; }
+        .alert-warning {
+            background: #fdf0dd;
+            color: #8a5a1a;
+            border: 1px solid rgba(217,160,90,.35);
+        }
+        .alert-warning i { color: #c98a2e; }
+        .alert-danger {
+            background: #fbe4e1;
+            color: #8a3226;
+            border: 1px solid rgba(217,140,122,.4);
+        }
+        .alert-danger i { color: #d98c7a; }
+
+        /* ---------- Post card ---------- */
+        .post-card { padding: 2rem 2.1rem 2.2rem; }
+        .post-card h2 {
+            margin: 0 0 8px;
+            font-family: Fraunces, serif;
+            font-size: 1.7rem;
+            font-weight: 600;
+        }
+        .post-meta {
+            font-size: .82rem;
+            color: var(--text-gray);
+            margin-bottom: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .post-meta strong { color: var(--text-dark); }
+        .post-content {
+            font-size: .96rem;
+            line-height: 1.7;
+            color: var(--text-dark);
+            margin: 0;
+            white-space: pre-line;
+        }
+        .attachments {
+            margin-top: 1.6rem;
+            padding-top: 1.4rem;
+            border-top: 1px solid rgba(217,140,122,.18);
+        }
+        .attachments h5 {
+            margin: 0 0 .8rem;
+            font-family: Fraunces, serif;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+        .attachments a {
+            margin: 0 8px 8px 0;
+        }
+
+        /* ---------- Comments card ---------- */
+        .comments-header {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: 1.3rem 2.1rem;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+        }
+        .comments-header h4 {
+            margin: 0;
+            font-family: Fraunces, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .comments-body { padding: 1.8rem 2.1rem 2.1rem; }
+
+        .comment {
+            padding: 1rem 1.2rem;
+            margin-bottom: .9rem;
+            border-radius: 14px;
+            background: rgba(255,255,255,.55);
+            border-left: 4px solid var(--accent-2);
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .comment.anonymous {
+            background: rgba(217,198,232,.22);
+            border-left-color: var(--lilac);
+        }
+        .comments-body .comment:nth-child(1) { animation-delay: .04s; }
+        .comments-body .comment:nth-child(2) { animation-delay: .08s; }
+        .comments-body .comment:nth-child(3) { animation-delay: .12s; }
+        .comments-body .comment:nth-child(4) { animation-delay: .16s; }
+        .comments-body .comment:nth-child(n+5) { animation-delay: .2s; }
+
+        .comment-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: .8rem;
+            flex-wrap: wrap;
+        }
+        .comment-author {
+            font-weight: 600;
+            font-size: .88rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .comment-time {
+            font-size: .74rem;
+            color: var(--text-gray);
+            white-space: nowrap;
+        }
+        .comment-body {
+            margin: 8px 0 0;
+            font-size: .89rem;
+            line-height: 1.55;
+            color: var(--text-dark);
+        }
+
+        .badge-pill {
+            font-size: .65rem;
+            font-weight: 700;
+            padding: .2rem .6rem;
+            border-radius: 999px;
+            background: var(--lilac);
+            color: #6b4d8a;
+        }
+
+        .no-comments {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--text-gray);
+            font-size: .9rem;
+        }
+
+        /* ---------- Comment form ---------- */
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: 1.3rem 2.1rem;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+        }
+        .form-header h4 {
+            margin: 0;
+            font-family: Fraunces, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .form-body { padding: 1.8rem 2.1rem 2.1rem; }
+
+        .field-group { margin-bottom: 1.1rem; }
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            font-size: .83rem;
+            margin-bottom: .45rem;
+        }
+        .field-group textarea,
+        .field-group input[type="text"] {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .92rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .field-group textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
+        .field-group input:hover, .field-group textarea:hover { border-color: var(--accent-2); }
+        .field-group input:focus, .field-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 4px rgba(217,140,122,.15);
+        }
+        .field-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: .78rem;
+            color: var(--text-gray);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .comment {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .post-card, .comments-body, .form-body { padding: 1.5rem 1.3rem 1.8rem; }
+            .comments-header, .form-header { padding: 1.2rem 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+        <a href="{% url 'community:forum_home' %}" class="btn-outline" style="margin-bottom:1rem;">
+            <i class="fas fa-arrow-left"></i> Back to forum
+        </a>
+
+        <!-- Post -->
+        <div class="glass-card post-card">
             <h2>{{ post.title }}</h2>
-            
-            <div class="text-muted small mb-3">
+            <div class="post-meta">
                 {% if post.is_anonymous %}
-                    <span>Posted anonymously</span>
+                    <span><i class="fas fa-user-secret"></i> Posted anonymously</span>
                 {% else %}
-                    <span>By: <strong>{{ post.author.get_full_name|default:post.author.username }}</strong></span>
+                    <span><i class="fas fa-user"></i> By <strong>{{ post.author.get_full_name|default:post.author.username }}</strong></span>
                 {% endif %}
-                on {{ post.created_at|date:"M d, Y" }}
+                <span>&middot; {{ post.created_at|date:"M d, Y" }}</span>
             </div>
 
-            <p>{{ post.content }}</p>
+            <p class="post-content">{{ post.content }}</p>
 
             {% if post.attachments.all %}
-                <hr>
-                <h5>Attachments</h5>
-                {% for attachment in post.attachments.all %}
-                    <a href="{{ attachment.file.url }}" class="btn btn-sm btn-outline-primary">
-                        📎 {{ attachment.file.name }}
-                    </a>
+                <div class="attachments">
+                    <h5><i class="fas fa-paperclip"></i> Attachments</h5>
+                    {% for attachment in post.attachments.all %}
+                        <a href="{{ attachment.file.url }}" class="btn-outline">
+                            <i class="fas fa-paperclip"></i> {{ attachment.file.name }}
+                        </a>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Comments -->
+        <div class="glass-card">
+            <div class="comments-header">
+                <i class="fas fa-comments"></i>
+                <h4>Comments ({{ comments.count|add:anonymous_comments.count }})</h4>
+            </div>
+            <div class="comments-body">
+                {% for comment in comments %}
+                    <div class="comment">
+                        <div class="comment-top">
+                            <span class="comment-author">{{ comment.author.get_full_name|default:comment.author.username }}</span>
+                            <span class="comment-time">{{ comment.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <p class="comment-body">{{ comment.content }}</p>
+                    </div>
                 {% endfor %}
-            {% endif %}
-        </div>
-    </div>
 
-    <div class="card mb-4">
-        <div class="card-header">
-            <h4>Comments ({{ comments.count|add:anonymous_comments.count }})</h4>
-        </div>
-        <div class="card-body">
-            <!-- Authenticated Comments -->
-            {% for comment in comments %}
-                <div class="forum-comment">
-                    <div class="d-flex justify-content-between">
-                        <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
-                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                {% for comment in anonymous_comments %}
+                    <div class="comment anonymous">
+                        <div class="comment-top">
+                            <span class="comment-author">
+                                {{ comment.author_name }}
+                                <span class="badge-pill">Anonymous</span>
+                            </span>
+                            <span class="comment-time">{{ comment.created_at|date:"M d, Y H:i" }}</span>
+                        </div>
+                        <p class="comment-body">{{ comment.content }}</p>
                     </div>
-                    <p class="mb-0 mt-2">{{ comment.content }}</p>
-                </div>
-            {% endfor %}
+                {% endfor %}
 
-            <!-- Anonymous Comments -->
-            {% for comment in anonymous_comments %}
-                <div class="forum-comment anonymous">
-                    <div class="d-flex justify-content-between">
-                        <strong>{{ comment.author_name }} <span class="badge badge-warning">Anonymous</span></strong>
-                        <small class="text-muted">{{ comment.created_at|date:"M d, Y H:i" }}</small>
+                {% if not comments and not anonymous_comments %}
+                    <p class="no-comments">No comments yet. Be the first to comment!</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Leave a comment -->
+        <div class="glass-card">
+            <div class="form-header">
+                <i class="fas fa-pen"></i>
+                <h4>Leave a Comment</h4>
+            </div>
+            <div class="form-body">
+                {% if is_authenticated %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-circle-info"></i>
+                        <span>You are commenting as <strong>{{ user.get_full_name|default:user.username }}</strong></span>
                     </div>
-                    <p class="mb-0 mt-2">{{ comment.content }}</p>
-                </div>
-            {% endfor %}
-
-            {% if not comments and not anonymous_comments %}
-                <p class="text-muted">No comments yet. Be the first to comment!</p>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h4>Leave a Comment</h4>
-        </div>
-        <div class="card-body">
-            {% if is_authenticated %}
-                <p class="alert alert-info">You are commenting as <strong>{{ user.get_full_name|default:user.username }}</strong></p>
-            {% else %}
-                <p class="alert alert-warning">You are commenting <strong>anonymously</strong>. Your name will not be shown unless you provide it.</p>
-            {% endif %}
-
-            <form method="POST" class="form">
-                {% csrf_token %}
-                
-                <div class="form-group">
-                    {{ form.content }}
-                </div>
-
-                {% if not is_authenticated %}
-                    <div class="form-group">
-                        <label for="{{ form.author_name.id_for_label }}">Name (Optional)</label>
-                        {{ form.author_name }}
-                        <small class="form-text text-muted">Leave blank to stay anonymous</small>
+                {% else %}
+                    <div class="alert alert-warning">
+                        <i class="fas fa-user-secret"></i>
+                        <span>You are commenting <strong>anonymously</strong>. Your name will not be shown unless you provide it.</span>
                     </div>
                 {% endif %}
 
-                {% if form.non_field_errors %}
-                    <div class="alert alert-danger">
-                        {{ form.non_field_errors }}
-                    </div>
-                {% endif %}
+                <form method="POST">
+                    {% csrf_token %}
 
-                <button type="submit" class="btn btn-primary">Post Comment</button>
-            </form>
+                    <div class="field-group">
+                        {{ form.content }}
+                    </div>
+
+                    {% if not is_authenticated %}
+                        <div class="field-group">
+                            <label for="{{ form.author_name.id_for_label }}">Name (Optional)</label>
+                            {{ form.author_name }}
+                            <span class="field-hint">Leave blank to stay anonymous</span>
+                        </div>
+                    {% endif %}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-triangle-exclamation"></i>
+                            <span>{{ form.non_field_errors }}</span>
+                        </div>
+                    {% endif %}
+
+                    <button type="submit" class="btn-gradient">
+                        <i class="fas fa-paper-plane"></i> Post Comment
+                    </button>
+                </form>
+            </div>
         </div>
+
     </div>
 </div>
 
-{% endblock %}
-
+</body>
+</html>

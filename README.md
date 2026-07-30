@@ -41,25 +41,33 @@ source env/bin/activate
 pip install -r req.txt
 ```
 
-3. Apply database migrations.
+3. Configure local environment variables (the defaults are suitable for local
+   development without AI):
+
+```bash
+export DJANGO_DEBUG=true
+export GROQ_API_KEY="your-optional-groq-key"
+```
+
+4. Apply database migrations.
 
 ```bash
 python3 manage.py migrate
 ```
 
-4. Create a superuser if needed.
+5. Create a superuser if needed.
 
 ```bash
 python3 manage.py createsuperuser
 ```
 
-5. Run the development server.
+6. Run the development server.
 
 ```bash
 python3 manage.py runserver
 ```
 
-6. Open the app in your browser at `http://127.0.0.1:8000/`.
+7. Open the app in your browser at `http://127.0.0.1:8000/`.
 
 ## Demo data
 
@@ -88,14 +96,15 @@ demo password.
 
 - The project currently uses SQLite by default (`db.sqlite3`).
 - Static files are served by Django in development mode.
-- Production deployment requires configuring `DEBUG=False`, allowed hosts, and a secure secret key.
+- Production deployment requires `DJANGO_DEBUG=false`, `DJANGO_SECRET_KEY`,
+  `DJANGO_ALLOWED_HOSTS`, HTTPS, and a persistent `DJANGO_MEDIA_ROOT`.
 - AI and chat functionality may require API credentials or environment configuration for external services.
 
 ## Dependencies
 
 This project depends on the packages listed in `req.txt`, including:
 
-- `Django==5.2.11`
+- `Django==6.0.7`
 - `openai`
 - `groq`
 - `fastapi`
@@ -114,7 +123,12 @@ This project depends on the packages listed in `req.txt`, including:
 - `/postpartum/` — postpartum workflows
 
 
-## future enhancements
-full hospital flow (q manegment smart scheduling)
-smart postpartum manegment system
-more engagement features on dashboard such as
+## Verification
+
+Run the project checks and test suite with:
+
+```bash
+python3 manage.py check
+python3 manage.py makemigrations --check --dry-run
+python3 manage.py test
+```

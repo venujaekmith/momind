@@ -1,64 +1,498 @@
-{% extends 'basec.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Dashboard  MoMind</title>
 
-{% block content %}
-<h2>Hospital Dashboard - {{ hospital.name }}</h2>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<h3>Clinics</h3>
-<ul>
-    {% for clinic in clinics %}
-    <li>
-        <strong>{{ clinic.name }}</strong> - {{ clinic.date }}
-        <form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" style="display:inline">{% csrf_token %}
-            <input type="hidden" name="title" value="Announcement: {{ clinic.name }}">
-            <input type="text" name="message" placeholder="Announcement message">
-            <button type="submit">Send Announcement</button>
-        </form>
-    </li>
-    {% empty %}
-    <li>No clinics scheduled.</li>
-    {% endfor %}
-</ul>
+    <style>
+        * { box-sizing: border-box; }
 
-<h3>Upcoming Appointments</h3>
-<table>
-<thead><tr><th>Date</th><th>Time</th><th>Patient</th><th>Clinic</th><th>Actions</th></tr></thead>
-<tbody>
-{% for appt in upcoming_appointments %}
-<tr>
-    <td>{{ appt.scheduled_date }}</td>
-    <td>{{ appt.scheduled_time }}</td>
-    <td>{{ appt.pregnancy.mother.user.get_full_name }} ({{ appt.pregnancy.mother.user.username }})</td>
-    <td>{% if appt.clinic %}{{ appt.clinic.name }}{% else %}—{% endif %}</td>
-    <td>
-        <form method="post" action="{% url 'community:reschedule_appointment' appt.id %}">{% csrf_token %}
-            <input type="date" name="date" value="{{ appt.scheduled_date }}">
-            <input type="time" name="time" value="{{ appt.scheduled_time }}">
-            <button type="submit">Reschedule</button>
-        </form>
-    </td>
-</tr>
-{% empty %}
-<tr><td colspan="5">No upcoming appointments.</td></tr>
-{% endfor %}
-</tbody>
-</table>
+        :root {
+            /* ---- MoMind brand palette ---- */
+            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
+            --pink: #E7B3AE;          /* Dusty Rose        */
+            --peach: #F2C8BC;         /* Muted Peach       */
+            --coral: #D98C7A;         /* Soft Coral        */
+            --lilac: #D9C6E8;         /* Soft Lilac        */
+            --sage: #B8C9B1;          /* Muted Sage        */
+            --teal: #A8D5CF;          /* Soft Teal         */
+            --card-bg: #FFF8F5;       /* Warm Ivory        */
+            --text-dark: #3E3A39;     /* Deep Charcoal     */
+            --text-gray: #7A716D;     /* Warm Gray         */
 
-<h3>Hospital Groups</h3>
-<ul>
-    {% for group in groups %}
-    <li>{{ group.name }} - {{ group.description }} - Members: {{ group.members.count }}</li>
-    {% empty %}
-    <li>No groups yet.</li>
-    {% endfor %}
-</ul>
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
 
-<h3>Create Group</h3>
-<form method="post" action="{% url 'community:create_group_and_add_members' %}">{% csrf_token %}
-    {{ group_form.as_p }}
-    <label>Members (comma-separated usernames)</label>
-    <input type="text" name="members">
-    <button type="submit">Create Group</button>
-</form>
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
 
-{% endblock %}
+        /* ---------- Page shell ---------- */
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 60%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 980px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        /* ---------- Shared glass card ---------- */
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            overflow: hidden;
+        }
+
+        /* ---------- Shared buttons ---------- */
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 7px;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: .85rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            white-space: nowrap;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 10px 20px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 26px -10px rgba(217,140,122,.65);
+        }
+        .btn-gradient.btn-lg {
+            padding: 14px 22px;
+            font-size: .92rem;
+            border-radius: 14px;
+        }
+
+        /* ---------- Page header ---------- */
+        .page-header h1 {
+            font-family: Fraunces, serif;
+            font-size: 30px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header h1 i { color: var(--accent-2); font-size: 24px; }
+        .page-header p { margin: 0; color: var(--text-gray); font-size: 14px; }
+        .back-link { display: inline-block; margin-top: .65rem; color: var(--accent-2); font-weight: 600; text-decoration: none; }
+        .back-link:hover { text-decoration: underline; }
+
+        /* ---------- Section shell ---------- */
+        .section-card { padding: 1.7rem 2rem 2rem; }
+        .section-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 0 1.3rem;
+            font-family: Fraunces, serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        .section-title i {
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 10px;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+            font-size: .9rem;
+        }
+
+        /* ---------- Clinics list ---------- */
+        .clinic-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.5);
+            border: 1px solid rgba(217,140,122,.15);
+            margin-bottom: 10px;
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .section-card .clinic-row:nth-of-type(1) { animation-delay: .03s; }
+        .section-card .clinic-row:nth-of-type(2) { animation-delay: .06s; }
+        .section-card .clinic-row:nth-of-type(3) { animation-delay: .09s; }
+        .section-card .clinic-row:nth-of-type(n+4) { animation-delay: .12s; }
+        .clinic-info { min-width: 200px; }
+        .clinic-info strong { font-size: .95rem; }
+        .clinic-info span { display: block; color: var(--text-gray); font-size: .8rem; margin-top: 2px; }
+
+        .inline-form {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .inline-form input[type="text"],
+        .inline-form input[type="date"],
+        .inline-form input[type="time"] {
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .83rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .inline-form input:hover { border-color: var(--accent-2); }
+        .inline-form input:focus {
+            outline: none;
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 3px rgba(217,140,122,.15);
+        }
+        .inline-form input[name="message"] { min-width: 220px; }
+
+        .empty-row {
+            text-align: center;
+            padding: 1.4rem;
+            color: var(--text-gray);
+            font-size: .88rem;
+        }
+
+        /* ---------- Appointments table ---------- */
+        .table-wrap { overflow-x: auto; }
+        .appt-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+            font-size: .87rem;
+        }
+        .appt-table thead th {
+            text-align: left;
+            font-size: .72rem;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            color: var(--text-gray);
+            font-weight: 700;
+            padding: 0 14px 6px;
+        }
+        .appt-table tbody tr {
+            background: rgba(255,255,255,.5);
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .appt-table tbody tr:nth-child(1) { animation-delay: .03s; }
+        .appt-table tbody tr:nth-child(2) { animation-delay: .06s; }
+        .appt-table tbody tr:nth-child(3) { animation-delay: .09s; }
+        .appt-table tbody tr:nth-child(n+4) { animation-delay: .12s; }
+        .appt-table td {
+            padding: 12px 14px;
+            border-top: 1px solid rgba(217,140,122,.12);
+            border-bottom: 1px solid rgba(217,140,122,.12);
+            vertical-align: middle;
+        }
+        .appt-table td:first-child { border-left: 1px solid rgba(217,140,122,.12); border-radius: 12px 0 0 12px; }
+        .appt-table td:last-child { border-right: 1px solid rgba(217,140,122,.12); border-radius: 0 12px 12px 0; }
+        .appt-table td.empty-cell {
+            text-align: center;
+            color: var(--text-gray);
+            border-radius: 12px;
+            border-left: 1px solid rgba(217,140,122,.12);
+            border-right: 1px solid rgba(217,140,122,.12);
+        }
+        .patient-name { font-weight: 600; }
+        .patient-username { color: var(--text-gray); font-size: .78rem; }
+
+        /* ---------- Groups list ---------- */
+        .group-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 13px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.5);
+            border: 1px solid rgba(217,140,122,.15);
+            margin-bottom: 9px;
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .section-card .group-row:nth-of-type(1) { animation-delay: .03s; }
+        .section-card .group-row:nth-of-type(2) { animation-delay: .06s; }
+        .section-card .group-row:nth-of-type(3) { animation-delay: .09s; }
+        .section-card .group-row:nth-of-type(n+4) { animation-delay: .12s; }
+        .group-row .group-name { font-weight: 600; font-size: .92rem; }
+        .group-row .group-desc { color: var(--text-gray); font-size: .82rem; margin-top: 2px; }
+        .group-row .group-count {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--accent-2);
+            background: rgba(217,140,122,.12);
+            padding: 4px 12px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+
+        /* ---------- Create group form ---------- */
+        .field-group { margin-bottom: 1.1rem; }
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            font-size: .83rem;
+            margin-bottom: .45rem;
+        }
+        .field-group input[type="text"],
+        .field-group select,
+        .field-group textarea {
+            width: 100%;
+            padding: 13px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .92rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            transition: border-color .2s ease, box-shadow .2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .field-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23d98c7a'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 42px;
+        }
+        .field-group textarea { min-height: 90px; resize: vertical; }
+        .field-group input:hover, .field-group select:hover, .field-group textarea:hover { border-color: var(--accent-2); }
+        .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 4px rgba(217,140,122,.15);
+        }
+        .field-hint { display: block; margin-top: 6px; font-size: .78rem; color: var(--text-gray); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .clinic-row, .group-row, .appt-table tbody tr {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .section-card { padding: 1.4rem 1.3rem 1.6rem; }
+            .clinic-row, .group-row { flex-direction: column; align-items: flex-start; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+
+        <div class="page-header">
+            <h1><i class="fas fa-house-chimney-medical"></i> Hospital Dashboard</h1>
+            <p>{{ hospital.name }}</p>
+            <a href="{% url 'dashboards:dashboard' %}" class="back-link"><i class="fas fa-arrow-left"></i> Main dashboard</a>
+        </div>
+
+        <!-- Clinics -->
+        <div class="glass-card section-card">
+            <h3 class="section-title"><i class="fas fa-clinic-medical"></i> Clinics</h3>
+
+            {% for clinic in clinics %}
+                <div class="clinic-row">
+                    <div class="clinic-info">
+                        <strong>{{ clinic.name }}</strong>
+                        <span>{{ clinic.date }}</span>
+                    </div>
+                    <form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" class="inline-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="title" value="Announcement: {{ clinic.name }}">
+                        <input type="text" name="message" placeholder="Announcement message">
+                        <button type="submit" class="btn-gradient">
+                            <i class="fas fa-bullhorn"></i> Send
+                        </button>
+                    </form>
+                </div>
+            {% empty %}
+                <div class="empty-row">No clinics scheduled.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Appointments -->
+        <div class="glass-card section-card">
+            <h3 class="section-title"><i class="fas fa-calendar-check"></i> Upcoming Appointments</h3>
+
+            <div class="table-wrap">
+                <table class="appt-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Patient</th>
+                            <th>Clinic</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in upcoming_appointments %}
+                            <tr>
+                                <td>{{ appt.scheduled_date }}</td>
+                                <td>{{ appt.scheduled_time }}</td>
+                                <td>
+                                    <div class="patient-name">{{ appt.pregnancy.mother.user.get_full_name }}</div>
+                                    <div class="patient-username">{{ appt.pregnancy.mother.user.username }}</div>
+                                </td>
+                                <td>{% if appt.clinic %}{{ appt.clinic.name }}{% endif %}</td>
+                                <td>
+                                    <form method="post" action="{% url 'community:reschedule_appointment' appt.id %}" class="inline-form">
+                                        {% csrf_token %}
+                                        <input type="date" name="date" value="{{ appt.scheduled_date }}">
+                                        <input type="time" name="time" value="{{ appt.scheduled_time }}">
+                                        <button type="submit" class="btn-gradient">
+                                            <i class="fas fa-clock-rotate-left"></i> Reschedule
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% empty %}
+                            <tr><td colspan="5" class="empty-cell">No upcoming appointments.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Groups -->
+        <div class="glass-card section-card">
+            <h3 class="section-title"><i class="fas fa-users"></i> Hospital Groups</h3>
+
+            {% for group in groups %}
+                <div class="group-row">
+                    <div>
+                        <div class="group-name">{{ group.name }}</div>
+                        <div class="group-desc">{{ group.description }}</div>
+                    </div>
+                    <span class="group-count">{{ group.members.count }} members</span>
+                </div>
+            {% empty %}
+                <div class="empty-row">No groups yet.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Create group -->
+        <div class="glass-card section-card">
+            <h3 class="section-title"><i class="fas fa-people-group"></i> Create Group</h3>
+
+            <form method="post" action="{% url 'community:create_group_and_add_members' %}">
+                {% csrf_token %}
+                {{ group_form.as_p }}
+
+                <div class="field-group">
+                    <label>Members (comma-separated usernames)</label>
+                    <input type="text" name="members" placeholder="jane_doe, sam_lee, ...">
+                    <span class="field-hint">Separate each username with a comma</span>
+                </div>
+
+                <button type="submit" class="btn-gradient btn-lg">
+                    <i class="fas fa-plus"></i> Create Group
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>

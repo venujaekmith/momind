@@ -1,108 +1,444 @@
-{% extends 'basec.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create a Post  MoMind</title>
 
-{% block extra_head %}
-{% include 'community/forum_theme.html' %}
-{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-{% block content %}
+    <style>
+        * { box-sizing: border-box; }
 
-<div class="forum-page forum-form-page">
-    <div class="forum-hero">
-        <div class="forum-title-wrap">
-            <span class="forum-hero-icon"><i class="fas fa-pen-to-square"></i></span>
-            <div>
-                <h2>Create a Forum Post</h2>
-                <p>Start a supportive conversation with the community.</p>
+        :root {
+            /* ---- MoMind brand palette ---- */
+            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
+            --pink: #E7B3AE;          /* Dusty Rose        */
+            --peach: #F2C8BC;         /* Muted Peach       */
+            --coral: #D98C7A;         /* Soft Coral        */
+            --lilac: #D9C6E8;         /* Soft Lilac        */
+            --sage: #B8C9B1;          /* Muted Sage        */
+            --teal: #A8D5CF;          /* Soft Teal         */
+            --card-bg: #FFF8F5;       /* Warm Ivory        */
+            --text-dark: #3E3A39;     /* Deep Charcoal     */
+            --text-gray: #7A716D;     /* Warm Gray         */
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        /* ---------- Page shell ---------- */
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 45%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        /* ---------- Shared glass card ---------- */
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            overflow: hidden;
+        }
+
+        /* ---------- Shared buttons ---------- */
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 22px;
+            border: none;
+            border-radius: 14px;
+            font-size: .95rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 12px 24px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -10px rgba(217,140,122,.65);
+        }
+        .btn-gradient:active { transform: translateY(0); }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 22px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(122,113,109,.3);
+            color: var(--text-gray);
+            background: rgba(255,255,255,.5);
+            font-size: .95rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .2s ease, border-color .2s ease, color .2s ease;
+        }
+        .btn-secondary:hover {
+            border-color: var(--text-gray);
+            color: var(--text-dark);
+            background: rgba(255,255,255,.75);
+        }
+
+        /* ---------- Alerts ---------- */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 1.4rem;
+            font-size: .88rem;
+            line-height: 1.55;
+        }
+        .alert i { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+        .alert-info {
+            background: #f2f0fb;
+            color: #5b5480;
+            border: 1px solid rgba(157,120,194,.25);
+        }
+        .alert-info i { color: #9d78c2; }
+        .alert-danger {
+            background: #fbe4e1;
+            color: #8a3226;
+            border: 1px solid rgba(217,140,122,.4);
+        }
+        .alert-danger i { color: #d98c7a; }
+
+        /* ---------- Card header ---------- */
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+        }
+        .post-header i { font-size: 1.15rem; }
+        .post-header h3 {
+            margin: 0;
+            font-family: Fraunces, serif;
+            font-size: 1.35rem;
+            font-weight: 600;
+        }
+
+        .post-body {
+            padding: 2rem 2rem 2.2rem;
+        }
+
+        /* ---------- Form ---------- */
+        .field-group {
+            margin-bottom: 1.3rem;
+            opacity: 0;
+            animation: rowIn .5s ease forwards;
+        }
+        .field-group:nth-of-type(1) { animation-delay: .05s; }
+        .field-group:nth-of-type(2) { animation-delay: .1s; }
+        .field-group:nth-of-type(3) { animation-delay: .15s; }
+        .field-group:nth-of-type(4) { animation-delay: .2s; }
+        .field-group:nth-of-type(5) { animation-delay: .25s; }
+
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            font-size: .85rem;
+            margin-bottom: .5rem;
+            color: var(--text-dark);
+        }
+
+        .field-group input[type="text"],
+        .field-group input[type="file"],
+        .field-group select,
+        .field-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .92rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            transition: border-color .2s ease, box-shadow .2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .field-group select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23d98c7a'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 42px;
+        }
+        .field-group textarea {
+            min-height: 150px;
+            resize: vertical;
+            line-height: 1.6;
+        }
+        .field-group input[type="file"] {
+            padding: 11px 14px;
+            cursor: pointer;
+        }
+        .field-group input:hover,
+        .field-group select:hover,
+        .field-group textarea:hover {
+            border-color: var(--accent-2);
+        }
+        .field-group input:focus,
+        .field-group select:focus,
+        .field-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 4px rgba(217,140,122,.15);
+        }
+
+        .field-error {
+            margin-top: 6px;
+            font-size: .8rem;
+            color: #b3462f;
+            font-weight: 500;
+        }
+
+        .field-hint {
+            display: block;
+            margin-top: 6px;
+            font-size: .78rem;
+            color: var(--text-gray);
+        }
+
+        /* ---------- Checkbox ---------- */
+        .check-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 14px 16px;
+            background: #ffffffb3;
+            border: 1.5px solid rgba(217,140,122,.2);
+            border-radius: 14px;
+            margin-bottom: 1.4rem;
+            opacity: 0;
+            animation: rowIn .5s ease .3s forwards;
+        }
+        .check-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: var(--accent-2);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .check-row label {
+            font-weight: 600;
+            font-size: .88rem;
+            cursor: pointer;
+            display: block;
+        }
+        .check-row small {
+            display: block;
+            margin-top: 3px;
+            color: var(--text-gray);
+            font-size: .78rem;
+            font-weight: 400;
+        }
+
+        /* ---------- Actions ---------- */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: .5rem;
+            opacity: 0;
+            animation: rowIn .5s ease .35s forwards;
+        }
+        .form-actions .btn-gradient,
+        .form-actions .btn-secondary {
+            flex: 1;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .field-group, .check-row, .form-actions {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .post-body { padding: 1.6rem 1.4rem 2rem; }
+            .post-header { padding: 1.3rem 1.4rem; }
+            .form-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+        <div class="glass-card">
+            <div class="post-header">
+                <i class="fas fa-pen-nib"></i>
+                <h3>Create a Forum Post</h3>
             </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary">
-                    <h3><i class="fas fa-message"></i> Post details</h3>
+
+            <div class="post-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-circle-info"></i>
+                    <span>
+                        Share your thoughts, questions, or experiences with the community.
+                        You can choose to post <strong>anonymously</strong> using the checkbox below.
+                    </span>
                 </div>
-                <div class="card-body">
-                    <p class="alert alert-info">
-                        Share your thoughts, questions, or experiences with the community. 
-                        {% if not user.is_authenticated %}
-                            You can post <strong>anonymously</strong> if you prefer!
-                        {% else %}
-                            You can choose to post <strong>anonymously</strong> using the checkbox below.
+
+                {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-triangle-exclamation"></i>
+                        <span>{{ form.non_field_errors }}</span>
+                    </div>
+                {% endif %}
+
+                <form method="POST" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="field-group">
+                        <label for="{{ form.category.id_for_label }}">Category</label>
+                        {{ form.category }}
+                        {% if form.category.errors %}
+                            <div class="field-error">{{ form.category.errors }}</div>
                         {% endif %}
-                    </p>
+                    </div>
 
-                    {% if form.non_field_errors %}
-                        <div class="alert alert-danger">
-                            {{ form.non_field_errors }}
+                    <div class="field-group">
+                        <label for="{{ form.title.id_for_label }}">Post Title</label>
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <div class="field-error">{{ form.title.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field-group">
+                        <label for="{{ form.content.id_for_label }}">Content</label>
+                        {{ form.content }}
+                        {% if form.content.errors %}
+                            <div class="field-error">{{ form.content.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="check-row">
+                        {{ form.is_anonymous }}
+                        <div>
+                            <label for="{{ form.is_anonymous.id_for_label }}">Post Anonymously</label>
+                            <small>If checked, your name won't be shown. Your post will appear as "Anonymous"</small>
                         </div>
-                    {% endif %}
+                    </div>
 
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
+                    <div class="field-group">
+                        <label for="attachments">Attachments (Optional)</label>
+                        <input type="file" name="attachments" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
+                        <span class="field-hint">You can upload multiple files</span>
+                    </div>
 
-                        <div class="form-group mb-3">
-                            <label for="{{ form.category.id_for_label }}" class="form-label">
-                                <strong>Category</strong>
-                            </label>
-                            {{ form.category }}
-                            {% if form.category.errors %}
-                                <div class="text-danger mt-1">{{ form.category.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.title.id_for_label }}" class="form-label">
-                                <strong>Post Title</strong>
-                            </label>
-                            {{ form.title }}
-                            {% if form.title.errors %}
-                                <div class="text-danger mt-1">{{ form.title.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.content.id_for_label }}" class="form-label">
-                                <strong>Content</strong>
-                            </label>
-                            {{ form.content }}
-                            {% if form.content.errors %}
-                                <div class="text-danger mt-1">{{ form.content.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-check mb-3">
-                            {{ form.is_anonymous }}
-                            <label class="form-check-label" for="{{ form.is_anonymous.id_for_label }}">
-                                <strong>Post Anonymously</strong>
-                            </label>
-                            <small class="d-block text-muted mt-1">
-                                If checked, your name won't be shown. Your post will appear as "Anonymous"
-                            </small>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="attachments" class="form-label">
-                                <strong>Attachments (Optional)</strong>
-                            </label>
-                            <input type="file" name="attachments" multiple class="form-control" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif">
-                            <small class="form-text text-muted">You can upload multiple files</small>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                ✅ Post to Forum
-                            </button>
-                            <a href="{% url 'community:forum_home' %}" class="btn btn-secondary btn-lg">
-                                Cancel
-                            </a>
-                        </div>
-                    </form>
-                </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-gradient">
+                            <i class="fas fa-paper-plane"></i> Post to Forum
+                        </button>
+                        <a href="{% url 'community:forum_home' %}" class="btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
+</body>
+</html>

@@ -1,5 +1,342 @@
-{% extends 'base.html' %}
-{% block title %}Mother profile{% endblock %}
-{% block content %}
-{% include 'profile_form.html' with profile_icon='fa-person-pregnant' hero_title='Your health, thoughtfully organized' hero_text='Share a few health details so MoMind can personalize your maternal care experience.' form_title='Mother health details' form_subtitle='Add the health information available to you now.' submit_label='Save and continue' %}
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mother Details  MoMind</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: #4c4745;
+        }
+
+        /* ---------- Page shell ---------- */
+        .details-page {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, #f6e7e2 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+
+        .details-page::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        /* ---------- Blobs ---------- */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, #f2c8bc, #e7b3ae);
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, #d9c6e8, #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 40%; left: 45%;
+            background: radial-gradient(circle at 50% 50%, #a8d5cf, #b8c9b1);
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---------- Layout ---------- */
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 560px;
+        }
+
+        /* ---------- Card ---------- */
+        .details-card {
+            width: 100%;
+            background: rgba(255,255,255,.55);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.4);
+            border-radius: 26px;
+            padding: 2.6rem 2.4rem 2.8rem;
+            box-shadow: 0 20px 50px -16px rgba(217,140,122,.2);
+            transition: .35s;
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+        }
+        .details-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 80px rgba(217,140,122,.25);
+        }
+
+        .details-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.1rem;
+            border-radius: 50%;
+            font-size: 22px;
+            color: #fff;
+            background: linear-gradient(100deg, #e7b3ae, #d98c7a);
+            box-shadow: 0 10px 24px -6px rgba(217,140,122,.5);
+        }
+
+        .details-card h2 {
+            font-size: 34px;
+            margin: 0 0 6px;
+            font-family: Fraunces, serif;
+            text-align: center;
+            font-weight: 600;
+        }
+        .details-sub {
+            font-size: 15px;
+            text-align: center;
+            color: #736d69;
+            margin-bottom: 1.4rem;
+        }
+
+        /* signature: a gentle pulse line, standing in for the vitals this form records */
+        .pulse-wrap {
+            width: 100%;
+            height: 34px;
+            margin-bottom: 1.8rem;
+            overflow: hidden;
+        }
+        .pulse-wrap svg {
+            width: 200%;
+            height: 100%;
+            animation: pulseScroll 6s linear infinite;
+        }
+        .pulse-line {
+            fill: none;
+            stroke: url(#pulseGradient);
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+        @keyframes pulseScroll {
+            from { transform: translateX(0); }
+            to   { transform: translateX(-50%); }
+        }
+
+        /* ---------- Form ---------- */
+        .details-card form p {
+            margin: 0 0 1.15rem;
+            opacity: 0;
+            animation: rowIn .5s ease forwards;
+        }
+        .details-card form p:nth-of-type(1) { animation-delay: .05s; }
+        .details-card form p:nth-of-type(2) { animation-delay: .1s; }
+        .details-card form p:nth-of-type(3) { animation-delay: .15s; }
+        .details-card form p:nth-of-type(4) { animation-delay: .2s; }
+        .details-card form p:nth-of-type(5) { animation-delay: .25s; }
+        .details-card form p:nth-of-type(6) { animation-delay: .3s; }
+        .details-card form p:nth-of-type(7) { animation-delay: .35s; }
+        .details-card form p:nth-of-type(8) { animation-delay: .4s; }
+        .details-card form p:nth-of-type(n+9) { animation-delay: .45s; }
+
+        .details-card form label {
+            display: block;
+            font-weight: 600;
+            font-size: .82rem;
+            margin-bottom: .4rem;
+        }
+        .details-card input,
+        .details-card select,
+        .details-card textarea {
+            width: 100%;
+            padding: 15px 18px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .95rem;
+            font-family: 'Inter', sans-serif;
+            color: #4c4745;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .details-card select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%23d98c7a'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 42px;
+        }
+        .details-card textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+        .details-card input:hover,
+        .details-card select:hover,
+        .details-card textarea:hover {
+            border-color: #d98c7a;
+        }
+        .details-card input:focus,
+        .details-card select:focus,
+        .details-card textarea:focus {
+            outline: none;
+            border-color: #d98c7a;
+            box-shadow: 0 0 0 4px rgba(217,140,122,.15);
+        }
+
+        .details-card ul.errorlist {
+            list-style: none;
+            margin: .35rem 0 0;
+            padding: .5rem .85rem;
+            background: #fbe4e1;
+            border: 1px solid rgba(217,140,122,.4);
+            border-radius: .6rem;
+            color: #8a3226;
+            font-size: .8rem;
+            font-weight: 500;
+        }
+
+        .helptext {
+            display: block;
+            margin-top: 8px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: #918b87;
+        }
+
+        .details-card button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 58px;
+            margin-top: .6rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(100deg, #e7b3ae, #d98c7a);
+            box-shadow: 0 14px 28px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .details-card button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px -10px rgba(217,140,122,.65);
+        }
+        .details-card button:active {
+            transform: translateY(0);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .details-page::before, .details-card, .details-card form p, .pulse-wrap svg, .details-card button {
+                animation: none !important;
+                transition: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .details-card {
+                padding: 2.2rem 1.6rem 2.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="details-page">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="content">
+        <div class="details-card">
+            <div class="details-icon">
+                <i class="fas fa-heart-pulse"></i>
+            </div>
+            <h2>Mother Health Details</h2>
+            <p class="details-sub">A few details help us keep track of your care.</p>
+
+            <div class="pulse-wrap" aria-hidden="true">
+                <svg viewBox="0 0 600 34" preserveAspectRatio="none">
+                    <defs>
+                        <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stop-color="#e7b3ae"/>
+                            <stop offset="50%" stop-color="#d98c7a"/>
+                            <stop offset="100%" stop-color="#c9b3de"/>
+                        </linearGradient>
+                    </defs>
+                    <path class="pulse-line" d="M0,17 L60,17 L80,17 L92,4 L104,30 L116,17 L136,17 L300,17 L360,17 L380,17 L392,4 L404,30 L416,17 L436,17 L600,17
+                                                  L660,17 L680,17 L692,4 L704,30 L716,17 L736,17 L900,17 L960,17 L980,17 L992,4 L1004,30 L1016,17 L1036,17 L1200,17"/>
+                </svg>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="helptext" style="background:#fff6f3;border-left:4px solid #d98c7a;padding:12px;border-radius:12px;margin-bottom:1.2rem;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit">
+                    <i class="fas fa-notes-medical"></i>
+                    Save Details
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

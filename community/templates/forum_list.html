@@ -1,148 +1,480 @@
-{% extends 'basec.html' %}
 {% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Community Forum  MoMind</title>
 
-{% block extra_head %}
-{% include 'community/forum_theme.html' %}
-{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-{% block content %}
+    <style>
+        * { box-sizing: border-box; }
 
-<div class="forum-page">
-    <!-- Header Section -->
-    <div class="forum-hero">
-        <div class="forum-title-wrap">
-            <span class="forum-hero-icon"><i class="fas fa-comments"></i></span>
+        :root {
+            --bg-cream: #F6E7E2;
+            --pink: #E7B3AE;
+            --peach: #F2C8BC;
+            --coral: #D98C7A;
+            --lilac: #D9C6E8;
+            --sage: #B8C9B1;
+            --teal: #A8D5CF;
+            --card-bg: #FFF8F5;
+            --text-dark: #3E3A39;
+            --text-gray: #7A716D;
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove { from { transform: translateY(0); } to { transform: translateY(60px); } }
+
+        .blob { position: absolute; border-radius: 50%; filter: blur(75px); opacity: .5; z-index: 0; }
+        .blob-1 {
+            width: 400px; height: 400px; top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px; bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px; top: 55%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes rowIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 860px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+        }
+
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            overflow: hidden;
+        }
+
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: .88rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            white-space: nowrap;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 10px 20px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 14px 26px -10px rgba(217,140,122,.65); }
+        .btn-gradient.btn-sm { padding: 8px 15px; font-size: .78rem; border-radius: 10px; }
+
+        .btn-secondary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 11px 18px;
+            border-radius: 12px;
+            border: 1.5px solid rgba(122,113,109,.3);
+            color: var(--text-gray);
+            background: rgba(255,255,255,.55);
+            font-size: .85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s ease, border-color .2s ease, color .2s ease;
+        }
+        .btn-secondary-pill:hover { border-color: var(--accent-2); color: var(--accent-2); background: #fff; }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 13px;
+            border-radius: 999px;
+            border: 1.5px solid var(--accent-2);
+            color: var(--accent-2);
+            background: transparent;
+            font-size: .76rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s ease, color .2s ease;
+        }
+        .btn-outline:hover { background: var(--accent-2); color: #fff; }
+
+        .link-plain {
+            color: var(--accent-2);
+            font-size: .85rem;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .link-plain:hover { text-decoration: underline; }
+
+        /* ---------- Header ---------- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        .page-header h1 {
+            font-family: Fraunces, serif;
+            font-size: 30px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header h1 i { color: var(--accent-2); font-size: 24px; }
+        .page-header p { margin: 0 0 8px; color: var(--text-gray); font-size: 14px; }
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        /* ---------- Card bar ---------- */
+        .card-bar {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 1.2rem 1.8rem;
+        }
+        .card-bar.bar-accent {
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+        }
+        .card-bar.bar-neutral {
+            background: rgba(255,255,255,.4);
+            color: var(--text-dark);
+            border-bottom: 1px solid rgba(217,140,122,.15);
+        }
+        .card-bar h5 {
+            margin: 0;
+            font-family: Fraunces, serif;
+            font-size: 1.1rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .card-bar.bar-neutral h5 i { color: var(--accent-2); }
+
+        .section-body { padding: 1.5rem 1.8rem 1.8rem; }
+
+        /* ---------- Categories ---------- */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+        .category-card {
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(255,255,255,.55);
+            border: 1px solid rgba(217,140,122,.15);
+        }
+        .category-card h6 { margin: 0 0 4px; font-size: .92rem; font-weight: 700; }
+        .category-card p { margin: 0 0 10px; font-size: .78rem; color: var(--text-gray); line-height: 1.5; }
+        .btn-subscribed {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 13px;
+            border-radius: 999px;
+            border: 1.5px solid var(--sage);
+            background: rgba(184,201,177,.25);
+            color: #4a6647;
+            font-size: .76rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ---------- Posts feed ---------- */
+        .post-card {
+            padding: 1.4rem 1.6rem;
+            margin-bottom: 1rem;
+            border-radius: 16px;
+            background: rgba(255,255,255,.55);
+            border: 1px solid rgba(217,140,122,.15);
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .section-body .post-card:nth-of-type(1) { animation-delay: .04s; }
+        .section-body .post-card:nth-of-type(2) { animation-delay: .08s; }
+        .section-body .post-card:nth-of-type(3) { animation-delay: .12s; }
+        .section-body .post-card:nth-of-type(n+4) { animation-delay: .16s; }
+        .post-card:last-child { margin-bottom: 0; }
+
+        .post-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .post-card h5 { margin: 0 0 6px; font-family: Fraunces, serif; font-size: 1.1rem; font-weight: 600; }
+        .post-card h5 a { color: var(--text-dark); text-decoration: none; }
+        .post-card h5 a:hover { color: var(--accent-2); }
+
+        .post-meta {
+            font-size: .78rem;
+            color: var(--text-gray);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .post-meta strong { color: var(--text-dark); }
+
+        .badge-pill {
+            font-size: .68rem;
+            font-weight: 700;
+            padding: .22rem .6rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .badge-anon { background: #e7e3e0; color: #6b6560; }
+        .badge-category { background: var(--lilac); color: #6b4d8a; }
+        .badge-comments { background: rgba(217,140,122,.12); color: var(--accent-2); }
+
+        .post-content {
+            margin: 12px 0 0;
+            font-size: .89rem;
+            line-height: 1.6;
+            color: var(--text-dark);
+        }
+
+        .attachments-preview {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .attachments-preview img {
+            width: 90px;
+            height: 90px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid rgba(217,140,122,.2);
+        }
+
+        .post-footer { margin-top: 1.1rem; }
+
+        /* ---------- Empty state ---------- */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+        }
+        .empty-state i { font-size: 2.2rem; color: var(--accent-2); margin-bottom: .7rem; display: block; }
+        .empty-state h5 { margin: 0 0 6px; font-family: Fraunces, serif; font-weight: 600; }
+        .empty-state p { margin: 0 0 1.2rem; color: var(--text-gray); font-size: .9rem; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .post-card { animation: none !important; opacity: 1 !important; transform: none !important; }
+        }
+
+        @media (max-width: 560px) {
+            .section-body { padding: 1.3rem 1.3rem 1.6rem; }
+            .card-bar { padding: 1.1rem 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+
+        <!-- Header -->
+        <div class="page-header">
             <div>
-                <h2>Community Forum</h2>
+                <h1><i class="fas fa-comments"></i> Community Forum</h1>
                 <p>Share your thoughts, ask questions, and connect with other members</p>
-            </div>
-        </div>
-        <div class="forum-actions">
-            <a href="{% url 'community:group_list' %}" class="btn btn-secondary">
-                <i class="fas fa-users"></i> Groups
-            </a>
-            <a href="{% url 'community:create_post' %}" class="btn btn-primary btn-lg">
-                <i class="fas fa-pen"></i> New Post
-            </a>
-            {% if user.is_authenticated %}
-                <a href="{% url 'community:view_notifications' %}" class="btn btn-secondary">
-                    <i class="fas fa-bell"></i> Notifications
+                <a href="{% url 'community:group_list' %}" class="link-plain">
+                    <i class="fas fa-hospital"></i> View hospital groups
                 </a>
-            {% endif %}
-        </div>
-    </div>
-
-    <!-- Categories Filter -->
-    {% if categories %}
-        <div class="card mb-4">
-            <div class="card-header bg-light">
-                <h5 class="mb-0">📂 Categories</h5>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'dashboards:dashboard' %}" class="link-plain">
+                        <i class="fas fa-arrow-left"></i> Dashboard
+                    </a>
+                {% endif %}
             </div>
-            <div class="card-body">
-                <div class="row">
-                    {% for category in categories %}
-                        <div class="col-md-4 mb-2">
-                            <div class="card category-card">
-                                <div class="card-body p-2">
-                                    <h6 class="mb-1">{{ category.name }}</h6>
-                                    <p class="mb-2 text-muted small">{{ category.description }}</p>
-                                    {% if user.is_authenticated %}
-                                        {% if category.id in user_subscribed_forums %}
-                                            <form method="POST" action="{% url 'community:unsubscribe_forum' category.id %}" class="d-inline">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-success">✅ Subscribed</button>
-                                            </form>
-                                        {% else %}
-                                            <form method="POST" action="{% url 'community:subscribe_forum' category.id %}" class="d-inline">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-sm btn-outline-primary">Subscribe</button>
-                                            </form>
-                                        {% endif %}
+            <div class="header-actions">
+                <a href="{% url 'community:create_post' %}" class="btn-gradient">
+                    <i class="fas fa-pen"></i> New Post
+                </a>
+                {% if user.is_authenticated %}
+                    <a href="{% url 'community:view_notifications' %}" class="btn-secondary-pill">
+                        <i class="fas fa-bell"></i> Notifications
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Categories -->
+        {% if categories %}
+            <div class="glass-card">
+                <div class="card-bar bar-neutral">
+                    <h5><i class="fas fa-folder-open"></i> Categories</h5>
+                </div>
+                <div class="section-body">
+                    <div class="category-grid">
+                        {% for category in categories %}
+                            <div class="category-card">
+                                <h6>{{ category.name }}</h6>
+                                <p>{{ category.description }}</p>
+                                {% if user.is_authenticated %}
+                                    {% if category.id in user_subscribed_forums %}
+                                        <form method="POST" action="{% url 'community:unsubscribe_forum' category.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-subscribed">
+                                                <i class="fas fa-check"></i> Subscribed
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST" action="{% url 'community:subscribe_forum' category.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-gradient btn-sm">Subscribe</button>
+                                        </form>
                                     {% endif %}
-                                </div>
+                                {% endif %}
                             </div>
-                        </div>
-                    {% endfor %}
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Posts Section -->
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0">📋 Recent Posts ({{ posts.count }})</h5>
-        </div>
-        <div class="card-body">
-            {% if posts %}
-                {% for post in posts %}
-                    <div class="card post-card mb-3">
-                        <div class="card-body">
-                            <!-- Post Header -->
-                            <div class="d-flex justify-content-between align-items-start">
+        <!-- Posts -->
+        <div class="glass-card">
+            <div class="card-bar bar-accent">
+                <h5><i class="fas fa-list"></i> Recent Posts ({{ posts.count }})</h5>
+            </div>
+            <div class="section-body">
+                {% if posts %}
+                    {% for post in posts %}
+                        <div class="post-card">
+                            <div class="post-card-top">
                                 <div>
-                                    <h5 class="mb-1">
-                                        <a href="{% url 'community:post_detail' post.id %}" class="post-title-link text-decoration-none">
-                                            {{ post.title }}
-                                        </a>
-                                    </h5>
-                                    <div class="text-muted small">
+                                    <h5><a href="{% url 'community:post_detail' post.id %}">{{ post.title }}</a></h5>
+                                    <div class="post-meta">
                                         {% if post.is_anonymous %}
-                                            <span class="badge bg-secondary">Anonymous</span>
+                                            <span class="badge-pill badge-anon">Anonymous</span>
                                         {% else %}
                                             <strong>{{ post.author.get_full_name|default:post.author.username }}</strong>
                                         {% endif %}
-                                        • {{ post.created_at|date:"M d, Y H:i" }}
-                                        
+                                        <span>&middot; {{ post.created_at|date:"M d, Y H:i" }}</span>
                                         {% if post.category %}
-                                            • <span class="badge bg-info">{{ post.category.name }}</span>
+                                            <span class="badge-pill badge-category">{{ post.category.name }}</span>
                                         {% endif %}
                                     </div>
                                 </div>
-                                <span class="badge bg-light text-dark">
-                                    💬 {{ post.comments.count|add:post.anonymous_comments.count }} comments
+                                <span class="badge-pill badge-comments">
+                                    <i class="fas fa-comment"></i> {{ post.comments.count|add:post.anonymous_comments.count }} comments
                                 </span>
                             </div>
 
-                            <!-- Post Content -->
-                            <p class="mt-3 mb-2">{{ post.content|truncatewords:50 }}</p>
+                            <p class="post-content">{{ post.content|truncatewords:50 }}</p>
 
-                            <!-- Attachments Preview -->
                             {% if post.attachments.all %}
-                                <div class="mt-2 mb-2">
-                                    <strong>Attachments:</strong><br>
+                                <div class="attachments-preview">
                                     {% for file in post.attachments.all %}
                                         {% if file.file.url|lower|slice:"-4:" == ".jpg" or file.file.url|lower|slice:"-4:" == ".png" or file.file.url|lower|slice:"-5:" == ".jpeg" %}
-                                            <!-- IMAGE PREVIEW -->
-                                            <img src="{{ file.file.url }}" class="forum-attachment-image" alt="Attachment for {{ post.title }}">
+                                            <img src="{{ file.file.url }}" alt="">
                                         {% else %}
-                                            <!-- FILE LINK -->
-                                            <a href="{{ file.file.url }}" class="btn btn-sm btn-outline-secondary" target="_blank">
-                                                📎 {{ file.file.name|truncatechars:30 }}
+                                            <a href="{{ file.file.url }}" class="btn-outline" target="_blank">
+                                                <i class="fas fa-paperclip"></i> {{ file.file.name|truncatechars:30 }}
                                             </a>
                                         {% endif %}
                                     {% endfor %}
                                 </div>
                             {% endif %}
 
-                            <!-- Read More Link -->
-                            <div class="mt-3">
-                                <a href="{% url 'community:post_detail' post.id %}" class="btn btn-sm btn-primary">
-                                    Read More →
+                            <div class="post-footer">
+                                <a href="{% url 'community:post_detail' post.id %}" class="btn-gradient btn-sm">
+                                    Read More <i class="fas fa-arrow-right"></i>
                                 </a>
                             </div>
                         </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <h5>No posts yet</h5>
+                        <p>Be the first to start a discussion!</p>
+                        <a href="{% url 'community:create_post' %}" class="btn-gradient">Create Post</a>
                     </div>
-                {% endfor %}
-            {% else %}
-                <div class="alert alert-info text-center">
-                    <h5>📭 No posts yet</h5>
-                    <p>Be the first to start a discussion!</p>
-                    <a href="{% url 'community:create_post' %}" class="btn btn-primary">Create Post</a>
-                </div>
-            {% endif %}
+                {% endif %}
+            </div>
         </div>
+
     </div>
 </div>
 
-{% endblock %}
+</body>
+</html>

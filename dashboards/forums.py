@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 from .models import *
 
 class MultipleFileInput(forms.ClearableFileInput):
@@ -32,17 +33,25 @@ class PregnancyForm(forms.ModelForm):
     class Meta:
         model = Pregnancy
         fields = [
-            "pregnancy_number",
-            "is_active",
             "last_menstrual_period",
             "expected_delivery_date",
             "pre_pregnancy_weight",
-            "is_high_risk",
         ]
         widgets = {
             "last_menstrual_period": forms.DateInput(attrs={'type': 'date'}),
             "expected_delivery_date": forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        lmp = cleaned.get("last_menstrual_period")
+        due = cleaned.get("expected_delivery_date")
+        today = timezone.localdate()
+        if lmp and lmp > today:
+            self.add_error("last_menstrual_period", "This date cannot be in the future.")
+        if lmp and due and due <= lmp:
+            self.add_error("expected_delivery_date", "The due date must be after the last menstrual period.")
+        return cleaned
 
 class PregnancyProgressForm(forms.ModelForm):
     class Meta:
@@ -131,6 +140,12 @@ class EndPregnancyForm(forms.ModelForm):
         initial=1,
         label="Number of Babies"
     )
+
+    def clean_actual_delivery_date(self):
+        value = self.cleaned_data["actual_delivery_date"]
+        if value > timezone.localdate():
+            raise forms.ValidationError("Delivery date cannot be in the future.")
+        return value
 
 class BabyDevelopmentForm(forms.ModelForm):
     class Meta:

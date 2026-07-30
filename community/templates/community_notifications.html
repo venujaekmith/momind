@@ -1,73 +1,445 @@
-{% extends 'basec.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notifications  MoMind</title>
 
-{% block content %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card mb-4">
-                <div class="card-body text-center">
-                    <h3>{{ unread_count }}</h3>
-                    <p class="text-muted">Unread Notifications</p>
-                    {% if unread_count > 0 %}
-                        <form method="POST" class="d-inline">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-primary">Mark All as Read</button>
-                        </form>
-                    {% endif %}
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            /* ---- MoMind brand palette ---- */
+            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
+            --pink: #E7B3AE;          /* Dusty Rose        */
+            --peach: #F2C8BC;         /* Muted Peach       */
+            --coral: #D98C7A;         /* Soft Coral        */
+            --lilac: #D9C6E8;         /* Soft Lilac        */
+            --sage: #B8C9B1;          /* Muted Sage        */
+            --teal: #A8D5CF;          /* Soft Teal         */
+            --card-bg: #FFF8F5;       /* Warm Ivory        */
+            --text-dark: #3E3A39;     /* Deep Charcoal     */
+            --text-gray: #7A716D;     /* Warm Gray         */
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        /* ---------- Page shell ---------- */
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 45%; left: 48%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        /* ---------- Page header ---------- */
+        .page-header {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto 1.6rem;
+        }
+        .page-header h1 {
+            font-family: Fraunces, serif;
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0 0 4px;
+        }
+        .page-header p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: 15px;
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        /* ---------- Shared glass card ---------- */
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+        }
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* ---------- Shared buttons ---------- */
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            padding: 13px 18px;
+            border: none;
+            border-radius: 14px;
+            font-size: .9rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 12px 24px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -10px rgba(217,140,122,.65);
+        }
+        .btn-gradient:active { transform: translateY(0); }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 14px;
+            border-radius: 999px;
+            border: 1.5px solid var(--accent-2);
+            color: var(--accent-2);
+            background: transparent;
+            font-size: .78rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s ease, color .2s ease;
+        }
+        .btn-outline:hover {
+            background: var(--accent-2);
+            color: #fff;
+        }
+
+        /* ================= Notifications component ================= */
+        .notif-layout {
+            display: flex;
+            gap: 24px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        /* ---------- Sidebar ---------- */
+        .notif-sidebar {
+            flex: 0 0 260px;
+            padding: 2rem 1.6rem;
+            text-align: center;
+        }
+
+        .unread-ring {
+            position: relative;
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .unread-ring::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(217,140,122,.35), transparent 70%);
+            animation: ping 2.4s ease-out infinite;
+        }
+        @keyframes ping {
+            0%   { transform: scale(.7); opacity: .9; }
+            70%  { transform: scale(1.4); opacity: 0; }
+            100% { opacity: 0; }
+        }
+        .unread-count {
+            position: relative;
+            z-index: 1;
+            font-family: 'Fraunces', serif;
+            font-size: 2.1rem;
+            font-weight: 600;
+            color: var(--accent-2);
+        }
+        .unread-label {
+            color: var(--text-gray);
+            font-size: .85rem;
+            margin-bottom: 1.1rem;
+        }
+
+        /* ---------- Main panel ---------- */
+        .notif-main {
+            flex: 1 1 480px;
+            min-width: 280px;
+            overflow: hidden;
+        }
+        .notif-header {
+            display: flex;
+            align-items: center;
+            gap: .6rem;
+            padding: 1.4rem 1.8rem;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+            border-radius: 22px 22px 0 0;
+        }
+        .notif-header i {
+            animation: ringBell 3.2s ease-in-out infinite;
+            transform-origin: top center;
+        }
+        @keyframes ringBell {
+            0%, 92%, 100% { transform: rotate(0deg); }
+            93% { transform: rotate(-14deg); }
+            95% { transform: rotate(12deg); }
+            97% { transform: rotate(-8deg); }
+            99% { transform: rotate(5deg); }
+        }
+        .notif-header h3 {
+            margin: 0;
+            font-family: 'Fraunces', serif;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .notif-list {
+            max-height: 600px;
+            overflow-y: auto;
+            padding: 1.2rem;
+        }
+
+        .notif-item {
+            display: flex;
+            flex-direction: column;
+            gap: .5rem;
+            padding: 1rem 1.2rem;
+            margin-bottom: .8rem;
+            border-radius: 16px;
+            background: rgba(255,255,255,.5);
+            border: 1px solid rgba(255,255,255,.5);
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+            transition: box-shadow .2s ease, transform .2s ease;
+        }
+        .notif-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 24px -10px rgba(0,0,0,.15);
+        }
+        .notif-item.unread {
+            background: rgba(255,255,255,.8);
+            border-left: 4px solid var(--accent-2);
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .notif-list .notif-item:nth-child(1) { animation-delay: .03s; }
+        .notif-list .notif-item:nth-child(2) { animation-delay: .06s; }
+        .notif-list .notif-item:nth-child(3) { animation-delay: .09s; }
+        .notif-list .notif-item:nth-child(4) { animation-delay: .12s; }
+        .notif-list .notif-item:nth-child(5) { animation-delay: .15s; }
+        .notif-list .notif-item:nth-child(n+6) { animation-delay: .18s; }
+
+        .notif-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: .8rem;
+        }
+        .notif-title {
+            margin: 0 0 .3rem;
+            font-weight: 600;
+            font-size: .95rem;
+        }
+        .notif-message {
+            margin: 0 0 .3rem;
+            font-size: .85rem;
+            color: var(--text-gray);
+        }
+        .notif-time {
+            font-size: .75rem;
+            color: #9a938f;
+        }
+
+        .badge-pill {
+            flex-shrink: 0;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: .25rem .65rem;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
+        .badge-new { background: var(--accent-2); color: #fff; }
+        .badge-read { background: #e7e3e0; color: #8a827d; }
+
+        .notif-empty {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            color: var(--text-gray);
+        }
+        .notif-empty i {
+            font-size: 2rem;
+            color: var(--accent-2);
+            margin-bottom: .6rem;
+            display: block;
+        }
+        .notif-empty h5 {
+            margin: 0 0 4px;
+            color: var(--text-dark);
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .unread-ring::before, .notif-header i, .notif-item {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 760px) {
+            .notif-sidebar { flex: 1 1 100%; }
+            .notif-header { border-radius: 22px 22px 0 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-header">
+        <h1>Notifications</h1>
+        <p>Stay up to date with your community and care team.</p>
+        <a href="{% url 'community:forum_home' %}" class="btn-outline" style="margin-top:.7rem;">
+            <i class="fas fa-arrow-left"></i> Community forum
+        </a>
+    </div>
+
+    <div class="page-wrap">
+        <div class="notif-layout">
+            <div class="notif-sidebar glass-card">
+                <div class="unread-ring">
+                    <span class="unread-count">{{ unread_count }}</span>
                 </div>
+                <p class="unread-label">Unread Notifications</p>
+                {% if unread_count > 0 %}
+                    <form method="POST">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-gradient">
+                            <i class="fas fa-check-double"></i> Mark All as Read
+                        </button>
+                    </form>
+                {% endif %}
             </div>
-        </div>
 
-        <div class="col-md-9">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3 class="mb-0">📢 Community Notifications</h3>
+            <div class="notif-main glass-card">
+                <div class="notif-header">
+                    <i class="fas fa-bell"></i>
+                    <h3>Community Notifications</h3>
                 </div>
-                <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+
+                <div class="notif-list">
                     {% if notifications %}
                         {% for notification in notifications %}
-                            <div class="notification-item {% if not notification.is_read %}bg-light border-left border-primary border-3{% endif %} p-3 mb-2 rounded" style="{% if not notification.is_read %}border-left: 4px solid #007bff;{% endif %}">
-                                <div class="d-flex justify-content-between align-items-start">
-                                    <div class="flex-grow-1">
-                                        <h6 class="mb-1">
-                                            {% if notification.notification_type == 'new_post' %}
-                                                📝
-                                            {% elif notification.notification_type == 'new_comment' %}
-                                                💬
-                                            {% elif notification.notification_type == 'clinic_schedule' %}
-                                                🏥
-                                            {% elif notification.notification_type == 'hospital_announcement' %}
-                                                📢
-                                            {% elif notification.notification_type == 'subscription_alert' %}
-                                                🔔
+                            <div class="notif-item {% if not notification.is_read %}unread{% endif %}">
+                                <div class="notif-top">
+                                    <div>
+                                        <p class="notif-title">
+                                            {% if notification.notification_type == 'new_post' %}📝
+                                            {% elif notification.notification_type == 'new_comment' %}💬
+                                            {% elif notification.notification_type == 'clinic_schedule' %}🏥
+                                            {% elif notification.notification_type == 'hospital_announcement' %}📢
+                                            {% elif notification.notification_type == 'subscription_alert' %}🔔
                                             {% endif %}
                                             {{ notification.title }}
-                                        </h6>
-                                        <p class="mb-1 text-muted small">{{ notification.message }}</p>
-                                        <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                                        </p>
+                                        <p class="notif-message">{{ notification.message }}</p>
+                                        <span class="notif-time">{{ notification.created_at|date:"M d, Y H:i" }}</span>
                                     </div>
-                                    <span class="badge {% if not notification.is_read %}badge-primary{% else %}badge-secondary{% endif %} ms-2">
+                                    <span class="badge-pill {% if not notification.is_read %}badge-new{% else %}badge-read{% endif %}">
                                         {% if not notification.is_read %}New{% else %}Read{% endif %}
                                     </span>
                                 </div>
-                                
-                                <!-- Related Links -->
+
                                 {% if notification.forum_post %}
-                                    <div class="mt-2">
-                                        <a href="{% url 'community:post_detail' notification.forum_post.id %}" class="btn btn-sm btn-outline-primary">
+                                    <div>
+                                        <a href="{% url 'community:post_detail' notification.forum_post.id %}" class="btn-outline">
                                             View Post
                                         </a>
                                     </div>
                                 {% elif notification.hospital_group %}
-                                    <div class="mt-2">
-                                        <a href="{% url 'community:group_detail' notification.hospital_group.id %}" class="btn btn-sm btn-outline-primary">
+                                    <div>
+                                        <a href="{% url 'community:group_detail' notification.hospital_group.id %}" class="btn-outline">
                                             View Group
                                         </a>
                                     </div>
-                                {% elif notification.clinic_schedule %}
-                                    <div class="mt-2">
-                                        <a href="{% url 'community:clinic_schedules' notification.clinic_schedule.hospital.groups.first.id %}" class="btn btn-sm btn-outline-primary">
+                                {% elif notification.clinic_schedule and notification.target_group %}
+                                    <div>
+                                        <a href="{% url 'community:clinic_schedules' notification.target_group.id %}" class="btn-outline">
                                             View Schedule
                                         </a>
                                     </div>
@@ -75,8 +447,9 @@
                             </div>
                         {% endfor %}
                     {% else %}
-                        <div class="alert alert-info text-center">
-                            <h5>✅ No notifications</h5>
+                        <div class="notif-empty">
+                            <i class="fas fa-circle-check"></i>
+                            <h5>No notifications</h5>
                             <p>You're all caught up! Check back later for updates.</p>
                         </div>
                     {% endif %}
@@ -86,14 +459,5 @@
     </div>
 </div>
 
-<style>
-    .notification-item {
-        border: 1px solid #ddd;
-        transition: all 0.3s ease;
-    }
-    .notification-item:hover {
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-</style>
-
-{% endblock %}
+</body>
+</html>

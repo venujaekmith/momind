@@ -1,126 +1,497 @@
-{% extends 'basec.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Communities  MoMind</title>
 
-{% block content %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<div class="container mt-4">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2>🏥 Hospital Communities</h2>
-            <p class="text-muted">Join your hospital's community forum to stay connected</p>
-        </div>
-        <div class="col-md-4 text-end">
-            {% if user.is_authenticated and user.user_hospital %}
-                <a href="{% url 'community:create_group' %}" class="btn btn-primary btn-lg">
-                    ➕ Create Group
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            /* ---- MoMind brand palette ---- */
+            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
+            --pink: #E7B3AE;          /* Dusty Rose        */
+            --peach: #F2C8BC;         /* Muted Peach       */
+            --coral: #D98C7A;         /* Soft Coral        */
+            --lilac: #D9C6E8;         /* Soft Lilac        */
+            --sage: #B8C9B1;          /* Muted Sage        */
+            --teal: #A8D5CF;          /* Soft Teal         */
+            --card-bg: #FFF8F5;       /* Warm Ivory        */
+            --text-dark: #3E3A39;     /* Deep Charcoal     */
+            --text-gray: #7A716D;     /* Warm Gray         */
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        /* ---------- Page shell ---------- */
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 55%; left: 48%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 1040px;
+            margin: 0 auto;
+        }
+
+        /* ---------- Shared glass card ---------- */
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            transition: transform .25s ease, box-shadow .25s ease;
+        }
+
+        /* ---------- Shared buttons ---------- */
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 13px 22px;
+            border: none;
+            border-radius: 14px;
+            font-size: .92rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 12px 24px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 16px 30px -10px rgba(217,140,122,.65);
+        }
+        .btn-gradient.btn-sm {
+            padding: 7px 16px;
+            font-size: .8rem;
+            border-radius: 999px;
+        }
+
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 16px;
+            border-radius: 999px;
+            border: 1.5px solid var(--accent-2);
+            color: var(--accent-2);
+            background: transparent;
+            font-size: .8rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background .2s ease, color .2s ease;
+        }
+        .btn-outline:hover {
+            background: var(--accent-2);
+            color: #fff;
+        }
+
+        /* ---------- Header ---------- */
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1.6rem;
+        }
+        .page-header h1 {
+            font-family: Fraunces, serif;
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0 0 4px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .page-header h1 i {
+            color: var(--accent-2);
+            font-size: 26px;
+        }
+        .page-header p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: 15px;
+        }
+
+        /* ---------- Alerts ---------- */
+        .alert {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 1.2rem;
+            font-size: .9rem;
+            opacity: 0;
+            animation: rowIn .45s ease forwards;
+        }
+        .alert i { font-size: 1rem; flex-shrink: 0; }
+        .alert-info {
+            background: #f2f0fb;
+            color: #5b5480;
+            border: 1px solid rgba(157,120,194,.25);
+        }
+        .alert-info i { color: #9d78c2; }
+        .alert-success {
+            background: #f0f6ee;
+            color: #4a6647;
+            border: 1px solid rgba(127,160,122,.3);
+        }
+        .alert-success i { color: #7fa07a; }
+        .alert-warning, .alert-error, .alert-danger {
+            background: #fbe4e1;
+            color: #8a3226;
+            border: 1px solid rgba(217,140,122,.4);
+        }
+        .alert-warning i, .alert-error i, .alert-danger i { color: #d98c7a; }
+        .alert-link { color: inherit; font-weight: 700; text-decoration: underline; }
+
+        /* ---------- Group cards ---------- */
+        .groups-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 2.4rem;
+        }
+        .group-card {
+            padding: 1.6rem 1.7rem;
+            opacity: 0;
+            animation: rowIn .5s ease forwards;
+        }
+        .groups-grid .group-card:nth-child(1) { animation-delay: .04s; }
+        .groups-grid .group-card:nth-child(2) { animation-delay: .08s; }
+        .groups-grid .group-card:nth-child(3) { animation-delay: .12s; }
+        .groups-grid .group-card:nth-child(4) { animation-delay: .16s; }
+        .groups-grid .group-card:nth-child(n+5) { animation-delay: .2s; }
+        .group-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 26px 60px -20px rgba(217,140,122,.32);
+        }
+
+        .group-card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: .8rem;
+        }
+        .group-card h5 {
+            margin: 0 0 4px;
+            font-family: Fraunces, serif;
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .group-card h5 a {
+            color: var(--text-dark);
+            text-decoration: none;
+        }
+        .group-card h5 a:hover { color: var(--accent-2); }
+        .group-hospital {
+            margin: 0 0 .8rem;
+            font-size: .8rem;
+            color: var(--text-gray);
+        }
+        .group-hospital strong { color: var(--text-dark); }
+        .group-desc {
+            margin: 0 0 1.2rem;
+            font-size: .88rem;
+            color: var(--text-gray);
+            line-height: 1.5;
+        }
+
+        .badge-pill {
+            flex-shrink: 0;
+            font-size: .7rem;
+            font-weight: 700;
+            padding: .3rem .7rem;
+            border-radius: 999px;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .badge-private { background: #fdf0dd; color: #a4691a; }
+        .badge-public { background: #f0f6ee; color: #4a6647; }
+        .badge-member { background: var(--accent-2); color: #fff; }
+
+        .group-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(217,140,122,.15);
+        }
+        .group-members {
+            font-size: .8rem;
+            color: var(--text-gray);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .group-members i { color: var(--accent-2); }
+
+        /* ---------- Empty state ---------- */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1.5rem;
+            margin-bottom: 2.4rem;
+        }
+        .empty-state i {
+            font-size: 2.2rem;
+            color: var(--accent-2);
+            margin-bottom: .7rem;
+            display: block;
+        }
+        .empty-state h5 {
+            margin: 0 0 4px;
+            font-family: Fraunces, serif;
+            font-weight: 600;
+        }
+        .empty-state p {
+            margin: 0;
+            color: var(--text-gray);
+            font-size: .9rem;
+        }
+
+        /* ---------- Info section ---------- */
+        .info-card {
+            padding: 1.8rem 2rem;
+        }
+        .info-card h5 {
+            margin: 0 0 1rem;
+            font-family: Fraunces, serif;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .info-card h5 i { color: var(--accent-2); }
+        .info-card ul {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: .9rem 1.6rem;
+        }
+        .info-card li {
+            font-size: .88rem;
+            color: var(--text-gray);
+            line-height: 1.5;
+            padding-left: 22px;
+            position: relative;
+        }
+        .info-card li::before {
+            content: "\f005";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            font-size: .65rem;
+            color: var(--accent-2);
+            position: absolute;
+            left: 0;
+            top: 4px;
+        }
+        .info-card li strong { color: var(--text-dark); }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .alert, .group-card {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+
+        <div class="page-header">
+            <div>
+                <h1><i class="fas fa-hospital"></i> Hospital Communities</h1>
+                <p>Join your hospital's community forum to stay connected</p>
+                <a href="{% url 'community:forum_home' %}" class="btn-outline" style="margin-top:.7rem;">
+                    <i class="fas fa-arrow-left"></i> Community forum
+                </a>
+            </div>
+            {% if can_manage_groups %}
+                <a href="{% url 'community:create_group' %}" class="btn-gradient">
+                    <i class="fas fa-plus"></i> Create Group
                 </a>
             {% endif %}
         </div>
-    </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    {% if not user.is_authenticated or not user.user_hospital %}
-        <div class="alert alert-info">
-            💡 <strong>Tip:</strong> Hospital staff can create custom groups to organize discussions.
-            <a href="{% url 'accounts:login' %}" class="alert-link">Login as hospital staff</a> to get started.
-        </div>
-    {% endif %}
-
-    <!-- Groups List -->
-    {% if groups %}
-        <div class="row">
-            {% for group in groups %}
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <div class="d-flex justify-content-between align-items-start">
-                                <div>
-                                    <h5 class="card-title">
-                                        <a href="{% url 'community:group_detail' group.pk %}" class="text-dark text-decoration-none">
-                                            {{ group.name }}
-                                        </a>
-                                    </h5>
-                                    <p class="text-muted small">
-                                        <strong>{{ group.hospital.name }}</strong>
-                                    </p>
-                                </div>
-                                {% if group.is_private %}
-                                    <span class="badge bg-warning">🔒 Private</span>
-                                {% else %}
-                                    <span class="badge bg-success">🌐 Public</span>
-                                {% endif %}
-                            </div>
-
-                            <p class="card-text">{{ group.description }}</p>
-
-                            <div class="d-flex justify-content-between align-items-center mt-3">
-                                <small class="text-muted">
-                                    👥 {{ group.members.count }} members
-                                </small>
-                                {% if user.is_authenticated %}
-                                    {% if user in group.members.values_list %}
-                                        <span class="badge bg-primary">✓ Member</span>
-                                    {% else %}
-                                        <a href="{% url 'community:join_group' group.pk %}" class="btn btn-sm btn-outline-primary">
-                                            Join
-                                        </a>
-                                    {% endif %}
-                                {% else %}
-                                    <a href="{% url 'accounts:login' %}" class="btn btn-sm btn-primary">
-                                        Login to Join
-                                    </a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    <i class="fas fa-circle-info"></i>
+                    <span>{{ message }}</span>
                 </div>
             {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info text-center">
-            <h5>📭 No community groups yet</h5>
-            <p>Hospital groups will appear here as they're created.</p>
-        </div>
-    {% endif %}
+        {% endif %}
 
-    <!-- Info Section -->
-    <div class="row mt-5">
-        <div class="col-md-12">
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h5>📚 What are Community Groups?</h5>
-                    <ul class="mb-0">
-                        <li><strong>Hospital Forums:</strong> Auto-created for each hospital</li>
-                        <li><strong>Custom Groups:</strong> Hospital staff can create specialized groups</li>
-                        <li><strong>Auto-Join:</strong> Mothers automatically join their hospital's group</li>
-                        <li><strong>Clinic Schedules:</strong> View appointment times and availability</li>
-                        <li><strong>Announcements:</strong> Stay updated with hospital news</li>
-                        <li><strong>Discussions:</strong> Connect with other community members</li>
-                    </ul>
-                </div>
+        {% if not can_manage_groups %}
+            <div class="alert alert-info">
+                <i class="fas fa-lightbulb"></i>
+                <span>
+                    <strong>Tip:</strong> Hospital staff can create custom groups to organize discussions.
+                    <a href="{% url 'accounts:login' %}" class="alert-link">Login as hospital staff</a> to get started.
+                </span>
             </div>
+        {% endif %}
+
+        <!-- Groups List -->
+        {% if groups %}
+            <div class="groups-grid">
+                {% for group in groups %}
+                    <div class="group-card glass-card">
+                        <div class="group-card-top">
+                            <div>
+                                <h5><a href="{% url 'community:group_detail' group.pk %}">{{ group.name }}</a></h5>
+                                <p class="group-hospital"><strong>{{ group.hospital.name }}</strong></p>
+                            </div>
+                            {% if group.is_private %}
+                                <span class="badge-pill badge-private"><i class="fas fa-lock"></i> Private</span>
+                            {% else %}
+                                <span class="badge-pill badge-public"><i class="fas fa-globe"></i> Public</span>
+                            {% endif %}
+                        </div>
+
+                        <p class="group-desc">{{ group.description }}</p>
+
+                        <div class="group-footer">
+                            <span class="group-members">
+                                <i class="fas fa-users"></i> {{ group.members.count }} members
+                            </span>
+                            {% if user.is_authenticated %}
+                                {% if group.id in user_group_ids %}
+                                    <span class="badge-pill badge-member"><i class="fas fa-check"></i> Member</span>
+                                {% elif group.is_private %}
+                                    <span class="badge-pill badge-private"><i class="fas fa-lock"></i> Invitation required</span>
+                                {% else %}
+                                    <form method="post" action="{% url 'community:join_group' group.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-outline">Join</button>
+                                    </form>
+                                {% endif %}
+                            {% else %}
+                                <a href="{% url 'accounts:login' %}" class="btn-gradient btn-sm">Login to Join</a>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state glass-card">
+                <i class="fas fa-inbox"></i>
+                <h5>No community groups yet</h5>
+                <p>Hospital groups will appear here as they're created.</p>
+            </div>
+        {% endif %}
+
+        <!-- Info Section -->
+        <div class="info-card glass-card">
+            <h5><i class="fas fa-book-open"></i> What are Community Groups?</h5>
+            <ul>
+                <li><strong>Hospital Forums:</strong> Auto-created for each hospital</li>
+                <li><strong>Custom Groups:</strong> Hospital staff can create specialized groups</li>
+                <li><strong>Auto-Join:</strong> Mothers automatically join their hospital's group</li>
+                <li><strong>Clinic Schedules:</strong> View appointment times and availability</li>
+                <li><strong>Announcements:</strong> Stay updated with hospital news</li>
+                <li><strong>Discussions:</strong> Connect with other community members</li>
+            </ul>
         </div>
+
     </div>
 </div>
 
-<style>
-    .card {
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    .card:hover {
-        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        transform: translateY(-2px);
-    }
-</style>
-
-{% endblock %}
+</body>
+</html>

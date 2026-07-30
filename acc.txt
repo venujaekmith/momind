@@ -1,36 +1,4 @@
->>>>hospital acc
-general
-Hos123go
+Do not store account credentials in this repository.
 
-
->>>father 
-venuja
-Sigmafi2005
-
-father
-123Menmen
-
->>>>mother 
-kali
-Momk1234
-
-mother
-123Women
-
->>>>>staff
-bnm
-123Staff
-
->>>>>>midwife
-jio
-Midwife123
-
-
->>>>>>admin
-dell
-123
-
-
->>>> doctor
-kamal
-Doctor123
+Use `python3 manage.py seed_demo` for disposable local demo accounts and change
+all credentials that were previously listed in this file.

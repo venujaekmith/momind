@@ -1,5 +1,384 @@
-{% extends 'base.html' %}
-{% block title %}Midwife profile{% endblock %}
-{% block content %}
-{% include 'profile_form.html' with profile_icon='fa-user-nurse' hero_title='Care for every maternal journey' hero_text='Set up your professional profile so families and care teams can work with confidence.' form_title='Midwife registration details' form_subtitle='Provide your license and service-area information.' submit_label='Complete registration' verification_note='Your professional profile will be reviewed for verification.' %}
-{% endblock %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Midwife Registration  MoMind</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <style>
+        * { box-sizing: border-box; }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: #4c4745;
+        }
+
+        /* ---------- Page shell ---------- */
+        .details-page {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 1.5rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, #f6e7e2 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+
+        .details-page::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            from { transform: translateY(0); }
+            to   { transform: translateY(60px); }
+        }
+
+        /* ---------- Blobs ---------- */
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: .5;
+            z-index: 0;
+        }
+        .blob-1 {
+            width: 400px; height: 400px;
+            top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, #d9c6e8, #c9b3de);
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px;
+            bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, #a8d5cf, #b8c9b1);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px;
+            top: 42%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, #f2c8bc, #e7b3ae);
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes rowIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ---------- Layout ---------- */
+        .content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 560px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+        }
+
+        /* ---------- Card ---------- */
+        .details-card {
+            width: 100%;
+            background: rgba(255,255,255,.55);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.4);
+            border-radius: 26px;
+            padding: 2.6rem 2.4rem 2.8rem;
+            box-shadow: 0 20px 50px -16px rgba(160,140,200,.2);
+            transition: .35s;
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+        }
+        .details-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 30px 80px rgba(160,140,200,.25);
+        }
+
+        .details-icon {
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.1rem;
+            border-radius: 50%;
+            font-size: 22px;
+            color: #fff;
+            background: linear-gradient(100deg, #c9b3de, #9d78c2);
+            box-shadow: 0 10px 24px -6px rgba(157,120,194,.5);
+        }
+
+        .details-card h2 {
+            font-size: 34px;
+            margin: 0 0 6px;
+            font-family: Fraunces, serif;
+            text-align: center;
+            font-weight: 600;
+        }
+        .details-sub {
+            font-size: 15px;
+            text-align: center;
+            color: #736d69;
+            margin-bottom: 1.4rem;
+        }
+
+        /* signature: small dots of care orbiting a steady center, standing in for ongoing support through a pregnancy */
+        .orbit-wrap {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.8rem;
+        }
+        .orbit {
+            position: relative;
+            width: 64px;
+            height: 64px;
+        }
+        .orbit-center {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 14px; height: 14px;
+            margin: -7px 0 0 -7px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #c9b3de, #9d78c2);
+            box-shadow: 0 0 0 6px rgba(157,120,194,.12);
+        }
+        .orbit-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            animation: spin 6s linear infinite;
+        }
+        .orbit-ring.r2 { animation-duration: 9s; animation-direction: reverse; }
+        .orbit-dot {
+            position: absolute;
+            top: -4px; left: 50%;
+            width: 8px; height: 8px;
+            margin-left: -4px;
+            border-radius: 50%;
+        }
+        .orbit-ring.r1 .orbit-dot { background: #9d78c2; }
+        .orbit-ring.r2 .orbit-dot { background: #7fa07a; top: auto; bottom: -4px; }
+        .orbit-ring.r2 { inset: 10px; }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        /* ---------- Form ---------- */
+        .details-card form p {
+            margin: 0 0 1.15rem;
+            opacity: 0;
+            animation: rowIn .5s ease forwards;
+        }
+        .details-card form p:nth-of-type(1) { animation-delay: .05s; }
+        .details-card form p:nth-of-type(2) { animation-delay: .1s; }
+        .details-card form p:nth-of-type(3) { animation-delay: .15s; }
+        .details-card form p:nth-of-type(4) { animation-delay: .2s; }
+        .details-card form p:nth-of-type(5) { animation-delay: .25s; }
+        .details-card form p:nth-of-type(6) { animation-delay: .3s; }
+        .details-card form p:nth-of-type(7) { animation-delay: .35s; }
+        .details-card form p:nth-of-type(8) { animation-delay: .4s; }
+        .details-card form p:nth-of-type(n+9) { animation-delay: .45s; }
+
+        .details-card form label {
+            display: block;
+            font-weight: 600;
+            font-size: .82rem;
+            margin-bottom: .4rem;
+        }
+        .details-card input,
+        .details-card select,
+        .details-card textarea {
+            width: 100%;
+            padding: 15px 18px;
+            border-radius: 16px;
+            border: 1.5px solid rgba(157,120,194,.25);
+            background: #ffffffcc;
+            font-size: .95rem;
+            font-family: 'Inter', sans-serif;
+            color: #4c4745;
+            transition: border-color .2s ease, box-shadow .2s ease;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+        .details-card select {
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%239d78c2'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 16px center;
+            background-size: 16px;
+            padding-right: 42px;
+        }
+        .details-card textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+        .details-card input:hover,
+        .details-card select:hover,
+        .details-card textarea:hover {
+            border-color: #9d78c2;
+        }
+        .details-card input:focus,
+        .details-card select:focus,
+        .details-card textarea:focus {
+            outline: none;
+            border-color: #9d78c2;
+            box-shadow: 0 0 0 4px rgba(157,120,194,.15);
+        }
+
+        .details-card ul.errorlist {
+            list-style: none;
+            margin: .35rem 0 0;
+            padding: .5rem .85rem;
+            background: #fbe4e1;
+            border: 1px solid rgba(217,140,122,.4);
+            border-radius: .6rem;
+            color: #8a3226;
+            font-size: .8rem;
+            font-weight: 500;
+        }
+
+        .helptext {
+            display: block;
+            margin-top: 8px;
+            font-size: 12.5px;
+            line-height: 1.5;
+            color: #918b87;
+        }
+
+        .details-card button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            width: 100%;
+            height: 58px;
+            margin-top: .6rem;
+            border: none;
+            border-radius: 16px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            background: linear-gradient(100deg, #c9b3de, #9d78c2);
+            box-shadow: 0 14px 28px -10px rgba(157,120,194,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .details-card button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px -10px rgba(157,120,194,.65);
+        }
+        .details-card button:active {
+            transform: translateY(0);
+        }
+
+        .review-note {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: .85rem;
+            color: #918b87;
+            text-align: center;
+            opacity: 0;
+            animation: fadeUp .5s ease .5s forwards;
+        }
+        .review-note i {
+            color: #9d78c2;
+            font-size: .8rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .details-page::before, .details-card, .details-card form p, .orbit-ring, .details-card button, .review-note {
+                animation: none !important;
+                transition: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .details-card {
+                padding: 2.2rem 1.6rem 2.4rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="details-page">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="content">
+        <div class="details-card">
+            <div class="details-icon">
+                <i class="fas fa-user-nurse"></i>
+            </div>
+            <h2>Midwife Registration</h2>
+            <p class="details-sub">Complete your details to register your professional profile.</p>
+
+            <div class="orbit-wrap" aria-hidden="true">
+                <div class="orbit">
+                    <div class="orbit-center"></div>
+                    <div class="orbit-ring r1"><div class="orbit-dot"></div></div>
+                    <div class="orbit-ring r2"><div class="orbit-dot"></div></div>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="helptext" style="background:#f7f2fb;border-left:4px solid #9d78c2;padding:12px;border-radius:12px;margin-bottom:1.2rem;">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+                {{ form.as_p }}
+
+                <button type="submit">
+                    <i class="fas fa-check-circle"></i>
+                    Complete Registration
+                </button>
+            </form>
+        </div>
+
+        <p class="review-note">
+            <i class="fas fa-shield-halved"></i>
+            Your profile will be reviewed for verification
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

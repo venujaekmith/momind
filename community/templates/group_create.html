@@ -1,101 +1,399 @@
-{% extends 'basec.html' %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Community Group  MoMind</title>
 
-{% block content %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3>➕ Create Community Group</h3>
+    <style>
+        * { box-sizing: border-box; }
+
+        :root {
+            --bg-cream: #F6E7E2;
+            --pink: #E7B3AE;
+            --peach: #F2C8BC;
+            --coral: #D98C7A;
+            --lilac: #D9C6E8;
+            --sage: #B8C9B1;
+            --teal: #A8D5CF;
+            --card-bg: #FFF8F5;
+            --text-dark: #3E3A39;
+            --text-gray: #7A716D;
+
+            --accent-1: var(--pink);
+            --accent-2: var(--coral);
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        .page-shell {
+            position: relative;
+            min-height: 100vh;
+            padding: 3rem 1.5rem 4rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+        .page-shell::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(255,255,255,.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.2) 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: .4;
+            animation: gridMove 18s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        @keyframes gridMove { from { transform: translateY(0); } to { transform: translateY(60px); } }
+
+        .blob { position: absolute; border-radius: 50%; filter: blur(75px); opacity: .5; z-index: 0; }
+        .blob-1 {
+            width: 400px; height: 400px; top: -130px; left: -110px;
+            background: radial-gradient(circle at 30% 30%, var(--peach), var(--pink));
+            animation: float1 18s ease-in-out infinite alternate;
+        }
+        .blob-2 {
+            width: 440px; height: 440px; bottom: -160px; right: -130px;
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            animation: float2 21s ease-in-out infinite alternate;
+        }
+        .blob-3 {
+            width: 320px; height: 320px; top: 50%; left: 46%;
+            background: radial-gradient(circle at 50% 50%, var(--teal), var(--sage));
+            animation: float1 24s ease-in-out infinite alternate-reverse;
+        }
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+
+        @keyframes cardIn { from { opacity: 0; transform: translateY(18px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        @keyframes rowIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .page-wrap {
+            position: relative;
+            z-index: 2;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .glass-card {
+            background: rgba(255,248,245,.6);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(255,255,255,.5);
+            border-radius: 22px;
+            box-shadow: 0 20px 50px -20px rgba(217,140,122,.25);
+            animation: cardIn .55s cubic-bezier(.2,.8,.2,1) both;
+            overflow: hidden;
+        }
+
+        .btn-gradient {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 22px;
+            border: none;
+            border-radius: 14px;
+            font-size: .95rem;
+            font-weight: 600;
+            color: #fff;
+            cursor: pointer;
+            text-decoration: none;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            box-shadow: 0 12px 24px -10px rgba(217,140,122,.55);
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -10px rgba(217,140,122,.65); }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 15px 22px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(122,113,109,.3);
+            color: var(--text-gray);
+            background: rgba(255,255,255,.5);
+            font-size: .95rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: background .2s ease, border-color .2s ease, color .2s ease;
+        }
+        .btn-secondary:hover { border-color: var(--text-gray); color: var(--text-dark); background: rgba(255,255,255,.75); }
+
+        /* ---------- Alerts ---------- */
+        .alert {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            margin-bottom: 1.2rem;
+            font-size: .87rem;
+            line-height: 1.55;
+        }
+        .alert i { font-size: .95rem; flex-shrink: 0; margin-top: 2px; }
+        .alert-info { background: #f2f0fb; color: #5b5480; border: 1px solid rgba(157,120,194,.25); }
+        .alert-info i { color: #9d78c2; }
+        .alert-success { background: #f0f6ee; color: #4a6647; border: 1px solid rgba(127,160,122,.3); }
+        .alert-success i { color: #7fa07a; }
+        .alert-warning { background: #fdf0dd; color: #8a5a1a; border: 1px solid rgba(217,160,90,.35); }
+        .alert-warning i { color: #c98a2e; }
+        .alert-danger { background: #fbe4e1; color: #8a3226; border: 1px solid rgba(217,140,122,.4); }
+        .alert-danger i { color: #d98c7a; }
+        .alert-secondary {
+            background: #f3f1ef;
+            color: var(--text-dark);
+            border: 1px solid rgba(122,113,109,.2);
+        }
+        .alert-secondary i { color: var(--text-gray); }
+        .alert-secondary h6 {
+            margin: 0 0 .7rem;
+            font-family: Fraunces, serif;
+            font-weight: 600;
+            font-size: .98rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .alert-secondary ul { margin: 0; padding-left: 1.2rem; }
+        .alert-secondary li { margin-bottom: 4px; font-size: .85rem; }
+        .alert-secondary li:last-child { margin-bottom: 0; }
+
+        /* ---------- Header ---------- */
+        .form-header {
+            display: flex;
+            align-items: center;
+            gap: .7rem;
+            padding: 1.5rem 2rem;
+            background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+            color: #fff;
+        }
+        .form-header i { font-size: 1.1rem; }
+        .form-header h3 { margin: 0; font-family: Fraunces, serif; font-size: 1.35rem; font-weight: 600; }
+
+        .form-body { padding: 2rem 2rem 2.2rem; }
+
+        /* ---------- Form fields ---------- */
+        .field-group {
+            margin-bottom: 1.3rem;
+            opacity: 0;
+            animation: rowIn .5s ease forwards;
+        }
+        .field-group:nth-of-type(1) { animation-delay: .05s; }
+        .field-group:nth-of-type(2) { animation-delay: .1s; }
+        .field-group:nth-of-type(3) { animation-delay: .15s; }
+
+        .field-group label {
+            display: block;
+            font-weight: 600;
+            font-size: .85rem;
+            margin-bottom: .5rem;
+        }
+        .field-group input[type="text"],
+        .field-group textarea {
+            width: 100%;
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(217,140,122,.25);
+            background: #ffffffcc;
+            font-size: .92rem;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+            transition: border-color .2s ease, box-shadow .2s ease;
+        }
+        .field-group textarea { min-height: 110px; resize: vertical; line-height: 1.6; }
+        .field-group input:hover, .field-group textarea:hover { border-color: var(--accent-2); }
+        .field-group input:focus, .field-group textarea:focus {
+            outline: none;
+            border-color: var(--accent-2);
+            box-shadow: 0 0 0 4px rgba(217,140,122,.15);
+        }
+        .field-group input:disabled {
+            background: #f1efec;
+            color: var(--text-gray);
+            cursor: not-allowed;
+        }
+        .field-hint { display: block; margin-top: 7px; font-size: .78rem; color: var(--text-gray); line-height: 1.5; }
+        .field-error { margin-top: 6px; font-size: .8rem; color: #b3462f; font-weight: 500; }
+
+        /* ---------- Privacy checkbox card ---------- */
+        .check-row {
+            padding: 16px 18px;
+            background: #ffffffb3;
+            border: 1.5px solid rgba(217,140,122,.2);
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: rowIn .5s ease .2s forwards;
+        }
+        .check-row-top {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .check-row input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-top: 2px;
+            accent-color: var(--accent-2);
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        .check-row label {
+            font-weight: 600;
+            font-size: .9rem;
+            cursor: pointer;
+        }
+        .privacy-info {
+            margin: 10px 0 0 32px;
+            font-size: .8rem;
+            color: var(--text-gray);
+            line-height: 1.7;
+        }
+        .privacy-info strong { color: var(--text-dark); }
+        .privacy-info em { color: var(--accent-2); font-style: normal; font-weight: 600; }
+
+        /* ---------- Actions ---------- */
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 1.8rem;
+            opacity: 0;
+            animation: rowIn .5s ease .25s forwards;
+        }
+        .form-actions .btn-gradient,
+        .form-actions .btn-secondary { flex: 1; }
+
+        .divider {
+            border: none;
+            border-top: 1px solid rgba(217,140,122,.2);
+            margin: 0 0 1.6rem;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .page-shell::before, .glass-card, .field-group, .check-row, .form-actions {
+                animation: none !important;
+                opacity: 1 !important;
+                transform: none !important;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .form-body { padding: 1.6rem 1.4rem 2rem; }
+            .form-header { padding: 1.3rem 1.4rem; }
+            .form-actions { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-shell">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="page-wrap">
+        <div class="glass-card">
+            <div class="form-header">
+                <i class="fas fa-people-group"></i>
+                <h3>Create Community Group</h3>
+            </div>
+
+            <div class="form-body">
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }}">
+                            <i class="fas fa-circle-info"></i>
+                            <span>{{ message }}</span>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="alert alert-info">
+                    <i class="fas fa-circle-info"></i>
+                    <span>Create a custom community group for <strong>{{ hospital.name }}</strong></span>
                 </div>
-                <div class="card-body">
-                    {% if messages %}
-                        {% for message in messages %}
-                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
-                    {% endif %}
 
-                    <p class="alert alert-info">
-                        Create a custom community group for <strong>{{ hospital.name }}</strong>
-                    </p>
+                <form method="POST">
+                    {% csrf_token %}
 
-                    <form method="POST" enctype="multipart/form-data">
-                        {% csrf_token %}
-
-                        <div class="form-group mb-3">
-                            <label class="form-label">
-                                <strong>Hospital</strong>
-                            </label>
-                            <input type="text" class="form-control" value="{{ hospital.name }}" disabled>
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.name.id_for_label }}" class="form-label">
-                                <strong>Group Name</strong>
-                            </label>
-                            {{ form.name }}
-                            <small class="form-text text-muted d-block mt-1">
-                                Examples: "Prenatal Support Group", "New Mothers", "Labor & Delivery Team", "Pediatric Clinic"
-                            </small>
-                            {% if form.name.errors %}
-                                <div class="text-danger mt-1">{{ form.name.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-group mb-3">
-                            <label for="{{ form.description.id_for_label }}" class="form-label">
-                                <strong>Description</strong>
-                            </label>
-                            {{ form.description }}
-                            <small class="form-text text-muted d-block mt-1">
-                                Describe the purpose and what members of this group can discuss/do
-                            </small>
-                            {% if form.description.errors %}
-                                <div class="text-danger mt-1">{{ form.description.errors }}</div>
-                            {% endif %}
-                        </div>
-
-                        <div class="form-check mb-3 p-3 border rounded" style="background-color: #f8f9fa;">
-                            <input type="checkbox" name="is_private" id="is_private" class="form-check-input" value="on">
-                            <label class="form-check-label" for="is_private">
-                                <strong>🔒 Private Group</strong>
-                            </label>
-                            <small class="d-block text-muted mt-2">
-                                <strong>Public (Unchecked):</strong> Anyone can view and join<br>
-                                <strong>Private (Checked):</strong> Only invited members can view and participate<br>
-                                <em>Recommended for staff-only teams or sensitive discussions</em>
-                            </small>
-                        </div>
-
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary btn-lg">
-                                ✅ Create Group
-                            </button>
-                            <a href="{% url 'community:group_list' %}" class="btn btn-secondary btn-lg">
-                                Cancel
-                            </a>
-                        </div>
-                    </form>
-
-                    <hr class="my-4">
-
-                    <div class="alert alert-secondary">
-                        <h6>📋 What to do after creating the group:</h6>
-                        <ul class="mb-0">
-                            <li>Share the group link with staff/patients</li>
-                            <li>They can click "Join" to become members</li>
-                            <li>Start posting announcements and clinic schedules</li>
-                            <li>Monitor group activity in the group page</li>
-                        </ul>
+                    <div class="field-group">
+                        <label>Hospital</label>
+                        <input type="text" value="{{ hospital.name }}" disabled>
                     </div>
+
+                    <div class="field-group">
+                        <label for="{{ form.name.id_for_label }}">Group Name</label>
+                        {{ form.name }}
+                        <span class="field-hint">Examples: "Prenatal Support Group", "New Mothers", "Labor &amp; Delivery Team", "Pediatric Clinic"</span>
+                        {% if form.name.errors %}
+                            <div class="field-error">{{ form.name.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="field-group">
+                        <label for="{{ form.description.id_for_label }}">Description</label>
+                        {{ form.description }}
+                        <span class="field-hint">Describe the purpose and what members of this group can discuss/do</span>
+                        {% if form.description.errors %}
+                            <div class="field-error">{{ form.description.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="check-row">
+                        <div class="check-row-top">
+                            {{ form.is_private }}
+                            <label for="{{ form.is_private.id_for_label }}"><i class="fas fa-lock"></i> Private Group</label>
+                        </div>
+                        <div class="privacy-info">
+                            <strong>Public (Unchecked):</strong> Anyone can view and join<br>
+                            <strong>Private (Checked):</strong> Only invited members can view and participate<br>
+                            <em>Recommended for staff-only teams or sensitive discussions</em>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn-gradient">
+                            <i class="fas fa-check"></i> Create Group
+                        </button>
+                        <a href="{% url 'community:group_list' %}" class="btn-secondary">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <hr class="divider">
+
+                <div class="alert-secondary">
+                    <h6><i class="fas fa-clipboard-list"></i> What to do after creating the group:</h6>
+                    <ul>
+                        <li>Share the group link with staff/patients</li>
+                        <li>They can click "Join" to become members</li>
+                        <li>Start posting announcements and clinic schedules</li>
+                        <li>Monitor group activity in the group page</li>
+                    </ul>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-{% endblock %}
+</body>
+</html>

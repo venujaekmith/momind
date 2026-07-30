@@ -1,9 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.utils import timezone
-from django.db.models import Q
 from .models import *
 from .forms import (
     ForumPostForm, 
@@ -14,16 +12,28 @@ from .forms import (
     ClinicScheduleForm,
     GroupForm,
 )
-from accounts.models import HospitalProfile, MotherProfile
+from accounts.models import HospitalProfile, HospitalStaffProfile
 from dashboards.models import ScheduleEvent, Clinics
-from django.urls import reverse
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
+from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_POST
+from django.utils.dateparse import parse_date, parse_time
 
 User = get_user_model()
 
 
 # === HELPER FUNCTIONS ===
+
+def managed_hospital(user):
+    hospital = HospitalProfile.objects.filter(user=user).first()
+    if hospital:
+        return hospital
+    staff = HospitalStaffProfile.objects.filter(
+        user=user, is_active=True
+    ).select_related("hospital").first()
+    return staff.hospital if staff else None
+
 
 def create_notification(user, notification_type, title, message, forum_post=None, hospital_group=None, clinic_schedule=None):
     """Create a notification for a user"""
@@ -125,7 +135,7 @@ def notify_clinic_patients(clinic_schedule, title, message):
 @login_required
 def hospital_staff_dashboard(request):
         """Dashboard for hospital staff to manage clinics, patients and groups."""
-        hospital = HospitalProfile.objects.filter(user=request.user).first()
+        hospital = managed_hospital(request.user)
         if not hospital:
             messages.error(request, 'You must be hospital staff to access this dashboard.')
             return redirect('community:group_list')
@@ -156,10 +166,13 @@ def hospital_staff_dashboard(request):
 
 
 @login_required
+@require_POST
 def create_clinic_announcement(request, clinic_id):
         """Create an announcement for a clinic and notify patients and group subscribers."""
         clinic = get_object_or_404(Clinics, pk=clinic_id)
         hospital = clinic.hospital
+        if managed_hospital(request.user) != hospital:
+            return HttpResponseForbidden("You cannot manage this clinic.")
 
         title = request.POST.get('title') or f"Announcement: {clinic.name}"
         message = request.POST.get('message') or ''
@@ -168,22 +181,27 @@ def create_clinic_announcement(request, clinic_id):
         notify_clinic_patients(clinic, title, message)
 
         messages.success(request, 'Announcement sent to clinic patients and subscribers.')
-        return redirect(request.META.get('HTTP_REFERER', reverse('community:group_list')))
+        return redirect('community:hospital_dashboard')
 
 
 @login_required
+@require_POST
 def create_group_and_add_members(request):
         """Create a hospital group and optionally add members (by username list)."""
-        if request.method != 'POST':
-            return redirect('community:group_list')
-
         form = GroupForm(request.POST)
         if form.is_valid():
             group = form.save(commit=False)
-            hospital = HospitalProfile.objects.filter(user=request.user).first()
+            hospital = managed_hospital(request.user)
+            if not hospital:
+                return HttpResponseForbidden("You cannot create a hospital group.")
             group.hospital = hospital
             group.created_by = request.user
             group.save()
+            GroupMember.objects.get_or_create(
+                group=group,
+                user=request.user,
+                defaults={"role": GroupMember.Role.ADMIN},
+            )
 
             # Add members by comma-separated usernames
             members = request.POST.get('members', '')
@@ -191,35 +209,40 @@ def create_group_and_add_members(request):
                 try:
                     user = User.objects.get(username=username)
                     GroupMember.objects.get_or_create(group=group, user=user, defaults={'role': 'PATIENT'})
-                except Exception:
+                except User.DoesNotExist:
                     continue
 
             messages.success(request, 'Group created and members added.')
         else:
             messages.error(request, 'Invalid group data.')
 
-        return redirect(request.META.get('HTTP_REFERER', reverse('community:group_list')))
+        return redirect('community:hospital_dashboard')
 
 
 @login_required
+@require_POST
 def reschedule_appointment(request, appointment_id):
         """Reschedule a ScheduleEvent (appointment). Expects POST with `date` and optional `time`."""
         appt = get_object_or_404(ScheduleEvent, pk=appointment_id)
-        if request.method != 'POST':
-            return JsonResponse({'error': 'Invalid method'}, status=400)
+        hospital = managed_hospital(request.user)
+        if not hospital or appt.clinic_id is None or appt.clinic.hospital_id != hospital.id:
+            return HttpResponseForbidden("You cannot manage this appointment.")
 
-        date = request.POST.get('date')
-        time = request.POST.get('time')
+        date = parse_date(request.POST.get('date', ''))
+        time_value = request.POST.get('time', '')
+        time = parse_time(time_value) if time_value else None
         clinic_id = request.POST.get('clinic_id')
-        if date:
-            appt.scheduled_date = date
-        if time:
-            appt.scheduled_time = time
+        if not date:
+            return JsonResponse({'error': 'A valid date is required.'}, status=400)
+        if time_value and not time:
+            return JsonResponse({'error': 'Enter a valid time.'}, status=400)
+        appt.scheduled_date = date
+        appt.scheduled_time = time
         if clinic_id:
             try:
-                appt.clinic = Clinics.objects.get(pk=clinic_id)
+                appt.clinic = Clinics.objects.get(pk=clinic_id, hospital=hospital)
             except Clinics.DoesNotExist:
-                pass
+                return JsonResponse({'error': 'Clinic not found.'}, status=400)
         appt.save()
 
         # Notify patient about reschedule
@@ -230,7 +253,7 @@ def reschedule_appointment(request, appointment_id):
             pass
 
         messages.success(request, 'Appointment rescheduled and patient notified.')
-        return redirect(request.META.get('HTTP_REFERER', reverse('community:group_list')))
+        return redirect('community:hospital_dashboard')
 
 
 # --- Forum Section ---
@@ -312,7 +335,7 @@ def post_detail(request, pk):
 def create_group(request):
     """Hospital staff create custom groups"""
     # Check if user is hospital staff
-    hospital = HospitalProfile.objects.filter(user=request.user).first()
+    hospital = managed_hospital(request.user)
     
     if not hospital:
         messages.error(request, 'You must be a hospital staff member to create groups.')
@@ -325,6 +348,11 @@ def create_group(request):
             group.hospital = hospital
             group.created_by = request.user
             group.save()
+            GroupMember.objects.get_or_create(
+                group=group,
+                user=request.user,
+                defaults={"role": GroupMember.Role.ADMIN},
+            )
             
             messages.success(request, f'Group "{group.name}" created successfully!')
             return redirect('community:group_detail', pk=group.id)
@@ -337,21 +365,15 @@ def create_group(request):
     })
 
 
+@login_required
 def create_post(request):
-    """Allow anyone (authenticated or anonymous) to create forum posts"""
+    """Allow signed-in users to post with their identity hidden when requested."""
     if request.method == 'POST':
         form = ForumPostForm(request.POST, request.FILES)
         if form.is_valid():
             post = form.save(commit=False)
             
-            # Only set author if user is authenticated
-            if request.user.is_authenticated:
-                post.author = request.user
-            else:
-                # For anonymous posts, create a flag
-                post.is_anonymous = True
-                # Create an anonymous user if needed (optional - can skip author)
-                post.author = request.user if request.user.is_authenticated else None
+            post.author = request.user
             
             post.save()
             
@@ -372,21 +394,23 @@ def create_post(request):
 
 
 @login_required
+@require_POST
 def subscribe_forum(request, forum_id):
     """Subscribe user to forum notifications"""
     forum = get_object_or_404(ForumCategory, pk=forum_id)
     ForumSubscription.objects.get_or_create(user=request.user, forum=forum)
     messages.success(request, f'You are now subscribed to {forum.name}!')
-    return redirect('community:post_detail') if 'next' not in request.GET else redirect(request.GET.get('next'))
+    return redirect('community:forum_home')
 
 
 @login_required
+@require_POST
 def unsubscribe_forum(request, forum_id):
     """Unsubscribe user from forum notifications"""
     forum = get_object_or_404(ForumCategory, pk=forum_id)
     ForumSubscription.objects.filter(user=request.user, forum=forum).delete()
     messages.success(request, f'You have unsubscribed from {forum.name}.')
-    return redirect('community:post_detail') if 'next' not in request.GET else redirect(request.GET.get('next'))
+    return redirect('community:forum_home')
 
 
 # --- Hospital Group Section ---
@@ -404,17 +428,26 @@ def group_list(request):
     
     return render(request, 'group_list.html', {
         'groups': groups,
-        'user_subscriptions': user_subscriptions
+        'user_subscriptions': user_subscriptions,
+        'can_manage_groups': managed_hospital(request.user) is not None,
+        'user_group_ids': set(
+            GroupMember.objects.filter(user=request.user).values_list('group_id', flat=True)
+        ),
     })
 
 
 @login_required
 def group_detail(request, pk):
     group = get_object_or_404(HospitalGroup, pk=pk)
-    is_member = GroupMember.objects.filter(group=group, user=request.user).exists()
+    can_manage_group = managed_hospital(request.user) == group.hospital
+    is_member = (
+        can_manage_group
+        or GroupMember.objects.filter(group=group, user=request.user).exists()
+    )
     
     if group.is_private and not is_member:
-        return render(request, 'denied.html', {'group': group})
+        messages.error(request, 'You do not have access to this private group.')
+        return redirect('community:group_list')
     
     posts = group.posts.all().order_by('-created_at')
     clinic_schedules = group.hospital.clinic_schedules.filter(
@@ -457,18 +490,28 @@ def group_detail(request, pk):
         'clinic_schedules': clinic_schedules,
         'is_member': is_member,
         'form': form,
-        'subscription': subscription
+        'subscription': subscription,
+        'can_manage_group': can_manage_group,
     })
 
 
 @login_required
+@require_POST
 def join_group(request, pk):
     group = get_object_or_404(HospitalGroup, pk=pk)
+    if group.is_private and managed_hospital(request.user) != group.hospital:
+        return HttpResponseForbidden("This group is private and requires an invitation.")
     # Default role set to PATIENT as per your model requirements
     member, created = GroupMember.objects.get_or_create(
         group=group, 
         user=request.user, 
-        defaults={'role': 'PATIENT'}
+        defaults={
+            'role': (
+                GroupMember.Role.ADMIN
+                if managed_hospital(request.user) == group.hospital
+                else GroupMember.Role.PATIENT
+            )
+        }
     )
     
     # Auto-subscribe to hospital group
@@ -483,6 +526,7 @@ def join_group(request, pk):
 
 
 @login_required
+@require_POST
 def subscribe_group(request, group_id):
     """Subscribe to hospital group notifications"""
     group = get_object_or_404(HospitalGroup, pk=group_id)
@@ -500,6 +544,7 @@ def subscribe_group(request, group_id):
 
 
 @login_required
+@require_POST
 def unsubscribe_group(request, group_id):
     """Unsubscribe from hospital group notifications"""
     group = get_object_or_404(HospitalGroup, pk=group_id)
@@ -515,7 +560,10 @@ def clinic_schedules(request, group_id):
     group = get_object_or_404(HospitalGroup, pk=group_id)
     
     # Check if user is authorized to view (member of group or hospital staff)
-    is_member = GroupMember.objects.filter(group=group, user=request.user).exists()
+    is_member = (
+        managed_hospital(request.user) == group.hospital
+        or GroupMember.objects.filter(group=group, user=request.user).exists()
+    )
     if group.is_private and not is_member:
         messages.error(request, 'You do not have access to this content.')
         return redirect('community:group_list')
@@ -571,7 +619,17 @@ def create_clinic_schedule(request, group_id):
 @login_required
 def view_notifications(request):
     """View user's community notifications"""
-    notifications = CommunityNotification.objects.filter(user=request.user).order_by('-created_at')
+    notifications = CommunityNotification.objects.filter(user=request.user).select_related(
+        'forum_post',
+        'hospital_group',
+        'clinic_schedule__hospital',
+    ).order_by('-created_at')
+    for notification in notifications:
+        notification.target_group = None
+        if notification.clinic_schedule_id:
+            notification.target_group = HospitalGroup.objects.filter(
+                hospital=notification.clinic_schedule.hospital
+            ).first()
     
     if request.method == 'POST':
         # Mark all as read

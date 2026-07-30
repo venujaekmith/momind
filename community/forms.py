@@ -1,4 +1,5 @@
 from django import forms
+from django.utils import timezone
 
 from .models import (
     ForumPost,
@@ -79,7 +80,7 @@ class GroupForm(forms.ModelForm):
 
     class Meta:
         model = HospitalGroup
-        fields = ['name', 'description']
+        fields = ['name', 'description', 'is_private']
 
 
 # =========================================
@@ -168,3 +169,17 @@ class ClinicScheduleForm(forms.ModelForm):
             'specialization': forms.TextInput(attrs={'class': 'form-control'}),
             'max_patients': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+    def clean(self):
+        cleaned = super().clean()
+        scheduled_date = cleaned.get('scheduled_date')
+        start_time = cleaned.get('start_time')
+        end_time = cleaned.get('end_time')
+        max_patients = cleaned.get('max_patients')
+        if scheduled_date and scheduled_date < timezone.localdate():
+            self.add_error('scheduled_date', 'Clinic date cannot be in the past.')
+        if start_time and end_time and end_time <= start_time:
+            self.add_error('end_time', 'End time must be after the start time.')
+        if max_patients is not None and max_patients < 1:
+            self.add_error('max_patients', 'Maximum patients must be at least 1.')
+        return cleaned

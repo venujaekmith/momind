@@ -6,6 +6,15 @@ from .utility import generate_id
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import IntegrityError
+from django.db import transaction
+from django.http import HttpResponseForbidden
+from django.views.decorators.http import require_POST
+
+
+def save_verification_files(user, files):
+    for uploaded_file in files:
+        VerifyDoc.objects.create(profile=user, file=uploaded_file)
+
 
 # -----------------------
 # REGISTER
@@ -43,76 +52,59 @@ def login_view(request):
 
     return render(request, "login.html")
 
+@require_POST
 def logout_view(request):
     logout(request)
-    return render(request, "login.html")
+    return redirect("accounts:login")
 
 # -----------------------
 # ROLE SELECTION
 # -----------------------
 @login_required
 def select_role(request):
+    if request.user.is_role_selected:
+        return redirect("dashboards:dashboard")
+
     if request.method == "POST":
         role = request.POST.get("role")
         user = request.user
-
-        user.role = role
-        user.is_role_selected = True
-        user.save()
-
+        valid_roles = {choice for choice, _ in Role.choices}
+        if role not in valid_roles:
+            messages.error(request, "Please select a valid role.")
+            return render(request, "select_role.html", status=400)
+        hospital_name = request.POST.get("hospital_name", "").strip()
+        if role == Role.HOSPITAL and not hospital_name:
+            messages.error(request, "Hospital name is required.")
+            return render(request, "select_role.html", status=400)
         try:
-            if role == "MOTHER":
-                mother = MotherProfile.objects.create(
-                user=user,
-                mother_id=generate_id("M")
-                )
-                #mother.generate_qr_code()   # ← Generate QR Code immediately
-                return redirect("accounts:mother_details")
+            with transaction.atomic():
+                destinations = {
+                    Role.MOTHER: ("mother_details", MotherProfile, "mother_id", "M"),
+                    Role.FATHER: ("father_details", FatherProfile, "father_id", "F"),
+                    Role.MIDWIFE: ("midwife_details", MidwifeProfile, "midwife_id", "MW"),
+                    Role.DOCTOR: ("doctor_details", DoctorProfile, "doctor_id", "DR"),
+                    Role.HOSPITAL_STAFF: (
+                        "hospital_staff_details", HospitalStaffProfile, "staff_id", "HS"
+                    ),
+                }
+                if role == Role.HOSPITAL:
+                    HospitalProfile.objects.create(
+                        user=user,
+                        hospital_id=generate_id("H"),
+                        name=hospital_name,
+                    )
+                    destination = "hospital_details"
+                else:
+                    destination, model, id_field, prefix = destinations[role]
+                    model.objects.create(user=user, **{id_field: generate_id(prefix)})
 
-            elif role == "FATHER":
-                father = FatherProfile.objects.create(
-                user=user,
-                father_id=generate_id("F")
-                )
-                #father.generate_qr_code()   # ← Generate QR Code immediately
-                return redirect("accounts:father_details")
-
-            elif role == "MIDWIFE":
-                midwife = MidwifeProfile.objects.create(
-                user=user,
-                midwife_id=generate_id("MW")
-            )
-                #midwife.generate_qr_code()   # ← Generate QR Code immediately
-                return redirect("accounts:midwife_details")
-
-            elif role == "DOCTOR":
-                doctor = DoctorProfile.objects.create(
-                user=user,
-                doctor_id=generate_id("DR")
-            )
-                #doctor.generate_qr_code()   # ← Generate QR Code immediately
-                return redirect("accounts:doctor_details")
-
-            elif role == "HOSPITAL":
-                hospital = HospitalProfile.objects.create(
-                user=user,
-                hospital_id=generate_id("H"),
-                name=request.POST.get("hospital_name", "").strip()
-            )
-                #hospital.generate_qr_code()   # ← Generate QR Code immediately
-                return redirect("accounts:hospital_details")
-
-            elif role == "HOSPITAL_STAFF":
-                staff = HospitalStaffProfile.objects.create(
-                    user=user,
-                    staff_id=generate_id("HS")
-                )
-                return redirect("accounts:hospital_staff_details")
-
-        except Exception as e:
-            print("Profile creation error:", e)
+                user.role = role
+                user.is_role_selected = True
+                user.save(update_fields=["role", "is_role_selected"])
+            return redirect(f"accounts:{destination}")
+        except (IntegrityError, KeyError):
             messages.error(request, "Error creating profile. Please try again.")
-            return redirect("accounts:register")
+            return render(request, "select_role.html", status=400)
 
 
     return render(request, "select_role.html")
@@ -121,6 +113,8 @@ def select_role(request):
 
 @login_required
 def mother_details(request):
+    if request.user.role != Role.MOTHER:
+        return HttpResponseForbidden("This page is only available to mothers.")
     profile, _ = MotherProfile.objects.get_or_create(user=request.user)
     
     if request.method == "POST":
@@ -132,37 +126,39 @@ def mother_details(request):
             obj.save()
             return redirect("dashboards:dashboard")
     else:
-        form = MotherDetailsForm()
+        form = MotherDetailsForm(instance=getattr(request.user, 'details', None))
 
     return render(request, "mother_details.html", {"form": form})
 
 
 @login_required
 def father_details(request):
+    if request.user.role != Role.FATHER:
+        return HttpResponseForbidden("This page is only available to fathers.")
     profile, _ = FatherProfile.objects.get_or_create(user=request.user)
     
     if request.method == "POST":
-        form = FatherDetailsForm(request.POST)
+        form = FatherDetailsForm(request.POST, instance=profile)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.user = request.user
-            obj.father = profile
-            obj.save()
+            form.save()
             return redirect("dashboards:dashboard")
     else:
-        form = FatherDetailsForm()
+        form = FatherDetailsForm(instance=profile)
 
     return render(request, "father_details.html", {"form": form})
 
 
 @login_required
 def midwife_details(request):
+    if request.user.role != Role.MIDWIFE:
+        return HttpResponseForbidden("This page is only available to midwives.")
     profile, _ = MidwifeProfile.objects.get_or_create(user=request.user)
     
     if request.method == "POST":
-        form = MidwifeDetailsForm(request.POST, instance=profile)
+        form = MidwifeDetailsForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
+            save_verification_files(request.user, request.FILES.getlist("attachments"))
             return redirect("dashboards:dashboard")
     else:
         form = MidwifeDetailsForm(instance=profile)
@@ -172,12 +168,15 @@ def midwife_details(request):
 
 @login_required
 def doctor_details(request):
+    if request.user.role != Role.DOCTOR:
+        return HttpResponseForbidden("This page is only available to doctors.")
     profile, _ = DoctorProfile.objects.get_or_create(user=request.user)
     
     if request.method == "POST":
-        form = DoctorDetailsForm(request.POST, instance=profile)
+        form = DoctorDetailsForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
+            save_verification_files(request.user, request.FILES.getlist("attachments"))
             return redirect("dashboards:dashboard")
     else:
         form = DoctorDetailsForm(instance=profile)
@@ -186,14 +185,17 @@ def doctor_details(request):
 
 @login_required
 def hospital_staff_details(request):
+    if request.user.role != Role.HOSPITAL_STAFF:
+        return HttpResponseForbidden("This page is only available to hospital staff.")
     profile, _ = HospitalStaffProfile.objects.get_or_create(user=request.user)
 
     if request.method == "POST":
-        form = HospitalStaffDetailsForm(request.POST, instance=profile)
+        form = HospitalStaffDetailsForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
+            save_verification_files(request.user, request.FILES.getlist("attachments"))
             return redirect("dashboards:dashboard")
     else:
         form = HospitalStaffDetailsForm(instance=profile)
@@ -202,12 +204,15 @@ def hospital_staff_details(request):
 
 @login_required
 def hospital_details(request):
+    if request.user.role != Role.HOSPITAL:
+        return HttpResponseForbidden("This page is only available to hospitals.")
     profile, _ = HospitalProfile.objects.get_or_create(user=request.user)
     
     if request.method == "POST":
-        form = HospitalDetailsForm(request.POST, instance=profile)
+        form = HospitalDetailsForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
             form.save()
+            save_verification_files(request.user, request.FILES.getlist("attachments"))
             return redirect("dashboards:dashboard")
     else:
         form = HospitalDetailsForm(instance=profile)

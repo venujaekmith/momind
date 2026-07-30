@@ -1,41 +1,332 @@
-{% extends 'base.html' %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login MoMind</title>
 
-{% block title %}Log in{% endblock %}
-{% block nav_action %}<a href="{% url 'accounts:register' %}" class="account-nav-button">Create account</a>{% endblock %}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
 
-{% block content %}
-<main class="account-page">
-    <section class="account-card account-card--compact" aria-labelledby="login-title">
-        <div class="account-hero">
-            <span class="account-hero-icon"><i class="fas fa-heart"></i></span>
-            <h1>Welcome back</h1>
-            <p>Continue your maternal wellness journey with your family and trusted care team.</p>
-        </div>
+    <style>
+        :root {
+            --bg-cream: #F6E7E2;
+            --dusty-rose: #E7B3AE;
+            --muted-peach: #F2C8BC;
+            --soft-coral: #D98C7A;
+            --soft-lilac: #D9C6E8;
+            --muted-sage: #B8C9B1;
+            --soft-teal: #A8D5CF;
+            --card-ivory: #FFF8F5;
+            --text-charcoal: #3E3A39;
+            --text-gray: #7A716D;
+        }
 
-        <div class="account-panel">
-            <header class="account-panel-header">
-                <span class="account-eyebrow">Secure access</span>
-                <h2 id="login-title">Sign in to MoMind</h2>
-                <p>Enter your account details to continue.</p>
-            </header>
+        * { box-sizing: border-box; }
 
-            <form method="POST" class="account-form">
-                {% csrf_token %}
-                <div class="account-field">
-                    <label for="loginUsername">Username</label>
-                    <input type="text" id="loginUsername" name="username" placeholder="Enter your username" autocomplete="username" required autofocus>
-                </div>
-                <div class="account-field">
-                    <label for="loginPassword">Password</label>
-                    <input type="password" id="loginPassword" name="password" placeholder="Enter your password" autocomplete="current-password" required>
-                </div>
-                <button type="submit" class="account-button"><span>Log in</span><i class="fas fa-arrow-right"></i></button>
-            </form>
+        html, body {
+            margin: 0;
+            padding: 0;
+            min-height: 100%;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-charcoal);
+        }
 
-            <div class="account-footer-links">
-                <span>New to MoMind? <a href="{% url 'accounts:register' %}">Create an account</a></span>
+        /* ---------- Background ---------- */
+        .login-page {
+            position: relative;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1.2rem;
+            overflow: hidden;
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+        }
+
+        .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(75px);
+            opacity: 0.55;
+            z-index: 0;
+        }
+
+        .blob-1 {
+            width: 380px; height: 380px;
+            top: -120px; left: -100px;
+            background: radial-gradient(circle at 30% 30%, var(--muted-peach), var(--dusty-rose));
+            animation: float1 17s ease-in-out infinite alternate;
+        }
+
+        .blob-2 {
+            width: 420px; height: 420px;
+            bottom: -150px; right: -120px;
+            background: radial-gradient(circle at 60% 40%, var(--soft-lilac), #c9b3de);
+            animation: float2 20s ease-in-out infinite alternate;
+        }
+
+        .blob-3 {
+            width: 220px; height: 220px;
+            bottom: 20%; left: 8%;
+            background: radial-gradient(circle, var(--soft-teal), var(--muted-sage));
+            opacity: 0.35;
+            animation: float3 15s ease-in-out infinite alternate;
+        }
+
+        @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
+        @keyframes float2 { from { transform: translate(0,0) scale(1); } to { transform: translate(-40px,-25px) scale(1.08); } }
+        @keyframes float3 { from { transform: translate(0,0); } to { transform: translate(-25px,20px); } }
+
+        /* ---------- Login card ---------- */
+        .login-card {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            max-width: 400px;
+            background: var(--card-ivory);
+            border: 1px solid rgba(231,179,174,0.35);
+            border-radius: 24px;
+            padding: 2.6rem 2.4rem 2.8rem;
+            box-shadow:
+                0 30px 60px -16px rgba(217,140,122,0.28),
+                0 8px 20px -8px rgba(217,140,122,0.18);
+            animation: cardIn 0.55s cubic-bezier(.2,.8,.2,1) both;
+        }
+
+        @keyframes cardIn {
+            from { opacity: 0; transform: translateY(18px) scale(0.98); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        .login-icon {
+            width: 54px; height: 54px;
+            border-radius: 50%;
+            margin: 0 auto 1.1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, var(--dusty-rose), var(--soft-coral));
+            box-shadow: 0 10px 22px -6px rgba(217,140,122,0.5);
+        }
+
+        .login-icon i { color: #fff; font-size: 1.4rem; }
+
+        .login-card h1 {
+            font-family: 'Fraunces', serif;
+            font-weight: 600;
+            font-size: 1.65rem;
+            text-align: center;
+            margin: 0 0 0.35rem;
+            color: var(--text-charcoal);
+        }
+
+        .login-sub {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 1.8rem;
+        }
+
+        /* ---------- Django messages ---------- */
+        .messages-container {
+            margin-bottom: 1.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .alert {
+            padding: 0.7rem 1rem;
+            border-radius: 0.7rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            background: var(--muted-peach);
+            color: #7a3e2f;
+            border: 1px solid rgba(217,140,122,0.35);
+        }
+
+        .alert-success { background: #e4efe0; color: #3f5c37; border-color: rgba(184,201,177,0.5); }
+        .alert-error, .alert-danger { background: #fbe4e1; color: #8a3226; border-color: rgba(217,140,122,0.4); }
+        .alert-warning { background: #fbeedd; color: #7a5a1e; border-color: rgba(242,200,188,0.5); }
+        .alert-info { background: #e2f0ee; color: #2e5c56; border-color: rgba(168,213,207,0.5); }
+
+        /* ---------- Form ---------- */
+        .login-card form {
+            display: flex;
+            flex-direction: column;
+            gap: 1.1rem;
+        }
+
+        .input-wrap {
+            position: relative;
+        }
+
+        .input-wrap > i.field-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-gray);
+            font-size: 0.95rem;
+            pointer-events: none;
+        }
+
+        .login-card input[type="text"],
+        .login-card input[type="password"] {
+            width: 100%;
+            padding: 0.8rem 1rem 0.8rem 2.6rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-charcoal);
+            background: #fff;
+            border: 1.5px solid rgba(217,140,122,0.25);
+            border-radius: 0.9rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-wrap.password-wrap input {
+            padding-right: 2.7rem;
+        }
+
+        .login-card input::placeholder {
+            color: #b8aba6;
+        }
+
+        .login-card input:focus {
+            outline: none;
+            border-color: var(--soft-coral);
+            box-shadow: 0 0 0 4px rgba(217,140,122,0.15);
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            padding: 0.2rem;
+            color: var(--text-gray);
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.15s ease;
+        }
+
+        .toggle-password:hover { color: var(--soft-coral); }
+        .toggle-password:focus { outline: none; }
+
+        .login-card button[type="submit"] {
+            position: relative;
+            margin-top: 0.4rem;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 0.98rem;
+            color: #fff;
+            background: linear-gradient(100deg, var(--dusty-rose), var(--soft-coral));
+            box-shadow: 0 14px 28px -10px rgba(217,140,122,0.55);
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .login-card button[type="submit"]::after {
+            content: "";
+            position: absolute;
+            top: 0; left: -60%;
+            width: 40%; height: 100%;
+            background: linear-gradient(120deg, transparent, rgba(255,255,255,0.5), transparent);
+            transform: skewX(-20deg);
+            transition: left 0.6s ease;
+        }
+
+        .login-card button[type="submit"]:hover::after { left: 130%; }
+
+        .login-card button[type="submit"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 34px -10px rgba(217,140,122,0.65);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .blob, .login-card, .login-card button[type="submit"]::after {
+                animation: none !important;
+                transition: none !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .login-card { padding: 2.2rem 1.7rem 2.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-page">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+
+    <div class="login-card">
+        <div class="login-icon"><i class="bi bi-heart-fill"></i></div>
+        <h1>Welcome back</h1>
+        <p class="login-sub">Log in to continue to MoMind</p>
+
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
             </div>
-        </div>
-    </section>
-</main>
-{% endblock %}
+        {% endif %}
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="input-wrap">
+                <i class="bi bi-person-fill field-icon"></i>
+                <input type="text" name="username" placeholder="Username" autocomplete="username" required autofocus>
+            </div>
+            <div class="input-wrap password-wrap">
+                <i class="bi bi-lock-fill field-icon"></i>
+                <input type="password" name="password" id="passwordField" placeholder="Password" autocomplete="current-password" required>
+                <button type="button" class="toggle-password" id="togglePassword" aria-label="Show password">
+                    <i class="bi bi-eye-fill" id="toggleIcon"></i>
+                </button>
+            </div>
+           <div class="auth-link">
+    <span>Don't have an account?</span>
+    <a href="{% url 'accounts:register' %}">
+        Register
+        <i class="bi bi-arrow-right-short"></i>
+    </a>
+</div>
+            <button type="submit">Login</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    const toggleBtn = document.getElementById('togglePassword');
+    const passwordField = document.getElementById('passwordField');
+    const toggleIcon = document.getElementById('toggleIcon');
+
+    toggleBtn.addEventListener('click', () => {
+        const isHidden = passwordField.type === 'password';
+        passwordField.type = isHidden ? 'text' : 'password';
+        toggleIcon.classList.toggle('bi-eye-fill', !isHidden);
+        toggleIcon.classList.toggle('bi-eye-slash-fill', isHidden);
+        toggleBtn.setAttribute('aria-label', isHidden ? 'Hide password' : 'Show password');
+    });
+</script>
+
+</body>
+</html>

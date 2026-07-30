@@ -1,78 +1,257 @@
-{% extends 'basec.html' %}
+{% extends "basec.html" %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --accent-1: var(--lavender-accent); /* #D9C6E8 Soft Lilac */
+        --accent-2: var(--sage-green);      /* #B8C9B1 Muted Sage */
+    }
+
+    /* ---------- Header ---------- */
+    .cs-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.6rem;
+    }
+    .cs-header h2 {
+        margin: 0 0 .3rem;
+        font-family: 'Fraunces', serif;
+        font-weight: 600;
+        font-size: 1.9rem;
+        background: linear-gradient(100deg, #a883c9, var(--accent-2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .cs-header p {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: .95rem;
+    }
+
+    /* ---------- Alerts (brand-tinted, no invented colors) ---------- */
+    .cs-alert {
+        position: relative;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: .85rem 1.1rem;
+        margin-bottom: .8rem;
+        border-radius: 14px;
+        font-size: .9rem;
+        color: var(--text-primary);
+        background: rgba(255,255,255,.5);
+        border-left: 4px solid var(--accent-2);
+    }
+    .cs-alert.alert-success { border-left-color: var(--sage-green); background: rgba(184,201,177,.2); }
+    .cs-alert.alert-error,
+    .cs-alert.alert-danger  { border-left-color: var(--accent-coral); background: rgba(217,140,122,.15); }
+    .cs-alert.alert-warning { border-left-color: var(--soft-peach); background: rgba(242,200,188,.3); }
+    .cs-alert.alert-info    { border-left-color: var(--teal-accent); background: rgba(168,213,207,.2); }
+    .cs-alert button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: .9rem;
+        color: var(--text-secondary);
+        line-height: 1;
+        padding: 0;
+    }
+    .cs-alert button:hover { color: var(--text-primary); }
+
+    /* ---------- Schedule grid ---------- */
+    .schedule-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+    }
+
+    .schedule-card {
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        animation: cardRise .5s ease forwards;
+    }
+    .schedule-grid .schedule-card:nth-child(1) { animation-delay: .05s; }
+    .schedule-grid .schedule-card:nth-child(2) { animation-delay: .1s; }
+    .schedule-grid .schedule-card:nth-child(3) { animation-delay: .15s; }
+    .schedule-grid .schedule-card:nth-child(4) { animation-delay: .2s; }
+    .schedule-grid .schedule-card:nth-child(n+5) { animation-delay: .25s; }
+    @keyframes cardRise {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .schedule-card-header {
+        padding: 1.1rem 1.4rem;
+        background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+        border-radius: 22px 22px 0 0;
+    }
+    .schedule-card-header h5 {
+        margin: 0;
+        color: #fff;
+        font-family: 'Fraunces', serif;
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .schedule-card-body {
+        flex: 1;
+        padding: 1.3rem 1.4rem;
+    }
+    .schedule-row {
+        display: flex;
+        gap: .5rem;
+        font-size: .88rem;
+        margin-bottom: .55rem;
+    }
+    .schedule-row strong { flex-shrink: 0; }
+
+    /* animated capacity meter */
+    .capacity-wrap {
+        margin: .8rem 0 1rem;
+    }
+    .capacity-label {
+        display: flex;
+        justify-content: space-between;
+        font-size: .8rem;
+        color: var(--text-secondary);
+        margin-bottom: .35rem;
+    }
+    .capacity-track {
+        width: 100%;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(0,0,0,.06);
+        overflow: hidden;
+    }
+    .capacity-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 999px;
+        background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+        animation: growFill 1.1s ease .4s forwards;
+    }
+    @keyframes growFill {
+        from { width: 0; }
+        to   { width: var(--pct); }
+    }
+
+    .schedule-desc {
+        font-size: .88rem;
+        color: var(--text-primary);
+        border-top: 1px solid rgba(0,0,0,.06);
+        padding-top: .8rem;
+        margin-top: .4rem;
+    }
+
+    .schedule-card-footer {
+        padding: .8rem 1.4rem;
+        border-radius: 0 0 22px 22px;
+        border-top: 1px solid rgba(0,0,0,.06);
+        font-size: .78rem;
+        color: var(--text-secondary);
+    }
+
+    .cs-empty {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: var(--text-secondary);
+    }
+    .cs-empty i {
+        font-size: 2rem;
+        color: var(--accent-2);
+        display: block;
+        margin-bottom: .6rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .schedule-card, .capacity-fill {
+            animation: none !important;
+            opacity: 1 !important;
+        }
+        .capacity-fill { width: var(--pct) !important; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2>{{ group.name }} - Clinic Schedules</h2>
-            <p class="text-muted">{{ group.description }}</p>
-        </div>
-        <div class="col-md-4 text-end">
-            {% if user.is_authenticated %}
-                {% if is_member %}
-                    <a href="{% url 'community:create_clinic_schedule' group.id %}" class="btn btn-success">
-                        ➕ New Schedule
-                    </a>
-                {% endif %}
-            {% endif %}
-        </div>
+<div class="cs-header">
+    <div>
+        <h2>{{ group.name }} — Clinic Schedules</h2>
+        <p>{{ group.description }}</p>
     </div>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {% endfor %}
-    {% endif %}
-
-    {% if schedules %}
-        <div class="row">
-            {% for schedule in schedules %}
-                <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header bg-primary text-white">
-                            <h5 class="mb-0">{{ schedule.title }}</h5>
-                        </div>
-                        <div class="card-body">
-                            <p class="mb-2">
-                                <strong>📅 Date:</strong> {{ schedule.scheduled_date|date:"M d, Y" }}
-                            </p>
-                            <p class="mb-2">
-                                <strong>🕐 Time:</strong> {{ schedule.start_time|time:"H:i" }} - {{ schedule.end_time|time:"H:i" }}
-                            </p>
-                            {% if schedule.specialization %}
-                                <p class="mb-2">
-                                    <strong>🏥 Specialization:</strong> {{ schedule.specialization }}
-                                </p>
-                            {% endif %}
-                            {% if schedule.location %}
-                                <p class="mb-2">
-                                    <strong>📍 Location:</strong> {{ schedule.location }}
-                                </p>
-                            {% endif %}
-                            <p class="mb-2">
-                                <strong>👥 Available Slots:</strong> 
-                                <span class="badge bg-info">{{ schedule.available_slots }} / {{ schedule.max_patients }}</span>
-                            </p>
-                            <hr>
-                            <p>{{ schedule.description }}</p>
-                        </div>
-                        <div class="card-footer text-muted">
-                            <small>Created by {{ schedule.created_by.get_full_name|default:schedule.created_by.username }}</small>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-    {% else %}
-        <div class="alert alert-info">
-            <h5>📅 No upcoming clinic schedules</h5>
-            <p>Check back later for upcoming appointments and clinic sessions.</p>
-        </div>
+    {% if user.is_authenticated %}
+        {% if is_member %}
+            <a href="{% url 'community:create_clinic_schedule' group.id %}" class="btn-gradient">
+                <i class="fas fa-plus"></i> New Schedule
+            </a>
+        {% endif %}
     {% endif %}
 </div>
 
+{% if messages %}
+    {% for message in messages %}
+        <div class="cs-alert {% if message.tags %}alert-{{ message.tags }}{% endif %}">
+            <span>{{ message }}</span>
+            <button type="button" onclick="this.parentElement.remove()" aria-label="Close">✕</button>
+        </div>
+    {% endfor %}
+{% endif %}
 {% endblock %}
+
+{% if schedules %}
+    <div class="schedule-grid">
+        {% for schedule in schedules %}
+            <div class="schedule-card glass-card">
+                <div class="schedule-card-header">
+                    <h5>{{ schedule.title }}</h5>
+                </div>
+                <div class="schedule-card-body">
+                    <div class="schedule-row">
+                        <strong>📅 Date:</strong> <span>{{ schedule.scheduled_date|date:"M d, Y" }}</span>
+                    </div>
+                    <div class="schedule-row">
+                        <strong>🕐 Time:</strong> <span>{{ schedule.start_time|time:"H:i" }} – {{ schedule.end_time|time:"H:i" }}</span>
+                    </div>
+                    {% if schedule.specialization %}
+                        <div class="schedule-row">
+                            <strong>🏥 Specialization:</strong> <span>{{ schedule.specialization }}</span>
+                        </div>
+                    {% endif %}
+                    {% if schedule.location %}
+                        <div class="schedule-row">
+                            <strong>📍 Location:</strong> <span>{{ schedule.location }}</span>
+                        </div>
+                    {% endif %}
+
+                    <div class="capacity-wrap">
+                        <div class="capacity-label">
+                            <span>👥 Available Slots</span>
+                            <span>{{ schedule.available_slots }} / {{ schedule.max_patients }}</span>
+                        </div>
+                        <div class="capacity-track">
+                            <div class="capacity-fill" style="--pct: {% widthratio schedule.available_slots schedule.max_patients 100 %}%;"></div>
+                        </div>
+                    </div>
+
+                    <p class="schedule-desc">{{ schedule.description }}</p>
+                </div>
+                <div class="schedule-card-footer">
+                    Created by {{ schedule.created_by.get_full_name|default:schedule.created_by.username }}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="cs-empty glass-card">
+        <i class="fas fa-calendar-days"></i>
+        <h5>No upcoming clinic schedules</h5>
+        <p>Check back later for upcoming appointments and clinic sessions.</p>
+    </div>
+{% endif %}

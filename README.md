@@ -1,7 +1,8 @@
 # Momind
 
-Momind is a Django-based maternal health and community support platform.
-It includes user role management, family and pregnancy dashboards, community forums, AI-enabled risk assessment, lab report analysis, chat support, and postpartum care workflows.
+Momind is a Django-based maternal health and community support platform. Its
+Maternal Care Agent reviews longitudinal pregnancy records, reasons about risk,
+remembers previous assessments, and takes bounded care-coordination actions.
 
 ## Key Features
 
@@ -11,7 +12,8 @@ It includes user role management, family and pregnancy dashboards, community for
 - Family linking and member management
 - Clinic and hospital scheduling with appointment management
 - Community forums, groups, notifications, and hospital announcements
-- AI risk assessment and lab report analysis endpoints
+- Auditable Maternal Care Agent with planning, tools, memory, reasoning, and actions
+- Hybrid clinical-rule/XGBoost risk assessment and lab report analysis
 - Chatbot session handling and message retrieval
 - Postpartum assessment workflows
 
@@ -47,6 +49,7 @@ pip install -r req.txt
 ```bash
 export DJANGO_DEBUG=true
 export GROQ_API_KEY="your-optional-groq-key"
+export GROQ_MODEL="openai/gpt-oss-120b"
 ```
 
 4. Apply database migrations.
@@ -100,17 +103,83 @@ demo password.
   `DJANGO_ALLOWED_HOSTS`, HTTPS, and a persistent `DJANGO_MEDIA_ROOT`.
 - AI and chat functionality may require API credentials or environment configuration for external services.
 
+## Maternal Care Agent
+
+The primary agent is not the support chatbot. It is a bounded, tool-using
+workflow implemented in `ai_services/services/maternal_agent.py`.
+
+For every run, the agent:
+
+1. Retrieves up to five previous risk assessments as longitudinal memory.
+2. Builds a plan based on the records available for the pregnancy.
+3. Inspects pregnancy progress, fetal health, lab reports, postpartum wellness,
+   and the linked care team.
+4. Runs hybrid risk reasoning using a deployed XGBoost model when available,
+   otherwise deterministic safety rules.
+5. Uses Groq to turn the evidence into a structured, supportive explanation
+   when an API key is configured.
+6. Selects actions using a safety policy. Every level creates in-app care-team
+   notifications; high and critical levels also create an in-app emergency
+   alert and require human review.
+7. Persists the plan, memory snapshot, rationale, tool inputs, tool outputs,
+   selected actions, and final result in `AgentRun` and `AgentStep` records.
+
+The agent is intentionally constrained. It cannot diagnose, prescribe, modify
+clinical observations, contact emergency services, or send information outside
+the application. Its output is decision support for qualified humans.
+
+### Run and inspect the agent
+
+1. Log in as a linked mother, father, midwife, doctor, hospital, or hospital
+   staff member.
+2. Open a pregnancy's patient details.
+3. Select **Run Maternal Care Agent**.
+4. Review the result and open the risk dashboard to see the complete reasoning
+   trace and actions.
+
+The main endpoints are:
+
+- `POST /ai/risk-assess/<pregnancy_id>/` — execute a complete agent run.
+- `GET /ai/show-risk/<pregnancy_id>/` — view the assessment and reasoning trace.
+- `GET /ai/agent-runs/<run_uuid>/` — retrieve the access-controlled audit JSON.
+
+With no `GROQ_API_KEY`, the complete workflow still runs using deterministic
+clinical rules and safe fallback explanations. This makes local demonstrations
+repeatable without simulating agent actions.
+
 ## Dependencies
 
-This project depends on the packages listed in `req.txt`, including:
+The exact Python dependencies are pinned in `req.txt`. The main runtime
+dependencies are:
 
 - `Django==6.0.7`
-- `openai`
 - `groq`
-- `fastapi`
-- `azure-*`
-- `pdfminer.six`, `pdfplumber`
-- `pandas`, `numpy`, `tensorflow`
+- `xgboost`
+- `pandas` and `numpy`
+- `pypdf`
+
+Frontend templates also load Bootstrap, Font Awesome, FullCalendar, Chart.js,
+Marked, QRCode.js, html5-qrcode, and Google Fonts from their respective CDNs.
+Before public distribution, the team should select a project license and retain
+the required notices for every redistributed third-party asset.
+
+## Future plans
+
+- Validate thresholds and model performance with clinicians and representative,
+  consented datasets.
+- Add clinician approval queues for urgent actions and escalation resolution.
+- Add model/tool versioning, evaluation datasets, and false-positive monitoring.
+- Add Sinhala and Tamil interfaces and locally reviewed safety language.
+- Encrypt sensitive fields and add retention/export/deletion workflows.
+- Integrate authorized hospital scheduling and notification providers.
+
+## Prototype evolution
+
+The prototype keeps the original maternal-care coordination direction while
+making the AI component safer and more explicit. The conversational assistant
+is treated as a support feature; the central AI capability is now an auditable
+Maternal Care Agent with tool use, persistent memory, multi-step decisions, and
+bounded application actions.
 
 ## URL Routes
 

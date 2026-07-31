@@ -67,7 +67,7 @@
                 <form id="riskForm" method="POST" action="{% url 'ai_services:risk_assessment' pregnancy.id %}">
                     {% csrf_token %}
                     <button type="submit" class="btn-pink btn-brain">
-                        <i class="fas fa-brain"></i> Run AI Assessment
+                        <i class="fas fa-brain"></i> Run Maternal Care Agent
                     </button>
                 </form>
             </div>
@@ -78,7 +78,7 @@
     <div id="riskModal" class="modal-momind" style="display: none;">
         <div class="modal-momind-content">
             <div class="flex-between modal-header">
-                <h3>AI Risk Assessment</h3>
+                <h3>Maternal Care Agent</h3>
                 <span onclick="closeRiskModal()" class="close-modal">&times;</span>
             </div>
             <div id="modalBody" class="modal-body">Waiting for AI analysis...</div>
@@ -314,13 +314,18 @@ if (riskForm) {
         })
         .then(data => {
             const levelClass = data.risk_level === "low" ? "low" : data.risk_level === "medium" ? "medium" : "high";
+            const completedSteps = (data.agent?.steps || []).filter(step => step.status === "completed").length;
+            const actions = (data.actions || []).map(action => action.tool.replaceAll("_", " ")).join(", ") || "assessment stored";
             document.getElementById("modalBody").innerHTML = `
                 <div class="ai-score-banner">
                     <h3>Risk Assessment Index Score: <strong>${data.risk_score}</strong></h3>
                     <p>Stratification Level Matrix: <span class="badge-risk ${levelClass}">${data.risk_level.toUpperCase()}</span></p>
+                    <p><strong>Agent workflow:</strong> ${completedSteps} tools completed</p>
+                    <p><strong>Actions:</strong> ${actions}</p>
                 </div>
                 <hr class="modal-divider">
                 <div id="aiExplanation" class="markdown-body"></div>
+                <p style="margin-top:1rem"><a class="btn-outline-pink" href="${data.agent_run_url}">View agent audit JSON</a></p>
             `;
             const explanation = data.explanation || "Assessment completed. No detailed explanation is available.";
             document.getElementById("aiExplanation").innerHTML =

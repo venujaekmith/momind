@@ -43,6 +43,21 @@ class DashboardAccessTests(TestCase):
             f"{reverse('accounts:login')}?next={reverse('dashboards:dashboard')}",
         )
 
+    def test_incomplete_role_profile_returns_to_setup(self):
+        incomplete = get_user_model().objects.create_user(
+            username="incomplete-mother",
+            email="incomplete@example.com",
+            password="safe-test-password",
+            role=Role.MOTHER,
+            is_role_selected=True,
+        )
+        self.client.force_login(incomplete)
+
+        response = self.client.get(reverse("dashboards:dashboard"))
+
+        self.assertRedirects(response, reverse("accounts:mother_details"))
+        self.assertTrue(MotherProfile.objects.get(user=incomplete).mother_id)
+
     def test_unrelated_user_cannot_view_or_edit_pregnancy(self):
         self.client.force_login(self.other_user)
         detail = self.client.get(

@@ -60,6 +60,42 @@ class AccountFlowTests(TestCase):
             reverse("accounts:login"),
         )
 
+    def test_login_returns_user_to_requested_page(self):
+        self.user.role = Role.MOTHER
+        self.user.is_role_selected = True
+        self.user.save(update_fields=["role", "is_role_selected"])
+        self.client.logout()
+        destination = reverse("dashboards:clinic_directory")
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "username": self.user.username,
+                "password": "safe-test-password",
+                "next": destination,
+            },
+        )
+
+        self.assertRedirects(response, destination)
+
+    def test_login_rejects_external_return_url(self):
+        self.user.role = Role.MOTHER
+        self.user.is_role_selected = True
+        self.user.save(update_fields=["role", "is_role_selected"])
+        self.client.logout()
+
+        response = self.client.post(
+            reverse("accounts:login"),
+            {
+                "username": self.user.username,
+                "password": "safe-test-password",
+                "next": "https://example.com/unsafe",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboards:dashboard"))
+
 
 class AccountTemplateSmokeTests(TestCase):
     @classmethod

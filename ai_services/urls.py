@@ -14,6 +14,9 @@ urlpatterns = [
     # Show Risk Dashboard (GET)
     path('show-risk/<int:pregnancy_id>/', ShowRiskView.as_view(), name='show_risk'),
 
+    # Inspect the complete plan, memory, reasoning, tool calls, and actions.
+    path('agent-runs/<uuid:run_id>/', agent_run_detail, name='agent_run_detail'),
+
     # Postpartum AI assessment endpoint
     path('postpartum-assessment/', postpartum_assessment, name='postpartum_assessment'),
 

@@ -15,16 +15,16 @@
         * { box-sizing: border-box; }
 
         :root {
-            --bg-cream: #F6E7E2;
-            --pink: #E7B3AE;
-            --peach: #F2C8BC;
-            --coral: #D98C7A;
-            --lilac: #D9C6E8;
-            --sage: #B8C9B1;
-            --teal: #A8D5CF;
-            --card-bg: #FFF8F5;
-            --text-dark: #3E3A39;
-            --text-gray: #7A716D;
+            --bg-cream: #fff5f8;
+            --pink: #e85d8f;
+            --peach: #f7b4c8;
+            --coral: #cc4677;
+            --lilac: #f3bfd0;
+            --sage: #e8a1b8;
+            --teal: #d87195;
+            --card-bg: #ffffff;
+            --text-dark: #4b2735;
+            --text-gray: #876f79;
 
             --accent-1: var(--pink);
             --accent-2: var(--coral);
@@ -43,7 +43,7 @@
             min-height: 100vh;
             padding: 3rem 1.5rem 4rem;
             overflow: hidden;
-            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #fff7fa 55%, #fde6ed 100%);
         }
         .page-shell::before {
             content: "";
@@ -68,7 +68,7 @@
         }
         .blob-2 {
             width: 440px; height: 440px; bottom: -160px; right: -130px;
-            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #e9a7bd);
             animation: float2 21s ease-in-out infinite alternate;
         }
         .blob-3 {
@@ -189,7 +189,7 @@
         .alert-warning { background: #fdf0dd; color: #8a5a1a; border: 1px solid rgba(217,160,90,.35); }
         .alert-warning i { color: #c98a2e; }
         .alert-danger { background: #fbe4e1; color: #8a3226; border: 1px solid rgba(217,140,122,.4); }
-        .alert-danger i { color: #d98c7a; }
+        .alert-danger i { color: #cc4677; }
 
         .alerts-stack { display: flex; flex-direction: column; gap: 10px; }
 
@@ -335,6 +335,7 @@
             .card-bar { padding: 1.1rem 1.3rem; }
         }
     </style>
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
 </head>
 <body>
 

@@ -4,8 +4,11 @@ from django.views import View
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse
 from dashboards.models import Pregnancy, RiskAssessment, LabTest
 from accounts.models import Family
+from .models import AgentRun
+from .services.maternal_agent import MaternalCareAgent, serialize_agent_run
 from .services.risk_assessment import AdvancedPregnancyRiskService
 from .services.postpartum_ai import PostpartumAIService
 from .services.lab_report_analysis import LabReportAnalysisService
@@ -30,6 +33,31 @@ def has_pregnancy_access(user, pregnancy):
     return bool(filters and family.filter(**filters).exists())
 
 
+def build_agent_response(agent_run):
+    assessment = agent_run.risk_assessment
+    trend = AdvancedPregnancyRiskService().get_risk_trend(
+        agent_run.pregnancy,
+        days=30,
+    )
+    return {
+        "success": agent_run.status == "completed",
+        "agent_run_id": str(agent_run.id),
+        "agent_run_url": reverse("ai_services:agent_run_detail", args=[agent_run.id]),
+        "agent": serialize_agent_run(agent_run),
+        "risk_score": assessment.risk_score if assessment else None,
+        "risk_level": assessment.risk_level if assessment else None,
+        "explanation": assessment.factors.get("llm_explanation") if assessment else "",
+        "trend": trend,
+        "assessed_at": assessment.created_at.isoformat() if assessment else None,
+        "model_version": assessment.prediction_model_version if assessment else None,
+        "lab_report_summary": assessment.factors.get("lab_report_summary") if assessment else "",
+        "lab_report_analysis": assessment.factors.get("lab_report_analysis") if assessment else [],
+        "actions": agent_run.result.get("actions", []),
+        "reasoning": agent_run.result.get("reasoning", ""),
+        "human_review_required": agent_run.result.get("human_review_required", False),
+    }
+
+
 @method_decorator(login_required, name='dispatch')
 class RiskAssessmentView(View):
     """
@@ -47,20 +75,11 @@ class RiskAssessmentView(View):
                     "error": "You do not have permission to access this pregnancy."
                 }, status=403)
 
-            service = AdvancedPregnancyRiskService()
-            assessment = service.calculate_risk(pregnancy)
-
-            result = {
-                "success": True,
-                "risk_score": assessment.risk_score,
-                "risk_level": assessment.risk_level,
-                "explanation": assessment.factors.get("llm_explanation"),
-                "trend": service.get_risk_trend(pregnancy, days=30),
-                "assessed_at": assessment.created_at.isoformat(),
-                "model_version": assessment.prediction_model_version,
-                "lab_report_summary": assessment.factors.get("lab_report_summary"),
-                "lab_report_analysis": assessment.factors.get("lab_report_analysis"),
-            }
+            agent_run = MaternalCareAgent().run(
+                pregnancy,
+                triggered_by=request.user,
+            )
+            result = build_agent_response(agent_run)
 
             if request.headers.get("X-Requested-With") == "XMLHttpRequest":
                 return JsonResponse(result)
@@ -122,18 +141,8 @@ def calculate_risk(request, pregnancy_id):
                 "success": False,
                 "error": "You do not have permission to access this pregnancy.",
             }, status=403)
-        service = AdvancedPregnancyRiskService()
-        assessment = service.calculate_risk(pregnancy)
-
-        return JsonResponse({
-            "success": True,
-            "risk_score": assessment.risk_score,
-            "risk_level": assessment.risk_level,
-            "explanation": assessment.factors.get("llm_explanation"),
-            "trend": service.get_risk_trend(pregnancy),
-            "lab_report_summary": assessment.factors.get("lab_report_summary"),
-            "lab_report_analysis": assessment.factors.get("lab_report_analysis"),
-        })
+        agent_run = MaternalCareAgent().run(pregnancy, triggered_by=request.user)
+        return JsonResponse(build_agent_response(agent_run))
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=400)
     
@@ -155,8 +164,13 @@ class ShowRiskView(View):
         ).order_by('-created_at').first()
 
         if not latest_assessment:
-            service = AdvancedPregnancyRiskService()
-            latest_assessment = service.calculate_risk(pregnancy)
+            agent_run = MaternalCareAgent().run(pregnancy, triggered_by=request.user)
+            latest_assessment = agent_run.risk_assessment
+
+        agent_run = AgentRun.objects.filter(
+            pregnancy=pregnancy,
+            risk_assessment=latest_assessment,
+        ).prefetch_related("steps").first()
 
         trend = AdvancedPregnancyRiskService().get_risk_trend(pregnancy, days=30)
 
@@ -164,6 +178,8 @@ class ShowRiskView(View):
             "pregnancy": pregnancy,
             "mother": pregnancy.mother,
             "risk": latest_assessment,
+            "agent_run": agent_run,
+            "agent_steps": agent_run.steps.all() if agent_run else [],
             "trend": trend,
             "color": self.get_risk_color(latest_assessment.risk_level),
         }
@@ -186,3 +202,17 @@ def show_risk(request, pregnancy_id):
     """Function-based alternative"""
     view = ShowRiskView()
     return view.get(request, pregnancy_id)
+
+
+@login_required
+def agent_run_detail(request, run_id):
+    agent_run = get_object_or_404(
+        AgentRun.objects.select_related("pregnancy", "risk_assessment").prefetch_related("steps"),
+        id=run_id,
+    )
+    if not has_pregnancy_access(request.user, agent_run.pregnancy):
+        return JsonResponse({
+            "success": False,
+            "error": "You do not have permission to inspect this agent run.",
+        }, status=403)
+    return JsonResponse({"success": True, "agent": serialize_agent_run(agent_run)})

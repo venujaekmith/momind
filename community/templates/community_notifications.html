@@ -16,16 +16,16 @@
 
         :root {
             /* ---- MoMind brand palette ---- */
-            --bg-cream: #F6E7E2;      /* Warm Blush Cream  */
-            --pink: #E7B3AE;          /* Dusty Rose        */
-            --peach: #F2C8BC;         /* Muted Peach       */
-            --coral: #D98C7A;         /* Soft Coral        */
-            --lilac: #D9C6E8;         /* Soft Lilac        */
-            --sage: #B8C9B1;          /* Muted Sage        */
-            --teal: #A8D5CF;          /* Soft Teal         */
-            --card-bg: #FFF8F5;       /* Warm Ivory        */
-            --text-dark: #3E3A39;     /* Deep Charcoal     */
-            --text-gray: #7A716D;     /* Warm Gray         */
+            --bg-cream: #fff5f8;      /* Warm Blush Cream  */
+            --pink: #e85d8f;          /* Dusty Rose        */
+            --peach: #f7b4c8;         /* Muted Peach       */
+            --coral: #cc4677;         /* Soft Coral        */
+            --lilac: #f3bfd0;         /* Soft Lilac        */
+            --sage: #e8a1b8;          /* Muted Sage        */
+            --teal: #d87195;          /* Soft Teal         */
+            --card-bg: #ffffff;       /* Warm Ivory        */
+            --text-dark: #4b2735;     /* Deep Charcoal     */
+            --text-gray: #876f79;     /* Warm Gray         */
 
             --accent-1: var(--pink);
             --accent-2: var(--coral);
@@ -45,7 +45,7 @@
             min-height: 100vh;
             padding: 3rem 1.5rem 4rem;
             overflow: hidden;
-            background: linear-gradient(150deg, var(--bg-cream) 0%, #f8ede9 55%, #f3e4e9 100%);
+            background: linear-gradient(150deg, var(--bg-cream) 0%, #fff7fa 55%, #fde6ed 100%);
         }
         .page-shell::before {
             content: "";
@@ -81,7 +81,7 @@
         .blob-2 {
             width: 440px; height: 440px;
             bottom: -160px; right: -130px;
-            background: radial-gradient(circle at 60% 40%, var(--lilac), #c9b3de);
+            background: radial-gradient(circle at 60% 40%, var(--lilac), #e9a7bd);
             animation: float2 21s ease-in-out infinite alternate;
         }
         .blob-3 {
@@ -363,6 +363,7 @@
             .notif-header { border-radius: 22px 22px 0 0; }
         }
     </style>
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
 </head>
 <body>
 

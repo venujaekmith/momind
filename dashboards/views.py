@@ -768,6 +768,26 @@ def add_clinic_appointment(request, clinic_id):
 @login_required
 def dashboard(request):
     role = request.user.role
+
+    profile_setup = {
+        Role.MOTHER: ("user_mother", "accounts:mother_details"),
+        Role.FATHER: ("user_father", "accounts:father_details"),
+        Role.MIDWIFE: ("user_midwife", "accounts:midwife_details"),
+        Role.DOCTOR: ("user_doctor", "accounts:doctor_details"),
+        Role.HOSPITAL: ("user_hospital", "accounts:hospital_details"),
+        Role.HOSPITAL_STAFF: ("user_hospital_staff", "accounts:hospital_staff_details"),
+    }
+
+    if role not in profile_setup:
+        request.user.is_role_selected = False
+        request.user.save(update_fields=["is_role_selected"])
+        messages.info(request, "Choose your role to finish setting up your account.")
+        return redirect("accounts:select_role")
+
+    relation_name, setup_route = profile_setup[role]
+    if not hasattr(request.user, relation_name):
+        messages.info(request, "Complete your profile before opening the dashboard.")
+        return redirect(setup_route)
     
     if role == "MOTHER":
         return mother_dashboard(request)
@@ -787,7 +807,7 @@ def dashboard(request):
     elif role == "HOSPITAL_STAFF":
         return hospital_staff_dashboard(request)
 
-    return redirect("accounts:login")
+    return redirect("accounts:select_role")
 
 
 

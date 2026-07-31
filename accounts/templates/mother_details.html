@@ -31,7 +31,7 @@
             justify-content: center;
             padding: 3rem 1.5rem;
             overflow: hidden;
-            background: linear-gradient(150deg, #f6e7e2 0%, #f8ede9 55%, #f3e4e9 100%);
+            background: linear-gradient(150deg, #fff5f8 0%, #fff7fa 55%, #fde6ed 100%);
         }
 
         .details-page::before {
@@ -63,19 +63,19 @@
         .blob-1 {
             width: 400px; height: 400px;
             top: -130px; left: -110px;
-            background: radial-gradient(circle at 30% 30%, #f2c8bc, #e7b3ae);
+            background: radial-gradient(circle at 30% 30%, #f7b4c8, #e85d8f);
             animation: float1 18s ease-in-out infinite alternate;
         }
         .blob-2 {
             width: 440px; height: 440px;
             bottom: -160px; right: -130px;
-            background: radial-gradient(circle at 60% 40%, #d9c6e8, #c9b3de);
+            background: radial-gradient(circle at 60% 40%, #f3bfd0, #e9a7bd);
             animation: float2 21s ease-in-out infinite alternate;
         }
         .blob-3 {
             width: 320px; height: 320px;
             top: 40%; left: 45%;
-            background: radial-gradient(circle at 50% 50%, #a8d5cf, #b8c9b1);
+            background: radial-gradient(circle at 50% 50%, #d87195, #e8a1b8);
             animation: float1 24s ease-in-out infinite alternate-reverse;
         }
         @keyframes float1 { from { transform: translate(0,0) scale(1); } to { transform: translate(40px,30px) scale(1.1); } }
@@ -126,7 +126,7 @@
             border-radius: 50%;
             font-size: 22px;
             color: #fff;
-            background: linear-gradient(100deg, #e7b3ae, #d98c7a);
+            background: linear-gradient(100deg, #e85d8f, #cc4677);
             box-shadow: 0 10px 24px -6px rgba(217,140,122,.5);
         }
 
@@ -219,13 +219,13 @@
         .details-card input:hover,
         .details-card select:hover,
         .details-card textarea:hover {
-            border-color: #d98c7a;
+            border-color: #cc4677;
         }
         .details-card input:focus,
         .details-card select:focus,
         .details-card textarea:focus {
             outline: none;
-            border-color: #d98c7a;
+            border-color: #cc4677;
             box-shadow: 0 0 0 4px rgba(217,140,122,.15);
         }
 
@@ -263,7 +263,7 @@
             font-weight: 600;
             color: #fff;
             cursor: pointer;
-            background: linear-gradient(100deg, #e7b3ae, #d98c7a);
+            background: linear-gradient(100deg, #e85d8f, #cc4677);
             box-shadow: 0 14px 28px -10px rgba(217,140,122,.55);
             transition: transform .15s ease, box-shadow .15s ease;
         }
@@ -290,6 +290,7 @@
             }
         }
     </style>
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
 </head>
 <body>
 
@@ -310,9 +311,9 @@
                 <svg viewBox="0 0 600 34" preserveAspectRatio="none">
                     <defs>
                         <linearGradient id="pulseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stop-color="#e7b3ae"/>
-                            <stop offset="50%" stop-color="#d98c7a"/>
-                            <stop offset="100%" stop-color="#c9b3de"/>
+                            <stop offset="0%" stop-color="#e85d8f"/>
+                            <stop offset="50%" stop-color="#cc4677"/>
+                            <stop offset="100%" stop-color="#e9a7bd"/>
                         </linearGradient>
                     </defs>
                     <path class="pulse-line" d="M0,17 L60,17 L80,17 L92,4 L104,30 L116,17 L136,17 L300,17 L360,17 L380,17 L392,4 L404,30 L416,17 L436,17 L600,17
@@ -322,7 +323,7 @@
 
             {% if messages %}
                 {% for message in messages %}
-                    <div class="helptext" style="background:#fff6f3;border-left:4px solid #d98c7a;padding:12px;border-radius:12px;margin-bottom:1.2rem;">{{ message }}</div>
+                    <div class="helptext" style="background:#fff6f3;border-left:4px solid #cc4677;padding:12px;border-radius:12px;margin-bottom:1.2rem;">{{ message }}</div>
                 {% endfor %}
             {% endif %}
 

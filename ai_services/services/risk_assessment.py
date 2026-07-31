@@ -1,10 +1,12 @@
 # ai_service/services/risk_assessment.py
-import uuid
+import json
+
 import pandas as pd
 import xgboost as xgb
 from datetime import timedelta
 from pathlib import Path
 from django.conf import settings
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils import timezone
 from django.db import transaction
 
@@ -18,12 +20,19 @@ from .llm_client import PregnancyLLMExplainer
 from .lab_report_analysis import LabReportAnalysisService
 
 
+def _json_safe(value):
+    """Convert dates, decimals, and other Django values into JSON-safe data."""
+    return json.loads(json.dumps(value, cls=DjangoJSONEncoder))
+
+
 class AdvancedPregnancyRiskService:
 
     def __init__(self):
-        self.model_version = "hybrid-xgboost-groq-v1.0"
         self.ml_model = self._load_or_train_model()
         self.llm = PregnancyLLMExplainer()
+        scoring_engine = "xgboost" if self.ml_model is not None else "clinical-rules"
+        explanation_engine = "groq" if self.llm.client is not None else "safe-fallback"
+        self.model_version = f"maternal-agent-{scoring_engine}-{explanation_engine}-v2.0"
         self.lab_analysis_service = LabReportAnalysisService()
 
     def _load_or_train_model(self):
@@ -39,10 +48,16 @@ class AdvancedPregnancyRiskService:
             # versioned model is deployed at model_path.
             return None
 
-    def calculate_risk(self, pregnancy: Pregnancy):
+    def calculate_risk(
+        self,
+        pregnancy: Pregnancy,
+        trigger_actions=True,
+        prepared_features=None,
+        prepared_context=None,
+    ):
         with transaction.atomic():
-            features = self._extract_features(pregnancy)
-            context_data = self._gather_context(pregnancy)
+            features = prepared_features or self._extract_features(pregnancy)
+            context_data = prepared_context or self._gather_context(pregnancy)
             context_data['summary_text'] = self._format_context_for_prompt(context_data)
 
             ml_score, ml_level, probabilities = self._predict_with_ml(features)
@@ -63,19 +78,20 @@ class AdvancedPregnancyRiskService:
                 pregnancy=pregnancy,
                 risk_score=final_score,
                 risk_level=final_level,
-                factors={
+                factors=_json_safe({
                     "features": features,
                     "rule_factors": rule_factors,
                     "llm_explanation": llm_explanation,
                     "analysis_summary": context_data['summary_text'],
                     "lab_report_summary": context_data.get('lab_report_summary'),
                     "lab_report_analysis": context_data.get('lab_report_analysis'),
-                },
+                }),
                 prediction_model_version=self.model_version,
             )
 
-            self._trigger_emergency_alert(pregnancy, final_level, llm_explanation)
-            self._notify_family(pregnancy, assessment, context_data)
+            if trigger_actions:
+                self._trigger_emergency_alert(pregnancy, final_level, llm_explanation)
+                self._notify_family(pregnancy, assessment, context_data)
             return assessment
 
     def _extract_features(self, pregnancy):
@@ -332,21 +348,43 @@ class AdvancedPregnancyRiskService:
         message = self._build_notification_message(assessment, context_data)
         title = f"AI Health Summary - {assessment.risk_level.title()} Risk"
 
+        notification_ids = []
         for recipient in recipients:
-            Notification.objects.create(
+            notification = Notification.objects.create(
                 user=recipient,
                 title=title,
                 message=message
             )
+            notification_ids.append(notification.id)
+        return notification_ids
 
     def _trigger_emergency_alert(self, pregnancy, risk_level, explanation):
         if risk_level in ["high", "critical"]:
-            EmergencyAlert.objects.create(
+            recent_cutoff = timezone.now() - timedelta(hours=6)
+            existing = EmergencyAlert.objects.filter(
+                pregnancy=pregnancy,
+                is_resolved=False,
+                triggered_by_ai=True,
+                created_at__gte=recent_cutoff,
+            ).order_by("-created_at").first()
+            if existing:
+                return {"alert_id": existing.id, "created": False}
+            alert = EmergencyAlert.objects.create(
                 pregnancy=pregnancy,
                 alert_type="other",
                 message=f"AI Risk Alert: {risk_level.upper()} risk detected.",
                 triggered_by_ai=True
             )
+            return {"alert_id": alert.id, "created": True}
+        return None
+
+    def notify_care_team(self, pregnancy, assessment, context_data):
+        """Execute the notification tool and return auditable identifiers."""
+        return self._notify_family(pregnancy, assessment, context_data)
+
+    def create_safety_alert(self, pregnancy, risk_level, explanation):
+        """Execute a policy-guarded emergency alert tool."""
+        return self._trigger_emergency_alert(pregnancy, risk_level, explanation)
 
     def get_risk_trend(self, pregnancy, days=30):
         assessments = RiskAssessment.objects.filter(

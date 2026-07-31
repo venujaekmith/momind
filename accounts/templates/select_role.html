@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -9,14 +10,14 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
-            --bg-cream: #F6E7E2;
-            --dusty-rose: #E7B3AE;
-            --soft-coral: #D98C7A;
-            --soft-lilac: #D9C6E8;
-            --soft-teal: #A8D5CF;
-            --card: #FFF8F5;
-            --text: #3E3A39;
-            --gray: #7A716D;
+            --bg-cream: #fff5f8;
+            --dusty-rose: #e85d8f;
+            --soft-coral: #cc4677;
+            --soft-lilac: #f3bfd0;
+            --soft-teal: #d87195;
+            --card: #ffffff;
+            --text: #4b2735;
+            --gray: #876f79;
         }
         * { box-sizing: border-box; }
         html, body { margin: 0; min-height: 100%; font-family: Inter, sans-serif; color: var(--text); }
@@ -121,6 +122,7 @@
             .role-card { padding: 28px; }
         }
     </style>
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
 </head>
 <body>
 <main class="role-page">

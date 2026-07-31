@@ -143,6 +143,7 @@ LOGIN_REDIRECT_URL = "dashboards:dashboard"
 LOGOUT_REDIRECT_URL = "accounts:login"
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
 if not DEBUG:
     SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "true").lower() in {

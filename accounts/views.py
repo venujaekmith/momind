@@ -9,6 +9,7 @@ from django.db import IntegrityError
 from django.db import transaction
 from django.http import HttpResponseForbidden
 from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
 
 
 def save_verification_files(user, files):
@@ -20,6 +21,11 @@ def save_verification_files(user, files):
 # REGISTER
 # -----------------------
 def register_view(request):
+    if request.user.is_authenticated:
+        if not request.user.is_role_selected:
+            return redirect("accounts:select_role")
+        return redirect("dashboards:dashboard")
+
     form = RegisterForm(request.POST or None)
 
     if form.is_valid():
@@ -34,6 +40,12 @@ def register_view(request):
 # LOGIN
 # -----------------------
 def login_view(request):
+    if request.user.is_authenticated:
+        if not request.user.is_role_selected:
+            return redirect("accounts:select_role")
+        return redirect("dashboards:dashboard")
+
+    next_url = request.POST.get("next") or request.GET.get("next")
     if request.method == "POST":
         username = request.POST.get("username")
         password = request.POST.get("password")
@@ -45,12 +57,18 @@ def login_view(request):
             if not user.is_role_selected:
                 return redirect("accounts:select_role")
 
-            return redirect('dashboards:dashboard') 
+            if next_url and url_has_allowed_host_and_scheme(
+                next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return redirect(next_url)
+            return redirect('dashboards:dashboard')
         else:
             # Add error message if authentication fails
             messages.error(request, "Invalid username or password. Please try again.")
 
-    return render(request, "login.html")
+    return render(request, "login.html", {"next": next_url or ""})
 
 @require_POST
 def logout_view(request):
@@ -115,7 +133,10 @@ def select_role(request):
 def mother_details(request):
     if request.user.role != Role.MOTHER:
         return HttpResponseForbidden("This page is only available to mothers.")
-    profile, _ = MotherProfile.objects.get_or_create(user=request.user)
+    profile, _ = MotherProfile.objects.get_or_create(
+        user=request.user,
+        defaults={"mother_id": generate_id("M")},
+    )
     
     if request.method == "POST":
         form = MotherDetailsForm(request.POST, instance=getattr(request.user, 'details', None))
@@ -135,7 +156,10 @@ def mother_details(request):
 def father_details(request):
     if request.user.role != Role.FATHER:
         return HttpResponseForbidden("This page is only available to fathers.")
-    profile, _ = FatherProfile.objects.get_or_create(user=request.user)
+    profile, _ = FatherProfile.objects.get_or_create(
+        user=request.user,
+        defaults={"father_id": generate_id("F")},
+    )
     
     if request.method == "POST":
         form = FatherDetailsForm(request.POST, instance=profile)
@@ -152,7 +176,10 @@ def father_details(request):
 def midwife_details(request):
     if request.user.role != Role.MIDWIFE:
         return HttpResponseForbidden("This page is only available to midwives.")
-    profile, _ = MidwifeProfile.objects.get_or_create(user=request.user)
+    profile, _ = MidwifeProfile.objects.get_or_create(
+        user=request.user,
+        defaults={"midwife_id": generate_id("MW")},
+    )
     
     if request.method == "POST":
         form = MidwifeDetailsForm(request.POST, request.FILES, instance=profile)
@@ -170,7 +197,10 @@ def midwife_details(request):
 def doctor_details(request):
     if request.user.role != Role.DOCTOR:
         return HttpResponseForbidden("This page is only available to doctors.")
-    profile, _ = DoctorProfile.objects.get_or_create(user=request.user)
+    profile, _ = DoctorProfile.objects.get_or_create(
+        user=request.user,
+        defaults={"doctor_id": generate_id("DR")},
+    )
     
     if request.method == "POST":
         form = DoctorDetailsForm(request.POST, request.FILES, instance=profile)
@@ -187,7 +217,10 @@ def doctor_details(request):
 def hospital_staff_details(request):
     if request.user.role != Role.HOSPITAL_STAFF:
         return HttpResponseForbidden("This page is only available to hospital staff.")
-    profile, _ = HospitalStaffProfile.objects.get_or_create(user=request.user)
+    profile, _ = HospitalStaffProfile.objects.get_or_create(
+        user=request.user,
+        defaults={"staff_id": generate_id("HS")},
+    )
 
     if request.method == "POST":
         form = HospitalStaffDetailsForm(request.POST, request.FILES, instance=profile)
@@ -206,7 +239,13 @@ def hospital_staff_details(request):
 def hospital_details(request):
     if request.user.role != Role.HOSPITAL:
         return HttpResponseForbidden("This page is only available to hospitals.")
-    profile, _ = HospitalProfile.objects.get_or_create(user=request.user)
+    profile, _ = HospitalProfile.objects.get_or_create(
+        user=request.user,
+        defaults={
+            "hospital_id": generate_id("H"),
+            "name": request.user.get_full_name() or request.user.username,
+        },
+    )
     
     if request.method == "POST":
         form = HospitalDetailsForm(request.POST, request.FILES, instance=profile)

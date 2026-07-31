@@ -1,8 +1,31 @@
 {% extends 'basec.html' %}
 
+{% block extra_head %}
+<style>
+    .agent-hero { background: linear-gradient(135deg, #fff, #fff5f8); border: 1px solid var(--mm-border); }
+    .agent-status { display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .7rem;border-radius:999px;color:#743149;background:#fce4ec;font-size:.78rem;font-weight:700; }
+    .agent-trace { display:grid;gap:.75rem; }
+    .agent-step { display:grid;grid-template-columns:42px 1fr;gap:.8rem;padding:.9rem;background:#fffafb;border:1px solid #f0c4d0;border-radius:12px; }
+    .agent-step-number { width:36px;height:36px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#e85d8f,#cc4677);border-radius:10px;font-weight:800; }
+    .agent-step h6 { margin:0;color:#4b2735; }
+    .agent-step p { margin:.25rem 0 0;color:#876f79;font-size:.82rem; }
+    .agent-tool { display:inline-block;margin-top:.45rem;padding:.2rem .45rem;color:#a13e63;background:#fff;border:1px solid #f0c4d0;border-radius:6px;font-size:.7rem;font-family:monospace; }
+    .agent-safety { padding:.9rem 1rem;color:#743149;background:#fff5f8;border-left:4px solid #e85d8f;border-radius:10px; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-5">
-    <h2 class="mb-4">Pregnancy Risk Assessment</h2>
+    <div class="card agent-hero shadow-sm mb-4">
+        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+            <div>
+                <span class="agent-status"><i class="fas fa-brain"></i> Maternal Care Agent</span>
+                <h2 class="mt-2 mb-1">Pregnancy Risk Assessment</h2>
+                <p class="text-muted mb-0">An auditable agent reviewed the longitudinal record, reasoned about risk, and executed permitted care actions.</p>
+            </div>
+            {% if agent_run %}<small class="text-muted">Run {{ agent_run.id }}<br>{{ agent_run.created_at|date:"M j, Y · H:i" }}</small>{% endif %}
+        </div>
+    </div>
 
     <div class="row">
         <!-- Main Risk Card -->
@@ -90,10 +113,53 @@
         </div>
     </div>
 
+    {% if agent_run %}
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0"><i class="fas fa-route"></i> Agent reasoning trace</h4>
+                    <span class="badge bg-success">{{ agent_run.status|title }}</span>
+                </div>
+                <div class="card-body agent-trace">
+                    {% for step in agent_steps %}
+                    <article class="agent-step">
+                        <div class="agent-step-number">{{ step.sequence }}</div>
+                        <div>
+                            <h6>{{ step.label }}</h6>
+                            <p>{{ step.rationale }}</p>
+                            <span class="agent-tool">{{ step.tool_name }}</span>
+                            {% if step.output_data.risk_level %}<p><strong>Result:</strong> {{ step.output_data.risk_level|upper }} · {{ step.output_data.risk_score }}/100</p>{% endif %}
+                            {% if step.output_data.recipient_count %}<p><strong>Action:</strong> {{ step.output_data.recipient_count }} care-team notification{{ step.output_data.recipient_count|pluralize }} created.</p>{% endif %}
+                            {% if step.error %}<p class="text-danger">{{ step.error }}</p>{% endif %}
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header"><h5 class="mb-0">Decision and actions</h5></div>
+                <div class="card-body">
+                    <p>{{ agent_run.result.reasoning }}</p>
+                    {% for action in agent_run.result.actions %}
+                    <div class="border rounded p-2 mb-2">
+                        <strong>{{ action.tool|cut:"_"|title }}</strong><br>
+                        <small class="text-muted">{{ action.status|title }}{% if action.recipient_count %} · {{ action.recipient_count }} recipients{% endif %}{% if action.alert_id %} · Alert #{{ action.alert_id }}{% endif %}</small>
+                    </div>
+                    {% endfor %}
+                    <div class="agent-safety mt-3"><i class="fas fa-user-doctor"></i> {{ agent_run.result.safety_boundary }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <form method="post" action="{% url 'ai_services:risk_assessment' pregnancy.id %}" class="mt-3">
         {% csrf_token %}
         <button type="submit" class="btn-pink">
-            <i class="fas fa-rotate"></i> Recalculate Risk
+            <i class="fas fa-rotate"></i> Run Agent Again
         </button>
     </form>
 </div>

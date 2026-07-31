@@ -14,6 +14,147 @@ from .services.postpartum_ai import PostpartumAIService
 from .services.lab_report_analysis import LabReportAnalysisService
 
 
+FEATURE_PRESENTATION = {
+    "age": ("Mother's age", "years"),
+    "gestational_week": ("Pregnancy week", "weeks"),
+    "bmi": ("BMI", ""),
+    "bp_systolic": ("Systolic blood pressure", "mmHg"),
+    "bp_diastolic": ("Diastolic blood pressure", "mmHg"),
+    "fetal_heart_rate": ("Fetal heart rate", "bpm"),
+    "weight_gain": ("Recorded weight change", "kg"),
+    "abnormal_lab_count": ("Abnormal lab results", ""),
+    "previous_pregnancies": ("Previous pregnancies", ""),
+    "postpartum_week": ("Postpartum week", "weeks"),
+    "recent_postpartum_mood": ("Recent mood score", "/10"),
+    "recent_postpartum_stress": ("Recent stress score", "/10"),
+}
+
+
+def _risk_page_context(assessment, agent_run, trend):
+    """Turn stored assessment data into safe, readable presentation data."""
+    factors = assessment.factors or {}
+    level = (assessment.risk_level or "low").lower()
+    severity = {
+        "low": {
+            "title": "Routine monitoring",
+            "summary": "No major warning signals were identified in the information currently recorded.",
+            "icon": "fa-circle-check",
+        },
+        "medium": {
+            "title": "Prompt care-team review",
+            "summary": "Some findings need a timely review by a midwife or doctor.",
+            "icon": "fa-clock",
+        },
+        "high": {
+            "title": "Urgent clinical review",
+            "summary": "Important warning signals were found. A qualified clinician should review this assessment urgently.",
+            "icon": "fa-triangle-exclamation",
+        },
+        "critical": {
+            "title": "Immediate clinical review",
+            "summary": "Serious warning signals were found. Contact the maternity care team immediately.",
+            "icon": "fa-triangle-exclamation",
+        },
+    }.get(level)
+    if severity is None:
+        severity = {
+            "title": "Clinical review needed",
+            "summary": "A care professional should review this assessment.",
+            "icon": "fa-stethoscope",
+        }
+
+    recommendations = {
+        "low": [
+            "Continue routine antenatal appointments and follow the care plan.",
+            "Keep health, fetal movement, and lab information up to date.",
+            "Contact the maternity care team if symptoms or fetal movement change.",
+        ],
+        "medium": [
+            "Arrange a prompt review with the assigned midwife or doctor.",
+            "Review the contributing factors below with the care team.",
+            "Seek urgent help if symptoms worsen or fetal movement reduces.",
+        ],
+        "high": [
+            "Contact the maternity care team for urgent clinical review.",
+            "Do not rely on this score alone; a clinician must assess the recorded warning signals.",
+            "Use local emergency services for severe or rapidly worsening symptoms.",
+        ],
+        "critical": [
+            "Contact the maternity care team immediately and follow their instructions.",
+            "Use local emergency services for severe symptoms or if the care team cannot be reached.",
+            "A clinician must confirm the cause and decide the next treatment step.",
+        ],
+    }.get(level, ["Ask a qualified maternity care professional to review this assessment."])
+
+    explanation = factors.get("llm_explanation") or ""
+    if not explanation or "Detailed explanation unavailable" in explanation:
+        recorded_factors = factors.get("rule_factors", [])
+        if recorded_factors:
+            findings = "The assessment identified: " + ", ".join(recorded_factors) + "."
+        else:
+            findings = "No major rule-based warning factors were identified in the information currently recorded."
+        explanation = (
+            "**Summary**\n"
+            f"This record is classified as **{level.upper()} risk** with a score of "
+            f"**{assessment.risk_score}/100**. {severity['summary']}\n\n"
+            "### Findings used\n"
+            f"{findings}\n\n"
+            "### Clinical note\n"
+            "This result supports care decisions but does not provide a diagnosis. "
+            "A midwife or doctor should interpret it together with symptoms and a clinical examination."
+        )
+
+    features = []
+    for key, (label, unit) in FEATURE_PRESENTATION.items():
+        value = factors.get("features", {}).get(key)
+        if value in (None, ""):
+            continue
+        # Zero is useful for counts, but is misleading for missing measurements.
+        if value == 0 and key in {"bp_systolic", "bp_diastolic", "fetal_heart_rate", "bmi"}:
+            continue
+        features.append({"label": label, "value": value, "unit": unit})
+
+    action_labels = {
+        "notify_care_team": "Care team notified",
+        "create_in_app_safety_alert": "In-app safety alert",
+    }
+    actions = []
+    if agent_run:
+        for action in agent_run.result.get("actions", []):
+            tool = action.get("tool", "care_action")
+            detail = "Completed"
+            if action.get("recipient_count") is not None:
+                count = action["recipient_count"]
+                detail = f"Sent to {count} care-team member{'s' if count != 1 else ''}"
+            elif action.get("alert_id"):
+                detail = f"Alert #{action['alert_id']} created"
+            elif action.get("reason"):
+                detail = action["reason"]
+            actions.append({
+                "label": action_labels.get(tool, tool.replace("_", " ").title()),
+                "status": action.get("status", "completed"),
+                "detail": detail,
+            })
+
+    trend_points = [
+        {"date": date, "score": score, "level": level_name}
+        for date, score, level_name in zip(
+            trend.get("dates", []), trend.get("scores", []), trend.get("levels", [])
+        )
+    ]
+    return {
+        "severity": severity,
+        "recommendations": recommendations,
+        "clinical_factors": factors.get("rule_factors", []),
+        "feature_summary": features,
+        "explanation": explanation,
+        "lab_reports": factors.get("lab_report_analysis") or [],
+        "actions": actions,
+        "trend_points": trend_points,
+        "human_review_required": bool(agent_run and agent_run.result.get("human_review_required")),
+    }
+
+
 def has_pregnancy_access(user, pregnancy):
     if user.is_staff:
         return True
@@ -182,6 +323,7 @@ class ShowRiskView(View):
             "agent_steps": agent_run.steps.all() if agent_run else [],
             "trend": trend,
             "color": self.get_risk_color(latest_assessment.risk_level),
+            **_risk_page_context(latest_assessment, agent_run, trend),
         }
 
         return render(request, 'risk_dashboard.html', context)

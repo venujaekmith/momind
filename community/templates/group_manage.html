@@ -1,0 +1,54 @@
+{% extends "basec.html" %}
+
+{% block extra_head %}
+<style>
+    .group-manage-shell{max-width:1050px;margin:0 auto}.manage-header{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1rem}.manage-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(320px,.8fr);gap:1rem}.manage-card{padding:1.25rem;background:#fff;border:1px solid var(--mm-border);border-radius:16px;box-shadow:var(--mm-shadow)}.manage-card h3{margin:0 0 1rem;color:var(--mm-heading)}.manage-form p{display:grid;gap:.35rem}.manage-form input:not([type=checkbox]),.manage-form textarea,.manage-form select{width:100%;padding:.7rem .8rem;border:2px solid #efb0c3;border-radius:10px;background:#fffafb}.manage-form textarea{min-height:100px}.member-list{display:grid;gap:.6rem}.member-row{display:flex;align-items:center;justify-content:space-between;gap:.8rem;padding:.75rem;background:#fff8fa;border:1px solid #f0c4d0;border-radius:11px}.member-row p{margin:0}.member-row small{color:var(--mm-muted)}.member-actions{display:flex;align-items:center;gap:.5rem}.manage-note{margin-bottom:1rem;padding:.8rem;color:#743149;background:#fff5f8;border-left:4px solid #e85d8f;border-radius:9px}@media(max-width:780px){.manage-grid{grid-template-columns:1fr}.member-row{align-items:flex-start;flex-direction:column}.member-actions{width:100%;justify-content:space-between}}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="group-manage-shell">
+    <header class="manage-header">
+        <div><span class="account-eyebrow">Community management</span><h1>{{ group.name }}</h1><p>{{ group.owner_name }}</p></div>
+        <a href="{% url 'community:group_detail' group.id %}" class="btn-outline-pink"><i class="fas fa-arrow-left"></i> Back to group</a>
+    </header>
+
+    {% if messages %}{% for message in messages %}<div class="alert alert-{{ message.tags }}">{{ message }}</div>{% endfor %}{% endif %}
+    <div class="manage-note"><i class="fas fa-shield-heart"></i> Group managers can update details, invite registered users, assign roles, and remove members. The original creator remains protected.</div>
+
+    <div class="manage-grid">
+        <section class="manage-card">
+            <h3><i class="fas fa-pen-to-square"></i> Group details</h3>
+            <form method="post" class="manage-form">
+                {% csrf_token %}<input type="hidden" name="action" value="update_group">
+                {{ form.as_p }}
+                <button type="submit" class="btn-pink">Save changes</button>
+            </form>
+        </section>
+
+        <aside class="manage-card">
+            <h3><i class="fas fa-user-plus"></i> Add or update member</h3>
+            <form method="post" class="manage-form">
+                {% csrf_token %}<input type="hidden" name="action" value="add_member">
+                <p><label for="member-username">Username</label><input id="member-username" name="username" required placeholder="Registered username"></p>
+                <p><label for="member-role">Role</label><select id="member-role" name="role">{% for value,label in role_choices %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></p>
+                <button type="submit" class="btn-pink">Add member</button>
+            </form>
+        </aside>
+    </div>
+
+    <section class="manage-card" style="margin-top:1rem">
+        <h3><i class="fas fa-users"></i> Members ({{ members|length }})</h3>
+        <div class="member-list">
+            {% for member in members %}
+            <div class="member-row">
+                <p><strong>{{ member.user.get_full_name|default:member.user.username }}</strong><br><small>@{{ member.user.username }} · {{ member.get_role_display }}</small></p>
+                <div class="member-actions">
+                    {% if member.user_id == group.created_by_id %}<span class="badge-status active">Creator</span>{% else %}<form method="post" action="{% url 'community:remove_group_member' group.id member.id %}">{% csrf_token %}<button class="btn-outline-pink" type="submit">Remove</button></form>{% endif %}
+                </div>
+            </div>
+            {% empty %}<p class="text-muted">No members have been added.</p>{% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

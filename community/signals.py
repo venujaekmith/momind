@@ -84,11 +84,11 @@ def auto_join_mother_to_hospital_group(sender, instance, created, **kwargs):
         if hospital_group:
             midwife_user = instance.midwife.user
             
-            # Add midwife as staff
-            member, member_created = GroupMember.objects.get_or_create(
+            # Add the linked midwife with group-management capability.
+            member, member_created = GroupMember.objects.update_or_create(
                 group=hospital_group,
                 user=midwife_user,
-                defaults={'role': 'NURSE'}
+                defaults={'role': GroupMember.Role.MIDWIFE}
             )
     
     # If doctor is connected to hospital

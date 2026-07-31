@@ -397,8 +397,8 @@
 
         <div class="page-header">
             <div>
-                <h1><i class="fas fa-hospital"></i> Hospital Communities</h1>
-                <p>Join your hospital's community forum to stay connected</p>
+                <h1><i class="fas fa-people-group"></i> Care Communities</h1>
+                <p>Join hospital and midwife-led groups to stay connected</p>
                 <a href="{% url 'community:forum_home' %}" class="btn-outline" style="margin-top:.7rem;">
                     <i class="fas fa-arrow-left"></i> Community forum
                 </a>
@@ -423,8 +423,7 @@
             <div class="alert alert-info">
                 <i class="fas fa-lightbulb"></i>
                 <span>
-                    <strong>Tip:</strong> Hospital staff can create custom groups to organize discussions.
-                    <a href="{% url 'accounts:login' %}" class="alert-link">Login as hospital staff</a> to get started.
+                    <strong>Tip:</strong> Hospital teams and registered midwives can create and manage care groups.
                 </span>
             </div>
         {% endif %}
@@ -437,7 +436,7 @@
                         <div class="group-card-top">
                             <div>
                                 <h5><a href="{% url 'community:group_detail' group.pk %}">{{ group.name }}</a></h5>
-                                <p class="group-hospital"><strong>{{ group.hospital.name }}</strong></p>
+                                <p class="group-hospital"><strong>{{ group.owner_name }}</strong></p>
                             </div>
                             {% if group.is_private %}
                                 <span class="badge-pill badge-private"><i class="fas fa-lock"></i> Private</span>
@@ -474,7 +473,7 @@
             <div class="empty-state glass-card">
                 <i class="fas fa-inbox"></i>
                 <h5>No community groups yet</h5>
-                <p>Hospital groups will appear here as they're created.</p>
+                <p>Hospital and midwife-led groups will appear here as they are created.</p>
             </div>
         {% endif %}
 
@@ -482,8 +481,8 @@
         <div class="info-card glass-card">
             <h5><i class="fas fa-book-open"></i> What are Community Groups?</h5>
             <ul>
-                <li><strong>Hospital Forums:</strong> Auto-created for each hospital</li>
-                <li><strong>Custom Groups:</strong> Hospital staff can create specialized groups</li>
+                <li><strong>Care Communities:</strong> Hospital teams and midwives can create focused groups</li>
+                <li><strong>Management:</strong> Group managers can invite users, assign roles, and update details</li>
                 <li><strong>Auto-Join:</strong> Mothers automatically join their hospital's group</li>
                 <li><strong>Clinic Schedules:</strong> View appointment times and availability</li>
                 <li><strong>Announcements:</strong> Stay updated with hospital news</li>

@@ -10,6 +10,7 @@ from ai_services.models import AgentRun
 from ai_services.services.maternal_agent import MaternalCareAgent
 from ai_services.services.postpartum_ai import PostpartumAIService
 from ai_services.services.lab_report_analysis import LabReportAnalysisService
+from ai_services.templatetags.ai_formatting import format_ai_summary
 from dashboards.models import (
     EmergencyAlert,
     FetalHealth,
@@ -50,6 +51,31 @@ class LabReportAnalysisServiceTests(SimpleTestCase):
         self.assertIn("urgency", analysis)
 
         self.assertEqual(analysis["urgency"], "monitor")
+
+
+class AISummaryFormattingTests(SimpleTestCase):
+    def test_formats_headings_lists_tables_and_escapes_model_output(self):
+        report = """**Summary**
+Clear overview.
+
+### What to Know
+| Finding | Meaning |
+|---|---|
+| **BP** | Normal |
+
+1. Keep the appointment
+2. Contact the care team
+
+<script>alert('unsafe')</script>"""
+
+        rendered = str(format_ai_summary(report))
+
+        self.assertIn("<h3>Summary</h3>", rendered)
+        self.assertIn('<table class="ai-report-table">', rendered)
+        self.assertIn("<ol>", rendered)
+        self.assertIn("<strong>BP</strong>", rendered)
+        self.assertNotIn("<script>", rendered)
+        self.assertIn("&lt;script&gt;", rendered)
 
 
 @override_settings(GROQ_API_KEY="")

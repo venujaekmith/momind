@@ -1,9 +1,15 @@
 import json
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
+
+from accounts.models import MotherProfile, Role
+from dashboards.models import Pregnancy
+from .services.context import build_context
 
 from .models import ChatMessage, ChatSession
 
@@ -60,5 +66,22 @@ class ChatEndpointTests(TestCase):
         self.client.force_login(self.user)
         response = self.client.get(reverse("chat:get_messages", args=[session.id]))
         self.assertEqual(response.status_code, 404)
+
+    def test_chat_context_uses_the_mothers_current_pregnancy(self):
+        self.user.role = Role.MOTHER
+        self.user.is_role_selected = True
+        self.user.save(update_fields=["role", "is_role_selected"])
+        mother = MotherProfile.objects.create(user=self.user, mother_id="M-CHAT")
+        pregnancy = Pregnancy.objects.create(
+            mother=mother,
+            last_menstrual_period=timezone.localdate() - timedelta(weeks=18),
+            expected_delivery_date=timezone.localdate() + timedelta(weeks=22),
+        )
+
+        context = build_context(self.user, "How is this week different?")
+
+        self.assertEqual(context["phase"], "pregnancy")
+        self.assertEqual(context["week"], pregnancy.get_pregnancy_week())
+        self.assertEqual(context["delivery_date"], str(pregnancy.expected_delivery_date))
 
 # Create your tests here.

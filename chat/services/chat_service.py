@@ -20,6 +20,7 @@ Please contact a doctor or go to the nearest hospital immediately.
 Role: {context['role']}
 Week: {context['week']}
 Phase: {context['phase']}
+Relevant date: {context['delivery_date']}
 
 User message:
 {context['message']}

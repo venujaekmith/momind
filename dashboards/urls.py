@@ -42,6 +42,7 @@ urlpatterns = [
      path("end_pregnancy/<int:id>/",views.end_pregnancy,name="end_pregnancy"),
 
     path('midwife/mother/<int:pregnancy_id>/', views.midwife_mother_detail, name='midwife_mother_detail'),
+    path('pregnancy/<int:pregnancy_id>/record/', views.midwife_mother_detail, name='pregnancy_detail'),
     path('midwife/add-visit-note/<int:pregnancy_id>/', views.add_visit_note, name='add_visit_note'),
     path('add-baby-development/<int:pregnancy_id>/', views.add_baby_development,name='add_baby_development'),
     path('baby_ai/<int:id>/',views.babyai,name='babyai'),

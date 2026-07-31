@@ -53,6 +53,28 @@ class MotherDetailsForm(forms.ModelForm):
             "home_longitude": forms.HiddenInput(),
         }
 
+    def clean_height_cm(self):
+        value = self.cleaned_data.get('height_cm')
+        if value is not None and not 50 <= value <= 250:
+            raise forms.ValidationError("Enter a height between 50 and 250 cm.")
+        return value
+
+    def clean_previous_pregnancies(self):
+        value = self.cleaned_data.get('previous_pregnancies')
+        if value is not None and not 0 <= value <= 30:
+            raise forms.ValidationError("Enter a value between 0 and 30.")
+        return value
+
+    def clean(self):
+        cleaned = super().clean()
+        latitude = cleaned.get('home_latitude')
+        longitude = cleaned.get('home_longitude')
+        if latitude is not None and not -90 <= latitude <= 90:
+            self.add_error('home_latitude', "Latitude must be between -90 and 90.")
+        if longitude is not None and not -180 <= longitude <= 180:
+            self.add_error('home_longitude', "Longitude must be between -180 and 180.")
+        return cleaned
+
 class FatherDetailsForm(forms.ModelForm):
     class Meta:
         model = FatherProfile  # or create a separate FatherDetails model
@@ -82,5 +104,3 @@ class HospitalStaffDetailsForm(forms.ModelForm):
     class Meta:
         model = HospitalStaffProfile
         fields = ['hospital', 'role_title']
-
-

@@ -2,11 +2,11 @@ from django.shortcuts import render,redirect,get_object_or_404
 from accounts.models import *
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
-from accounts.models import *
 from django.contrib.auth.decorators import login_required
 from .models import *
 from .utils import *
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import Sum
 from accounts.forms import *
 from .forums import *
@@ -77,6 +77,8 @@ def mother_dashboard(request):
             obj = form.save(commit=False)
             obj.user = request.user
             obj.save()
+            messages.success(request, "Your health details were updated.")
+            return redirect(f"{reverse('dashboards:dashboard')}?pregnancy={pregnancy.id}")
     else:
         form = MotherDetailsForm(instance=mother_details)
 
@@ -103,7 +105,8 @@ def mother_dashboard(request):
     today = timezone.now().date()
     hospital_queue = []
     hospital_queue_count = 0
-    hospital_queue_next = None
+    my_hospital_visit = None
+    my_queue_position = None
     hospital_name = None
     available_clinics = []
 
@@ -115,8 +118,11 @@ def mother_dashboard(request):
             pregnancy__mother__mom_familiy__hospital=family.hospital
         ).select_related('pregnancy__mother__user').order_by('scheduled_time')
         hospital_queue_count = hospital_queue.count()
-        if hospital_queue_count:
-            hospital_queue_next = hospital_queue[0]
+        for position, visit in enumerate(hospital_queue, start=1):
+            if pregnancy and visit.pregnancy_id == pregnancy.id:
+                my_hospital_visit = visit
+                my_queue_position = position
+                break
 
         available_clinics = Clinics.objects.filter(
             hospital=family.hospital,
@@ -132,6 +138,7 @@ def mother_dashboard(request):
         pregnancy=pregnancy, 
         scheduled_date__gte=timezone.now().date()
     ).order_by('scheduled_date')[:10] if pregnancy else ScheduleEvent.objects.none()
+    next_event = schedule_events.first() if pregnancy else None
 
     trimester_tasks = TrimesterTask.objects.filter(pregnancy=pregnancy) if pregnancy else TrimesterTask.objects.none()
 
@@ -155,9 +162,10 @@ def mother_dashboard(request):
         "lab_tests": lab_tests,
         'trimester_tasks':trimester_tasks,
         'schedule_events':schedule_events,
-        'hospital_queue': hospital_queue,
+        'next_event': next_event,
         'hospital_queue_count': hospital_queue_count,
-        'hospital_queue_next': hospital_queue_next,
+        'my_hospital_visit': my_hospital_visit,
+        'my_queue_position': my_queue_position,
         'hospital_name': hospital_name,
         'available_clinics': available_clinics,
         'notifications': notif_data['notifications'],
@@ -224,17 +232,23 @@ def father_dashboard(request):
         today = timezone.now().date()
         hospital_queue = []
         hospital_queue_count = 0
+        my_hospital_visit = None
+        my_queue_position = None
         hospital_name = None
         available_clinics = []
 
         if mother_profile:
             # 1. Baby Size Data
             
-            # Select active pregnancy if available, otherwise most recent
-            pregnancy = Pregnancy.objects.filter(mother=mother_profile, is_active=True).order_by('-created_at').first()
-            if not pregnancy:
-                pregnancy = Pregnancy.objects.filter(mother=mother_profile).order_by('-created_at').first()
             pregnancies = Pregnancy.objects.filter(mother=mother_profile).order_by('-created_at')
+            selected_id = request.GET.get('pregnancy')
+            if selected_id:
+                pregnancy = pregnancies.filter(id=selected_id).first()
+            # Select active pregnancy if available, otherwise most recent
+            if not pregnancy:
+                pregnancy = pregnancies.filter(is_active=True).first()
+            if not pregnancy:
+                pregnancy = pregnancies.first()
             if pregnancy:
                 baby_info = get_baby_size_info(pregnancy.get_pregnancy_week())
             # 2. Daily Water (Mother's intake)
@@ -254,6 +268,11 @@ def father_dashboard(request):
                     pregnancy__mother__mom_familiy__hospital=family.hospital
                 ).select_related('pregnancy__mother__user').order_by('scheduled_time')
                 hospital_queue_count = hospital_queue.count()
+                for position, visit in enumerate(hospital_queue, start=1):
+                    if pregnancy and visit.pregnancy_id == pregnancy.id:
+                        my_hospital_visit = visit
+                        my_queue_position = position
+                        break
                 available_clinics = Clinics.objects.filter(
                     hospital=family.hospital,
                     is_active=True,
@@ -264,6 +283,7 @@ def father_dashboard(request):
             pregnancy=pregnancy, 
             scheduled_date__gte=timezone.now().date()
             ).order_by('scheduled_date')[:10]
+        next_event = schedule_events.first()
 
         trimester_tasks = TrimesterTask.objects.filter(pregnancy=pregnancy)
        
@@ -280,8 +300,11 @@ def father_dashboard(request):
             'pregnancies': pregnancies if 'pregnancies' in locals() else Pregnancy.objects.none(),
             'trimester_tasks':trimester_tasks,
             'schedule_events':schedule_events,
-            'hospital_queue': hospital_queue,
+            'next_event': next_event,
+            'is_postpartum': bool(pregnancy and pregnancy.status in ["delivered", "completed"]),
             'hospital_queue_count': hospital_queue_count,
+            'my_hospital_visit': my_hospital_visit,
+            'my_queue_position': my_queue_position,
             'hospital_name': hospital_name,
         'available_clinics': available_clinics,
         'notifications': notif_data['notifications'],
@@ -581,6 +604,9 @@ def hospital_dashboard(request):
 def hospital_staff_dashboard(request):
     staff = get_object_or_404(HospitalStaffProfile, user=request.user)
     hospital = staff.hospital
+    if not hospital:
+        messages.info(request, "Select your hospital before opening the staff dashboard.")
+        return redirect("accounts:hospital_staff_details")
     today = timezone.now().date()
 
     assigned_clinics = Clinics.objects.filter(
@@ -595,12 +621,27 @@ def hospital_staff_dashboard(request):
         scheduled_date=today
     ).select_related('pregnancy__mother__user').order_by('scheduled_time')
 
+    from community.forms import GroupForm
+    from community.models import HospitalGroup
+
+    clinics = Clinics.objects.filter(hospital=hospital, is_active=True).order_by('date', 'time')
+    upcoming_appointments = ScheduleEvent.objects.filter(
+        clinic__hospital=hospital,
+        scheduled_date__gte=today,
+    ).select_related('pregnancy__mother__user', 'clinic').order_by(
+        'scheduled_date', 'scheduled_time'
+    )[:100]
+
     context = {
         "staff": staff,
         "hospital": hospital,
         "assigned_clinics": assigned_clinics,
         "today_queue": today_queue,
         "today_queue_count": today_queue.count(),
+        "clinics": clinics,
+        "groups": HospitalGroup.objects.filter(hospital=hospital).order_by('name'),
+        "group_form": GroupForm(),
+        "upcoming_appointments": upcoming_appointments,
     }
     
     notif_data = get_user_notifications_and_requests(request.user)
@@ -665,7 +706,10 @@ def create_hospital_clinic(request, clinic_id=None):
 
     clinic = None
     if clinic_id:
-        clinic = get_object_or_404(Clinics, id=clinic_id, hospital=hospital)
+        clinic_filters = {"id": clinic_id, "hospital": hospital}
+        if user.role == "HOSPITAL_STAFF":
+            clinic_filters["staff"] = staff
+        clinic = get_object_or_404(Clinics, **clinic_filters)
 
     if request.method == "POST":
         form = ClinicForm(request.POST, instance=clinic)
@@ -689,12 +733,12 @@ def create_hospital_clinic(request, clinic_id=None):
 
 
 @login_required
+@require_POST
 def assign_clinic_staff(request, clinic_id):
+    if request.user.role != "HOSPITAL":
+        return HttpResponseForbidden("Only the hospital account can assign clinic staff.")
     selected_clinic_id = request.POST.get('clinic_id') or clinic_id
-    if request.user.role == "HOSPITAL_STAFF":
-        clinic = get_object_or_404(Clinics, id=selected_clinic_id, staff__user=request.user)
-    else:
-        clinic = get_object_or_404(Clinics, id=selected_clinic_id, hospital__user=request.user)
+    clinic = get_object_or_404(Clinics, id=selected_clinic_id, hospital__user=request.user)
 
     if request.method == "POST":
         staff_id = request.POST.get('staff_id')
@@ -708,6 +752,7 @@ def assign_clinic_staff(request, clinic_id):
 
 
 @login_required
+@require_POST
 def add_clinic_appointment(request, clinic_id):
     if request.user.role == "HOSPITAL_STAFF":
         clinic = get_object_or_404(Clinics, id=clinic_id, staff__user=request.user)
@@ -715,6 +760,13 @@ def add_clinic_appointment(request, clinic_id):
         clinic = get_object_or_404(Clinics, id=clinic_id, hospital__user=request.user)
 
     if request.method == "POST":
+        if not clinic.is_active or clinic.date < timezone.localdate():
+            messages.error(request, "Appointments can only be added to an active upcoming clinic.")
+            return redirect('dashboards:dashboard')
+        if clinic.queue_count() >= clinic.capacity:
+            messages.error(request, "This clinic has reached its patient capacity.")
+            return redirect('dashboards:dashboard')
+
         patient_identifier = request.POST.get('patientID', '').strip()
         if not patient_identifier:
             messages.error(request, "Please enter a valid patient ID.")
@@ -746,6 +798,15 @@ def add_clinic_appointment(request, clinic_id):
 
         if not pregnancy:
             messages.error(request, "Patient not found or not assigned to this hospital.")
+            return redirect('dashboards:dashboard')
+
+        if ScheduleEvent.objects.filter(
+            pregnancy=pregnancy,
+            clinic=clinic,
+            event_type="hospital_clinic",
+            scheduled_date=clinic.date,
+        ).exists():
+            messages.info(request, "This patient is already in the clinic queue.")
             return redirect('dashboards:dashboard')
 
         ScheduleEvent.objects.create(
@@ -1099,6 +1160,7 @@ def can_edit_pregnancy(user, pregnancy):
 
 
 @login_required
+@transaction.atomic
 def end_pregnancy(request, id):
     pregnancy = get_object_or_404(Pregnancy, id=id)
 
@@ -1106,13 +1168,39 @@ def end_pregnancy(request, id):
         messages.error(request, "You do not have permission to end this pregnancy.")
         return redirect('dashboards:dashboard')
 
+    if pregnancy.status in {"delivered", "completed"} or not pregnancy.is_active:
+        messages.info(request, "This pregnancy has already been completed.")
+        return redirect('dashboards:pregnancy_detail', pregnancy_id=pregnancy.id)
+
     if request.method == "POST":
         form = EndPregnancyForm(request.POST)
         
         if form.is_valid():
             actual_date = form.cleaned_data['actual_delivery_date']
             baby_count = form.cleaned_data.get('baby_count', 1)
-            delivery_type = request.POST.get('delivery_type', 'normal')
+            delivery_type = form.cleaned_data['delivery_type']
+
+            babies_data = []
+            try:
+                for i in range(baby_count):
+                    baby_name = request.POST.get(f'baby_name_{i}', '').strip() or f"Baby {i+1}"
+                    if len(baby_name) > 100:
+                        raise ValueError(f"Baby {i+1}'s name must be 100 characters or fewer.")
+                    baby_gender = request.POST.get(f'baby_gender_{i}', 'unknown')
+                    if baby_gender not in {"male", "female", "unknown"}:
+                        raise ValueError(f"Select a valid gender for baby {i+1}.")
+                    raw_weight = request.POST.get(f'birth_weight_{i}', '').strip()
+                    birth_weight = float(raw_weight) if raw_weight else None
+                    if birth_weight is not None and not 0.1 <= birth_weight <= 15:
+                        raise ValueError(f"Baby {i+1}'s birth weight must be between 0.1 and 15 kg.")
+                    babies_data.append((baby_name, baby_gender, birth_weight))
+            except (TypeError, ValueError) as exc:
+                form.add_error(None, str(exc) or "Enter valid baby details.")
+                return render(request, "end_pregnancy.html", {
+                    "form": form,
+                    "pregnancy": pregnancy,
+                    "mother": pregnancy.mother,
+                })
 
             # End Pregnancy
             pregnancy.end_pregnancy(actual_date)
@@ -1134,17 +1222,13 @@ def end_pregnancy(request, id):
 
             # Create Baby Profiles
             babies_created = []
-            for i in range(baby_count):
-                baby_name = request.POST.get(f'baby_name_{i}', '').strip() or f"Baby {i+1}"
-                baby_gender = request.POST.get(f'baby_gender_{i}', 'unknown')
-                birth_weight = request.POST.get(f'birth_weight_{i}')
-
+            for baby_name, baby_gender, birth_weight in babies_data:
                 baby = BabyProfile.objects.create(
                     pregnancy=pregnancy,
                     name=baby_name,
                     gender=baby_gender,
                     birth_date=actual_date,
-                    birth_weight_kg=float(birth_weight) if birth_weight else None,
+                    birth_weight_kg=birth_weight,
                 )
                 babies_created.append(baby)
 
@@ -1261,7 +1345,8 @@ def create_default_pregnancy_schedule(pregnancy):
     """Create important trimester milestones as ScheduleEvents 
     so parents can see exact dates and reschedule them."""
     
-    today = timezone.now().date()
+    today = timezone.localdate()
+    pregnancy_start = pregnancy.last_menstrual_period or today
 
     # ====================== IMPORTANT TRIMESTER MILESTONES ======================
     milestones = [
@@ -1310,20 +1395,22 @@ def create_default_pregnancy_schedule(pregnancy):
     ]
 
     for m in milestones:
-        scheduled_date = today + timedelta(days=m["days_from_now"])
-        
-        ScheduleEvent.objects.create(
+        scheduled_date = pregnancy_start + timedelta(days=m["days_from_now"])
+        if scheduled_date < today:
+            continue
+
+        ScheduleEvent.objects.get_or_create(
             pregnancy=pregnancy,
             title=m["title"],
-            event_type=m["event_type"],
-            scheduled_date=scheduled_date,
-            notes=m["notes"],
-            what_to_bring="Previous medical records",
-            created_by=pregnancy.mother.user,   # Created by mother initially
-            location="Clinic / Hospital"
+            defaults={
+                "event_type": m["event_type"],
+                "scheduled_date": scheduled_date,
+                "notes": m["notes"],
+                "what_to_bring": "Previous medical records",
+                "created_by": pregnancy.mother.user,
+                "location": "Clinic / Hospital",
+            },
         )
-
-    print(f"✅ Default milestone schedule created for pregnancy {pregnancy.id}")
     
 
 def create_midwife_visits_for_pregnancy(pregnancy, midwife):
@@ -1365,7 +1452,6 @@ def create_midwife_visits_for_pregnancy(pregnancy, midwife):
             # Skip this day if midwife is full (10 visits)
             current_date += timedelta(days=1)
 
-    print(f"✅ Created {visit_count} midwife visits for pregnancy {pregnancy.id} by {midwife.midwife_id}")
 
 
 @login_required

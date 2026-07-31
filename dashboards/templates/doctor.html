@@ -1,70 +1,85 @@
 {% extends 'basec.html' %}
 
-{% block extra_head %}
-{% include 'dashboard_role_theme.html' %}
-{% endblock %}
+{% block extra_head %}{% include 'dashboard_role_theme.html' %}{% endblock %}
 
 {% block content %}
-<div class="role-dashboard-page doctor-dashboard-page">
-<div class="card-pink">
-    <div class="flex-between">
-        <div>
-            <h2><i class="fas fa-user-md"></i> Doctor Dashboard</h2>
-            <p>Welcome Dr. {{ user.username }} | ID: <strong id="qrValue">{{ user.user_doctor.doctor_id }}</strong></p>
-        </div>
-        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
-    </div>
-    <div id="qrcode" style="margin-top: 1rem;"></div>
-</div>
-
-<div class="card-pink">    <h3><i class="fas fa-door-open"></i> Family Assignments</h3>
-    {% if families %}
-        {% for family in families %}
-            <div class="card-pink" style="margin-bottom: 0.75rem;">
-                <strong>Family ID: {{ family.id }}</strong>
-                {% if family.mother %}<div>Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</div>{% endif %}
-                {% if family.father %}<div>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}</div>{% endif %}
-                <form method="POST" action="{% url 'dashboards:leave_family' family.id %}" style="margin-top:0.75rem; display:inline-block;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-outline-pink">Leave This Family</button>
-                </form>
+<main class="role-dashboard-page doctor-dashboard-page page-shell--wide">
+    <header class="card-pink">
+        <div class="flex-between">
+            <div>
+                <h2><i class="fas fa-user-doctor"></i> Doctor Dashboard</h2>
+                <p>Welcome, Dr. {{ user.get_full_name|default:user.username }} · ID: <strong id="qrValue">{{ user.user_doctor.doctor_id }}</strong></p>
             </div>
-        {% endfor %}
-    {% else %}
-        <p>No family assignments yet.</p>
+            <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
+        </div>
+        <div id="qrcode"></div>
+    </header>
+
+    <p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+    <nav class="dashboard-quick-actions" aria-label="Doctor dashboard quick actions">
+        <a href="#doctor-appointments" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Appointments</strong><small>{{ my_appointments|length }} upcoming</small></span></a>
+        <a href="#assigned-pregnancies" class="dashboard-action"><i class="fas fa-notes-medical"></i><span><strong>Patient Records</strong><small>{{ pregnancies|length }} assigned</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-people-group"></i><span><strong>Care Groups</strong><small>Open communities</small></span></a>
+        <a href="{% url 'accounts:doctor_details' %}" class="dashboard-action"><i class="fas fa-id-card"></i><span><strong>My Profile</strong><small>Credentials and specialty</small></span></a>
+    </nav>
+
+    <section class="dashboard-overview" aria-label="Doctor workload overview">
+        <div class="stat-card"><i class="fas fa-person-pregnant"></i><h3>{{ pregnancies|length }}</h3><p>Patient records</p></div>
+        <div class="stat-card"><i class="fas fa-calendar-check"></i><h3>{{ my_appointments|length }}</h3><p>Upcoming appointments</p></div>
+        <div class="stat-card"><i class="fas fa-people-roof"></i><h3>{{ families|length }}</h3><p>Care assignments</p></div>
+        <div class="stat-card"><i class="fas fa-user-shield"></i><h3>Ready</h3><p>Clinical workspace</p></div>
+    </section>
+
+    {% if my_appointments|first %}
+    <aside class="dashboard-next">
+        <i class="fas fa-clock"></i>
+        <div><strong>Next appointment: {{ my_appointments.first.title }}</strong><span>{{ my_appointments.first.scheduled_date|date:"d M Y" }} at {{ my_appointments.first.scheduled_time|time:"H:i"|default:"time not set" }} · {{ my_appointments.first.pregnancy.mother.user.get_full_name|default:my_appointments.first.pregnancy.mother.user.username }}</span></div>
+    </aside>
     {% endif %}
-</div>
 
-<div class="card-pink">    <h3><i class="fas fa-female"></i> Assigned Pregnancies</h3>
-    {% for p in pregnancies %}
-    <div class="card-pink" style="margin-bottom: 1rem;">
-        <div class="flex-between">
-            <strong>Mother: {{ p.mother.user.username }}</strong>
-            <span>Pregnancy #{{ p.pregnancy_number }} • {{ p.status|capfirst }}</span>
+    <section class="card-pink dashboard-anchor" id="doctor-appointments">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-calendar-alt"></i> Upcoming Appointments</h3></div>
+        <div class="dashboard-record-grid">
+            {% for app in my_appointments %}
+            <article class="dashboard-record">
+                <header class="dashboard-record-header"><strong>{{ app.title }}</strong><span class="dashboard-status">{{ app.event_type|default:"Appointment"|title }}</span></header>
+                <div class="dashboard-record-meta">
+                    <div><span>Date</span><strong>{{ app.scheduled_date|date:"d M Y" }}</strong></div>
+                    <div><span>Time</span><strong>{{ app.scheduled_time|time:"H:i"|default:"Not set" }}</strong></div>
+                    <div><span>Mother</span><strong>{{ app.pregnancy.mother.user.get_full_name|default:app.pregnancy.mother.user.username }}</strong></div>
+                    <div><span>Location</span><strong>{{ app.location|default:"Not specified" }}</strong></div>
+                </div>
+                <div class="dashboard-record-actions"><a href="{% url 'dashboards:reschedule_event' app.id %}" class="btn-outline-pink"><i class="fas fa-clock-rotate-left"></i> Reschedule</a><a href="{% url 'dashboards:midwife_mother_detail' app.pregnancy.id %}" class="btn-pink"><i class="fas fa-folder-open"></i> Patient record</a></div>
+            </article>
+            {% empty %}<div class="dashboard-empty"><i class="fas fa-calendar-check"></i>No upcoming appointments. Scheduled care will appear here.</div>{% endfor %}
         </div>
-        <p>Week: {{ p.get_pregnancy_week|default:"—" }} • EDD: {{ p.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
-        <div class="flex-between" style="margin-top: 0.5rem;">
-            <a href="{% url 'dashboards:midwife_mother_detail' p.id %}" class="btn-pink">View Details</a>
-            <a href="{% url 'dashboards:add_schedule' p.id %}" class="btn-outline-pink">+ Add Checkup</a>
-        </div>
-    </div>
-    {% empty %}
-    <p>No pregnancies assigned yet.</p>
-    {% endfor %}
-</div>
+    </section>
 
-<div class="card-pink">
-    <h3><i class="fas fa-calendar-alt"></i> My Upcoming Appointments</h3>
-    {% for app in my_appointments %}
-    <div class="card-pink" style="margin-bottom: 0.5rem;">
-        <div class="flex-between">
-            <strong>{{ app.scheduled_date }}</strong>
-            <span>{{ app.title }}</span>
+    <section class="card-pink dashboard-anchor" id="assigned-pregnancies">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-person-pregnant"></i> Assigned Patients</h3></div>
+        <div class="dashboard-record-grid">
+            {% for p in pregnancies %}
+            <article class="dashboard-record">
+                <header class="dashboard-record-header"><strong>{{ p.mother.user.get_full_name|default:p.mother.user.username }}</strong><span class="dashboard-status">{{ p.status|capfirst }}</span></header>
+                <div class="dashboard-record-meta">
+                    <div><span>Pregnancy</span><strong>#{{ p.pregnancy_number }}</strong></div>
+                    <div><span>Current week</span><strong>{{ p.get_pregnancy_week|default:"Not available" }}</strong></div>
+                    <div><span>Expected delivery</span><strong>{{ p.expected_delivery_date|date:"d M Y"|default:"Not set" }}</strong></div>
+                    <div><span>Risk history</span><strong>{% if p.is_high_risk %}High-risk history{% else %}Routine{% endif %}</strong></div>
+                </div>
+                <div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' p.id %}" class="btn-pink"><i class="fas fa-folder-open"></i> Open record</a><a href="{% url 'ai_services:show_risk' p.id %}" class="btn-outline-pink"><i class="fas fa-brain"></i> Risk assessment</a><a href="{% url 'dashboards:add_schedule' p.id %}" class="btn-outline-pink"><i class="fas fa-calendar-plus"></i> Add checkup</a></div>
+            </article>
+            {% empty %}<div class="dashboard-empty"><i class="fas fa-user-plus"></i>No patients are assigned yet.</div>{% endfor %}
         </div>
-        <p>{{ app.pregnancy.mother.user.username }}</p>
-        <a href="{% url 'dashboards:reschedule_event' app.id %}" class="btn-outline-pink">Reschedule</a>
-    </div>
-    {% endfor %}
-</div>
-</div>
+    </section>
+
+    <details class="dashboard-disclosure">
+        <summary><i class="fas fa-people-roof"></i> Family care assignments <small>{{ families|length }} linked famil{{ families|length|pluralize:"y,ies" }}</small></summary>
+        <div class="dashboard-disclosure-body">
+            <div class="dashboard-record-grid">
+                {% for family in families %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>Family #{{ family.id }}</strong></header><p>{% if family.mother %}Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}{% endif %}{% if family.father %}<br>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}{% endif %}</p><form method="post" action="{% url 'dashboards:leave_family' family.id %}">{% csrf_token %}<button type="submit" class="btn-outline-pink"><i class="fas fa-arrow-right-from-bracket"></i> Leave assignment</button></form></article>{% empty %}<div class="dashboard-empty">No family assignments yet.</div>{% endfor %}
+            </div>
+        </div>
+    </details>
+</main>
 {% endblock %}

@@ -51,6 +51,9 @@ class PregnancyForm(forms.ModelForm):
             self.add_error("last_menstrual_period", "This date cannot be in the future.")
         if lmp and due and due <= lmp:
             self.add_error("expected_delivery_date", "The due date must be after the last menstrual period.")
+        weight = cleaned.get("pre_pregnancy_weight")
+        if weight is not None and not 20 <= weight <= 300:
+            self.add_error("pre_pregnancy_weight", "Enter a weight between 20 and 300 kg.")
         return cleaned
 
 class PregnancyProgressForm(forms.ModelForm):
@@ -59,11 +62,23 @@ class PregnancyProgressForm(forms.ModelForm):
         fields = "__all__"
         exclude = ["pregnancy","id","recorded_by"]
 
+    def clean_week(self):
+        value = self.cleaned_data['week']
+        if not 0 <= value <= 45:
+            raise forms.ValidationError("Pregnancy week must be between 0 and 45.")
+        return value
+
 class FetalHealthForm(forms.ModelForm):
     class Meta:
         model = FetalHealth
         fields = "__all__"
         exclude = ["pregnancy","id","recorded_by"]
+
+    def clean_week(self):
+        value = self.cleaned_data['week']
+        if not 0 <= value <= 45:
+            raise forms.ValidationError("Pregnancy week must be between 0 and 45.")
+        return value
 
 class LabTestForm(forms.ModelForm):
     attachments = MultipleFileField(required=False)
@@ -74,6 +89,12 @@ class LabTestForm(forms.ModelForm):
         widgets = {
             "taken_date": forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def clean_taken_date(self):
+        value = self.cleaned_data['taken_date']
+        if value > timezone.localdate():
+            raise forms.ValidationError("The test date cannot be in the future.")
+        return value
 
 
 # In forums.py
@@ -88,6 +109,12 @@ class ScheduleEventForm(forms.ModelForm):
             'scheduled_time': forms.TimeInput(attrs={'type': 'time'}),
         }
 
+    def clean_scheduled_date(self):
+        value = self.cleaned_data['scheduled_date']
+        if value < timezone.localdate():
+            raise forms.ValidationError("The event date cannot be in the past.")
+        return value
+
 
 class ClinicForm(forms.ModelForm):
     class Meta:
@@ -97,6 +124,19 @@ class ClinicForm(forms.ModelForm):
             'date': forms.DateInput(attrs={'type': 'date'}),
             'time': forms.TimeInput(attrs={'type': 'time'}),
         }
+
+
+    def clean_date(self):
+        value = self.cleaned_data['date']
+        if value < timezone.localdate():
+            raise forms.ValidationError("The clinic date cannot be in the past.")
+        return value
+
+    def clean_capacity(self):
+        value = self.cleaned_data['capacity']
+        if value < 1:
+            raise forms.ValidationError("Clinic capacity must be at least 1.")
+        return value
 
 
 class TrimesterTaskForm(forms.ModelForm):

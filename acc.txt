@@ -1,4 +1,0 @@
-Do not store account credentials in this repository.
-
-Use `python3 manage.py seed_demo` for disposable local demo accounts and change
-all credentials that were previously listed in this file.

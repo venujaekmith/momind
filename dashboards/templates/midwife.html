@@ -1,202 +1,56 @@
 {% extends 'basec.html' %}
 
-{% block extra_head %}
-{% include 'dashboard_role_theme.html' %}
-{% endblock %}
+{% block extra_head %}{% include 'dashboard_role_theme.html' %}{% endblock %}
 
 {% block content %}
-<div class="role-dashboard-page midwife-dashboard-page">
-<div class="card-pink">
-    <div class="flex-between">
-        <div>
-            <h2><i class="fas fa-user-md"></i> Welcome, Midwife {{ user.get_full_name|default:user.username }}!</h2>
-            <p>ID: <strong id="qrValue">{{ user.user_midwife.midwife_id }}</strong> | Status: {% if user.user_midwife.is_verified %}✅ Verified{% else %}⏳ Pending{% endif %}</p>
+<main class="role-dashboard-page midwife-dashboard-page page-shell--wide">
+    <header class="card-pink"><div class="flex-between"><div><h2><i class="fas fa-user-nurse"></i> Midwife Dashboard</h2><p>{{ user.get_full_name|default:user.username }} · ID: <strong id="qrValue">{{ user.user_midwife.midwife_id }}</strong> · {% if user.user_midwife.is_verified %}Verified{% else %}Verification pending{% endif %}</p></div><button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button></div><div id="qrcode"></div></header>
+
+    <p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+    <nav class="dashboard-quick-actions" aria-label="Midwife dashboard quick actions">
+        <a href="#active-mothers" class="dashboard-action"><i class="fas fa-person-pregnant"></i><span><strong>Active Mothers</strong><small>{{ total_active }} records</small></span></a>
+        <a href="#care-schedule" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Care Schedule</strong><small>{{ upcoming_visits|length }} upcoming visits</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-people-group"></i><span><strong>Care Groups</strong><small>Create and manage</small></span></a>
+        <a href="{% url 'accounts:midwife_details' %}" class="dashboard-action"><i class="fas fa-id-card"></i><span><strong>My Profile</strong><small>Credentials and service area</small></span></a>
+    </nav>
+
+    <section class="dashboard-overview" aria-label="Midwife workload overview">
+        <div class="stat-card"><i class="fas fa-person-pregnant"></i><h3>{{ total_active|default:0 }}</h3><p>Active pregnancies</p></div>
+        <div class="stat-card"><i class="fas fa-baby-carriage"></i><h3>{{ total_postpartum|default:0 }}</h3><p>Postpartum mothers</p></div>
+        <div class="stat-card"><i class="fas fa-calendar-check"></i><h3>{{ upcoming_visits|length }}</h3><p>Midwife visits</p></div>
+        <div class="stat-card"><i class="fas fa-user-doctor"></i><h3>{{ doctor_schedules|length }}</h3><p>Doctor appointments</p></div>
+    </section>
+
+    {% if upcoming_visits|first %}<aside class="dashboard-next"><i class="fas fa-clock"></i><div><strong>Next midwife visit: {{ upcoming_visits.first.pregnancy.mother.user.get_full_name|default:upcoming_visits.first.pregnancy.mother.user.username }}</strong><span>{{ upcoming_visits.first.scheduled_date|date:"d M Y" }} at {{ upcoming_visits.first.scheduled_time|time:"H:i"|default:"time not set" }} · {{ upcoming_visits.first.title }}</span></div></aside>{% endif %}
+
+    <section class="card-pink dashboard-anchor" id="active-mothers">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-heart-pulse"></i> Active Mothers</h3><span class="dashboard-status">{{ total_active }} active</span></div>
+        <div class="dashboard-record-grid">
+            {% for pregnancy in active_pregnancies %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong><span class="dashboard-status">Week {{ pregnancy.get_pregnancy_week|default:"—" }}</span></header><div class="dashboard-record-meta"><div><span>Pregnancy</span><strong>#{{ pregnancy.pregnancy_number }}</strong></div><div><span>Expected delivery</span><strong>{{ pregnancy.expected_delivery_date|date:"d M Y"|default:"Not set" }}</strong></div><div><span>Status</span><strong>{{ pregnancy.status|capfirst }}</strong></div><div><span>Risk history</span><strong>{% if pregnancy.is_high_risk %}High-risk history{% else %}Routine{% endif %}</strong></div></div><div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink"><i class="fas fa-folder-open"></i> Open record</a><a href="{% url 'ai_services:show_risk' pregnancy.id %}" class="btn-outline-pink"><i class="fas fa-brain"></i> Risk</a><a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Progress</a><a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Fetal</a><a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule</a><a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Lab</a></div></article>{% empty %}<div class="dashboard-empty"><i class="fas fa-person-circle-plus"></i>No active pregnancies are assigned.</div>{% endfor %}
         </div>
-        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
-    </div>
-    <div id="qrcode" style="margin-top: 1rem;"></div>
-</div>
+    </section>
 
-<!-- Stats -->
-<div class="stats-grid">
-    <div class="stat-card">
-        <i class="fas fa-female" style="font-size: 2rem;"></i>
-        <h3>{{ total_active|default:0 }}</h3>
-        <p>Active Pregnancies</p>
+    <div class="dashboard-focus-grid">
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-baby"></i> Postpartum Care</h3><span class="dashboard-status">{{ total_postpartum }}</span></div><div class="dashboard-record-grid">{% for pregnancy in postpartum_pregnancies %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong><span class="dashboard-status">{{ pregnancy.status|capfirst }}</span></header><div class="dashboard-record-meta"><div><span>Pregnancy</span><strong>#{{ pregnancy.pregnancy_number }}</strong></div><div><span>Delivery</span><strong>{{ pregnancy.actual_delivery_date|date:"d M Y"|default:"Not recorded" }}</strong></div></div><div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">Open record</a><a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule follow-up</a></div></article>{% empty %}<div class="dashboard-empty">No postpartum mothers currently assigned.</div>{% endfor %}</div></section>
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-people-group"></i> Community Support</h3><a href="{% url 'community:group_list' %}" class="btn-outline-pink">View groups</a></div><p>Create support groups for mothers or manage hospital communities where you are a linked midwife.</p><a href="{% url 'community:create_group' %}" class="btn-pink"><i class="fas fa-plus"></i> Create care group</a></section>
     </div>
-    <div class="stat-card">
-        <i class="fas fa-baby-carriage" style="font-size: 2rem;"></i>
-        <h3>{{ total_postpartum|default:0 }}</h3>
-        <p>Postpartum Mothers</p>
-    </div>
-</div>
 
-<div class="card-pink">
-    <h3><i class="fas fa-door-open"></i> My Family Assignments</h3>
-    {% if families %}
-        {% for family in families %}
-            <div class="card-pink" style="margin-bottom: 0.75rem;">
-                <strong>Family ID: {{ family.id }}</strong>
-                {% if family.mother %}<div>Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</div>{% endif %}
-                {% if family.father %}<div>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}</div>{% endif %}
-                <form method="POST" action="{% url 'dashboards:leave_family' family.id %}" style="margin-top:0.75rem; display:inline-block;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn-outline-pink">Leave This Family</button>
-                </form>
-            </div>
-        {% endfor %}
-    {% else %}
-        <p>No families assigned yet.</p>
-    {% endif %}
-</div>
+    <section class="card-pink">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-user-doctor"></i> Upcoming Doctor Appointments</h3></div>
+        {% if doctor_schedules %}<div class="table-responsive"><table class="table-modern"><thead><tr><th>Date and time</th><th>Mother</th><th>Appointment</th><th>Doctor</th><th>Location</th></tr></thead><tbody>{% for appointment in doctor_schedules %}<tr><td><strong>{{ appointment.scheduled_date|date:"d M Y" }}</strong><br><small>{{ appointment.scheduled_time|time:"H:i"|default:"Time not set" }}</small></td><td>{{ appointment.pregnancy.mother.user.get_full_name|default:appointment.pregnancy.mother.user.username }}<br><small>Pregnancy #{{ appointment.pregnancy.pregnancy_number }}</small></td><td><strong>{{ appointment.title }}</strong>{% if appointment.notes %}<br><small>{{ appointment.notes|truncatechars:80 }}</small>{% endif %}</td><td>{% if appointment.created_by %}{{ appointment.created_by.get_full_name|default:appointment.created_by.username }}{% else %}Not specified{% endif %}</td><td>{% if appointment.clinic %}{{ appointment.clinic.name }}{% else %}{{ appointment.location|default:"Not specified" }}{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="dashboard-empty"><i class="fas fa-calendar"></i>No upcoming doctor appointments for assigned mothers.</div>{% endif %}
+    </section>
 
-<!-- Active Pregnancies -->
-<div class="card-pink">
-    <h3><i class="fas fa-heartbeat"></i> Active Pregnancies</h3>
-    {% for pregnancy in active_pregnancies %}
-    <div class="card-pink" style="margin-bottom: 1rem;">
-        <div class="flex-between">
-            <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
-            <span>Pregnancy #{{ pregnancy.pregnancy_number }} • Week {{ pregnancy.get_pregnancy_week|default:"—" }}</span>
-        </div>
-        <p>Status: {{ pregnancy.status|capfirst }} • EDD: {{ pregnancy.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
-        <div class="flex-between" style="margin-top: 0.5rem;">
-            <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">View Record</a>
-            <a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Progress</a>
-            <a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Fetal</a>
-            <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule</a>
-            <a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Lab</a>
-        </div>
-    </div>
-    {% empty %}
-    <p>No active pregnancies assigned.</p>
-    {% endfor %}
-</div>
+    <section class="calendar-wrapper dashboard-anchor" id="care-schedule"><div class="dashboard-toolbar"><h3><i class="fas fa-calendar-alt"></i> Care Schedule</h3></div><div id="visitsCalendar" style="min-height:400px"></div></section>
 
-<div class="card-pink">
-    <h3><i class="fas fa-baby"></i> Postpartum / Completed Pregnancies</h3>
-    {% for pregnancy in postpartum_pregnancies %}
-    <div class="card-pink" style="margin-bottom: 1rem;">
-        <div class="flex-between">
-            <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
-            <span>Pregnancy #{{ pregnancy.pregnancy_number }} • {{ pregnancy.status|capfirst }}</span>
-        </div>
-        <p>Delivery: {{ pregnancy.actual_delivery_date|date:"d M, Y"|default:"—" }}</p>
-        <div class="flex-between" style="margin-top: 0.5rem;">
-            <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">View Record</a>
-            <a href="{% url 'dashboards:add_progress' pregnancy.id %}" class="btn-outline-pink">Progress</a>
-            <a href="{% url 'dashboards:add_fetal' pregnancy.id %}" class="btn-outline-pink">Fetal</a>
-            <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule</a>
-            <a href="{% url 'dashboards:add_lab' pregnancy.id %}" class="btn-outline-pink">Lab</a>
-        </div>
-    </div>
-    {% empty %}
-    <p>No postpartum mothers under your care.</p>
-    {% endfor %}
-</div>
+    <details class="dashboard-disclosure"><summary><i class="fas fa-people-roof"></i> Family care assignments <small>{{ families|length }} linked</small></summary><div class="dashboard-disclosure-body"><div class="dashboard-record-grid">{% for family in families %}<article class="dashboard-record"><strong>Family #{{ family.id }}</strong><p>{% if family.mother %}Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}{% endif %}{% if family.father %}<br>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}{% endif %}</p><form method="post" action="{% url 'dashboards:leave_family' family.id %}">{% csrf_token %}<button type="submit" class="btn-outline-pink">Leave assignment</button></form></article>{% empty %}<div class="dashboard-empty">No family assignments yet.</div>{% endfor %}</div></div></details>
 
-<div class="card-pink">
-    <h3><i class="fas fa-history"></i> Full Pregnancy History</h3>
-    {% for pregnancy in all_pregnancies %}
-    <div class="card-pink" style="margin-bottom: 0.5rem;">
-        <strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
-        <span> • Pregnancy #{{ pregnancy.pregnancy_number }} • {{ pregnancy.status|capfirst }}</span>
-        <p>Started: {{ pregnancy.created_at|date:"d M, Y" }} • EDD: {{ pregnancy.expected_delivery_date|date:"d M, Y"|default:"Not set" }}</p>
-    </div>
-    {% empty %}
-    <p>No pregnancy history yet.</p>
-    {% endfor %}
-</div>
-
-<div class="card-pink">
-    <h3><i class="fas fa-user-doctor"></i> Upcoming Doctor Schedules</h3>
-    <p class="text-muted">Doctor appointments for mothers currently assigned to you.</p>
-    {% if doctor_schedules %}
-    <div class="table-responsive" style="margin-top: 1rem;">
-        <table class="table-modern">
-            <thead>
-                <tr>
-                    <th>Date and time</th>
-                    <th>Mother</th>
-                    <th>Appointment</th>
-                    <th>Doctor / creator</th>
-                    <th>Location</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for appointment in doctor_schedules %}
-                <tr>
-                    <td>
-                        <strong>{{ appointment.scheduled_date|date:"d M, Y" }}</strong>
-                        <br><small>{{ appointment.scheduled_time|time:"H:i"|default:"Time not set" }}</small>
-                    </td>
-                    <td>
-                        {{ appointment.pregnancy.mother.user.get_full_name|default:appointment.pregnancy.mother.user.username }}
-                        <br><small>Pregnancy #{{ appointment.pregnancy.pregnancy_number }}</small>
-                    </td>
-                    <td>
-                        <strong>{{ appointment.title }}</strong>
-                        {% if appointment.notes %}<br><small>{{ appointment.notes|truncatechars:90 }}</small>{% endif %}
-                    </td>
-                    <td>
-                        {% if appointment.created_by %}
-                            {{ appointment.created_by.get_full_name|default:appointment.created_by.username }}
-                        {% else %}
-                            Not specified
-                        {% endif %}
-                    </td>
-                    <td>
-                        {% if appointment.clinic %}{{ appointment.clinic.name }}{% endif %}
-                        {% if appointment.clinic and appointment.location %}<br>{% endif %}
-                        {{ appointment.location|default:"Not specified" }}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-        <p style="margin-top: 1rem;">No upcoming doctor appointments for your assigned mothers.</p>
-    {% endif %}
-</div>
-
-<!-- Calendar -->
-<div class="calendar-wrapper">
-    <h3><i class="fas fa-calendar-alt"></i> Midwife Visits and Doctor Schedules</h3>
-    <div id="visitsCalendar" style="min-height: 400px;"></div>
-</div>
+    <details class="dashboard-disclosure"><summary><i class="fas fa-clock-rotate-left"></i> Full pregnancy history <small>{{ total_pregnancies }} records</small></summary><div class="dashboard-disclosure-body"><div class="dashboard-record-grid">{% for pregnancy in all_pregnancies %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong><span class="dashboard-status">{{ pregnancy.status|capfirst }}</span></header><p>Pregnancy #{{ pregnancy.pregnancy_number }} · Started {{ pregnancy.created_at|date:"d M Y" }} · EDD {{ pregnancy.expected_delivery_date|date:"d M Y"|default:"Not set" }}</p><div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Open history</a></div></article>{% empty %}<div class="dashboard-empty">No pregnancy history yet.</div>{% endfor %}</div></div></details>
+</main>
 
 <script>
 const visitEvents = [];
-{% for visit in upcoming_visits %}
-visitEvents.push({
-    title: "{{ visit.title|escapejs }} - {{ visit.pregnancy.mother.user.username }}",
-    start: "{{ visit.scheduled_date|date:'Y-m-d' }}",
-    description: "{{ visit.notes|escapejs }}",
-    color: "#9b59b6"
-});
-{% endfor %}
-{% for appointment in doctor_schedules %}
-visitEvents.push({
-    title: "Doctor: {{ appointment.title|escapejs }} - {{ appointment.pregnancy.mother.user.username|escapejs }}",
-    start: "{{ appointment.scheduled_date|date:'Y-m-d' }}{% if appointment.scheduled_time %}T{{ appointment.scheduled_time|time:'H:i:s' }}{% endif %}",
-    description: "{{ appointment.notes|escapejs }}",
-    color: "#2878b5"
-});
-{% endfor %}
-
-const calendarEl = document.getElementById('visitsCalendar');
-if (calendarEl) {
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
-        events: visitEvents,
-        height: 'auto'
-    });
-    calendar.render();
-}
+{% for visit in upcoming_visits %}visitEvents.push({title:"{{ visit.title|escapejs }} - {{ visit.pregnancy.mother.user.username|escapejs }}",start:"{{ visit.scheduled_date|date:'Y-m-d' }}",description:"{{ visit.notes|escapejs }}",color:"#e85d8f"});{% endfor %}
+{% for appointment in doctor_schedules %}visitEvents.push({title:"Doctor: {{ appointment.title|escapejs }} - {{ appointment.pregnancy.mother.user.username|escapejs }}",start:"{{ appointment.scheduled_date|date:'Y-m-d' }}{% if appointment.scheduled_time %}T{{ appointment.scheduled_time|time:'H:i:s' }}{% endif %}",description:"{{ appointment.notes|escapejs }}",color:"#a13e63"});{% endfor %}
+const calendarEl=document.getElementById('visitsCalendar');if(calendarEl){const calendar=new FullCalendar.Calendar(calendarEl,{initialView:'dayGridMonth',headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,listWeek'},events:visitEvents,height:'auto'});calendar.render();}
 </script>
-
-<a href="{% url 'dashboards:dashboard' %}" class="btn-outline-pink"><i class="fas fa-sync-alt"></i> Refresh Dashboard</a>
-</div>
 {% endblock %}

@@ -127,7 +127,7 @@ Keep the tone supportive, clinical, and non-alarming.
                 model=self.model,
                 messages=messages,
                 temperature=0.35,
-                max_tokens=900,
+                max_tokens=1400,
             )
             return response.choices[0].message.content.strip()
         except Exception:

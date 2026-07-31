@@ -1,222 +1,64 @@
 {% extends 'basec.html' %}
 
-{% block extra_head %}
-{% include 'dashboard_role_theme.html' %}
-{% endblock %}
+{% block extra_head %}{% include 'dashboard_role_theme.html' %}{% endblock %}
 
 {% block content %}
-<div class="role-dashboard-page father-dashboard-page">
-<div class="card-pink">
-    <div class="flex-between">
-        <div>
-            <h2><i class="fas fa-male"></i> Welcome, {{ user.username }}!</h2>
-            <p>ID: <strong id="qrValue">{{ user.user_father.father_id }}</strong></p>
-        </div>
-        <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
-    </div>
-    <div id="qrcode" style="margin-top: 1rem; display: none;"></div>
-</div>
+<main class="role-dashboard-page father-dashboard-page page-shell--wide">
+    <header class="card-pink">
+        <div class="flex-between"><div><h2><i class="fas fa-people-roof"></i> Family Dashboard</h2><p>Welcome, {{ user.get_full_name|default:user.username }} · ID: <strong id="qrValue">{{ user.user_father.father_id }}</strong></p></div><button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button></div>
+        {% if pregnancies and pregnancies|length > 1 %}<div class="form-group" style="position:relative;z-index:1;max-width:420px;margin:1rem 0 0"><label for="pregSelectF" style="color:#fff">Viewing pregnancy</label><select id="pregSelectF" class="form-control" onchange="onPregFSelect()">{% for p in pregnancies %}<option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} · EDD {{ p.expected_delivery_date|date:"d M Y" }}{% endif %}</option>{% endfor %}</select></div>{% endif %}
+        <div id="qrcode"></div>
+    </header>
 
-    {% if pregnancies and pregnancies|length > 1 %}
-    <div style="margin-top:0.75rem;">
-        <label for="pregSelectF">Select pregnancy:</label>
-        <select id="pregSelectF" class="form-group" onchange="onPregFSelect()">
-            {% for p in pregnancies %}
-                <option value="{{ p.id }}" {% if pregnancy and pregnancy.id == p.id %}selected{% endif %}>
-                    Pregnancy #{{ p.pregnancy_number }} — {{ p.status|capfirst }}{% if p.expected_delivery_date %} (EDD {{ p.expected_delivery_date }}){% endif %}
-                </option>
-            {% endfor %}
-        </select>
-    </div>
-    {% endif %}
+    {% if warning %}<div class="alert alert-warning"><i class="fas fa-link"></i><span>Your family care team is incomplete. Link the mother and care professionals so shared records and schedules are available.</span><a href="#family-care-team" class="btn-outline-pink">Manage care team</a></div>{% endif %}
 
-{% if warning %}
-<div class="alert alert-warning">Please add your partner and midwife for your account!</div>
-{% endif %}
-
-{% if not is_postpartum and pregnancy %}
-<div class="alert alert-info">
     {% if pregnancy %}
-        <a href="{% url 'dashboards:end_pregnancy' pregnancy.id %}" class="btn-pink">Delivered - End Pregnancy</a>
-        <a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">Mother Details</a>
-    {% endif %}
-</div>
-{% endif %}
+    <p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+    <nav class="dashboard-quick-actions" aria-label="Father dashboard quick actions">
+        <a href="{% url 'dashboards:pregnancy_detail' pregnancy.id %}" class="dashboard-action"><i class="fas fa-notes-medical"></i><span><strong>Mother & Baby Record</strong><small>Shared care information</small></span></a>
+        <a href="#family-schedule" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Shared Schedule</strong><small>{% if next_event %}Next {{ next_event.scheduled_date|date:"d M" }}{% else %}No upcoming events{% endif %}</small></span></a>
+        <a href="#family-care-team" class="dashboard-action"><i class="fas fa-users-gear"></i><span><strong>Family Care Team</strong><small>View and manage links</small></span></a>
+        <a href="{% url 'accounts:father_details' %}" class="dashboard-action"><i class="fas fa-user-pen"></i><span><strong>My Profile</strong><small>Update personal details</small></span></a>
+    </nav>
 
-<!-- Family Members -->
-<div class="card-pink">
-    <h3><i class="fas fa-heart"></i> Your Family Unit</h3>
-    <div class="grid-2">
-        <div>
-            <h4>Partner</h4>
-            {% if family.mother %}
-                <p>✓ Connected: {{ family.mother.user.get_full_name|default:family.mother.user.username }}</p>
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink" title="Change Mother"><i class="fas fa-pencil-alt"></i></button>
-                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
-                        {% csrf_token %}
-                        <input type="hidden" name="family_id" value="{{ family.id }}">
-                        <input type="hidden" name="role" value="MOTHER">
-                        <button type="submit" class="btn-outline-pink" title="Remove Mother"><i class="fas fa-trash"></i></button>
-                    </form>
-                </div>
-            {% else %}
-                <button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink">+ Add Mother</button>
-            {% endif %}
-        </div>
-        <div>
-            <h4>Midwife</h4>
-            {% if family.midwife %}
-                <p>✓ {{ family.midwife.user.username }}</p>
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink" title="Change Midwife"><i class="fas fa-pencil-alt"></i></button>
-                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
-                        {% csrf_token %}
-                        <input type="hidden" name="family_id" value="{{ family.id }}">
-                        <input type="hidden" name="role" value="MIDWIFE">
-                        <button type="submit" class="btn-outline-pink" title="Remove Midwife"><i class="fas fa-trash"></i></button>
-                    </form>
-                </div>
-            {% else %}
-                <button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink">+ Link Midwife</button>
-            {% endif %}
-        </div>
-        <div>
-            <h4>Doctor</h4>
-            {% if family.doctor %}
-                <p>✓ Dr. {{ family.doctor.user.username }}</p>
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink" title="Change Doctor"><i class="fas fa-pencil-alt"></i></button>
-                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
-                        {% csrf_token %}
-                        <input type="hidden" name="family_id" value="{{ family.id }}">
-                        <input type="hidden" name="role" value="DOCTOR">
-                        <button type="submit" class="btn-outline-pink" title="Remove Doctor"><i class="fas fa-trash"></i></button>
-                    </form>
-                </div>
-            {% else %}
-                <button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink">+ Link Doctor</button>
-            {% endif %}
-        </div>
-        <div>
-            <h4>Hospital</h4>
-            {% if family.hospital %}
-                <p>✓ {{ family.hospital.name }}</p>
-                <div style="margin-top:0.5rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
-                    <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink" title="Change Hospital"><i class="fas fa-pencil-alt"></i></button>
-                    <form method="POST" action="{% url 'dashboards:remove_family_member' %}" style="display:inline-block;">
-                        {% csrf_token %}
-                        <input type="hidden" name="family_id" value="{{ family.id }}">
-                        <input type="hidden" name="role" value="HOSPITAL">
-                        <button type="submit" class="btn-outline-pink" title="Remove Hospital"><i class="fas fa-trash"></i></button>
-                    </form>
-                </div>
-            {% else %}
-                <button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink">+ Link Hospital</button>
-            {% endif %}
-        </div>
-    </div>
-</div>
+    <section class="dashboard-overview" aria-label="Family care overview">
+        <div class="stat-card"><i class="fas fa-calendar-week"></i><h3>{{ pregnancy.get_pregnancy_week|default:"—" }}</h3><p>Pregnancy week</p></div>
+        <div class="stat-card"><i class="fas fa-calendar-check"></i><h3>{{ schedule_events|length }}</h3><p>Upcoming events</p></div>
+        <div class="stat-card"><i class="fas fa-glass-water"></i><h3>{{ daily_water }}</h3><p>Water today (ml)</p></div>
+        <div class="stat-card"><i class="fas fa-baby"></i><h3>{{ recent_kicks|length }}</h3><p>Movement logs</p></div>
+    </section>
 
-<!-- Baby Growth -->
-{% if not is_postpartum and pregnancy %}
-<div class="card-pink">
-    <h3><i class="fas fa-baby"></i> Baby's Growth</h3>
-    {% if baby_info %}
-    <div class="grid-3">
-        <div class="stat-card">
-            <i class="fas fa-seedling stat-icon"></i>
-            <div class="stat-number">{{ baby_info.size }}</div>
-            <div class="stat-label">Size at week {{ baby_info.week }}</div>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-ruler-vertical stat-icon"></i>
-            <div class="stat-number">{{ baby_info.length }}</div>
-            <div class="stat-label">Approximate length</div>
-        </div>
-        <div class="stat-card">
-            <i class="fas fa-weight-scale stat-icon"></i>
-            <div class="stat-number">{{ baby_info.weight }}</div>
-            <div class="stat-label">Approximate weight</div>
-        </div>
+    <div class="alert alert-info"><i class="fas fa-circle-info"></i><span>{% if is_postpartum %}This pregnancy is in postpartum care. You can continue viewing the shared record and schedule.{% else %}You have read-only access to the maternal health record. Health changes must be entered by the mother or care team.{% endif %}</span><a href="{% url 'dashboards:pregnancy_detail' pregnancy.id %}" class="btn-outline-pink">Open full record</a></div>
+
+    {% if next_event %}<aside class="dashboard-next"><i class="fas fa-calendar-day"></i><div><strong>Next family event: {{ next_event.title }}</strong><span>{{ next_event.scheduled_date|date:"d M Y" }} at {{ next_event.scheduled_time|time:"H:i"|default:"time not set" }}{% if next_event.location %} · {{ next_event.location }}{% endif %}</span></div></aside>{% endif %}
+
+    <div class="dashboard-focus-grid">
+        {% if not is_postpartum %}<section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-baby"></i> Baby's Growth</h3></div>{% if baby_info %}<div class="dashboard-record-meta"><div><span>Current comparison</span><strong>{{ baby_info.size }}</strong></div><div><span>Pregnancy week</span><strong>{{ baby_info.week }}</strong></div><div><span>Approximate length</span><strong>{{ baby_info.length }}</strong></div><div><span>Approximate weight</span><strong>{{ baby_info.weight }}</strong></div></div>{% else %}<div class="dashboard-empty">Growth estimates appear after pregnancy dates are recorded.</div>{% endif %}</section>{% endif %}
+
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-user-clock"></i> Hospital Visit Today</h3></div>{% if my_hospital_visit and hospital_name %}<div class="dashboard-record-meta"><div><span>Hospital</span><strong>{{ hospital_name }}</strong></div><div><span>Time</span><strong>{{ my_hospital_visit.scheduled_time|time:"H:i"|default:"TBD" }}</strong></div><div><span>Queue position</span><strong>#{{ my_queue_position }} of {{ hospital_queue_count }}</strong></div><div><span>Visit</span><strong>{{ my_hospital_visit.title }}</strong></div></div><p class="text-muted">Only your family's appointment is shown to protect patient privacy.</p>{% elif family and family.hospital %}<div class="dashboard-empty"><i class="fas fa-calendar-check"></i>No clinic visit is scheduled today at {{ family.hospital.name }}.</div>{% else %}<div class="dashboard-empty"><i class="fas fa-hospital"></i>Link a hospital to see clinic information.</div>{% endif %}</section>
     </div>
+
+    <section class="calendar-wrapper dashboard-anchor" id="family-schedule"><div class="dashboard-toolbar"><h3><i class="fas fa-calendar-alt"></i> Shared Family Schedule</h3></div><div id="scheduleCalendar" style="min-height:400px"></div><p class="text-muted">The mother and care team can add or change appointments.</p></section>
+
+    {% if available_clinics %}<section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-clinic-medical"></i> Available Clinics</h3><a href="{% url 'dashboards:clinic_directory' %}" class="btn-outline-pink">See all clinics</a></div><div class="dashboard-record-grid">{% for clinic in available_clinics|slice:":4" %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ clinic.name }}</strong><span class="dashboard-status">{{ clinic.date|date:"d M" }}</span></header><div class="dashboard-record-meta"><div><span>Time</span><strong>{{ clinic.time|time:"H:i"|default:"TBD" }}</strong></div><div><span>Location</span><strong>{{ clinic.location|default:"Not specified" }}</strong></div></div></article>{% endfor %}</div></section>{% endif %}
     {% else %}
-    <p class="text-muted">Growth estimates will appear after pregnancy dates are added.</p>
+    <div class="dashboard-empty"><i class="fas fa-link"></i><h3>No shared pregnancy record yet</h3><p>Link the mother account to view the family care record and schedule.</p><button type="button" onclick="openModal('MOTHER')" class="btn-pink">Link mother account</button></div>
     {% endif %}
-</div>
 
-<!-- Calendar -->
-<div class="calendar-wrapper">
-    <h3><i class="fas fa-calendar-alt"></i> Upcoming Schedule</h3>
-    <div id="scheduleCalendar" style="min-height: 400px;"></div>
-    <a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-pink" style="margin-top: 1rem;">+ Add New Event</a>
-</div>
-
-{% if hospital_queue_count and hospital_name %}
-<div class="card-pink">
-    <h3><i class="fas fa-user-clock"></i> Hospital Queue for {{ hospital_name }}</h3>
-    <p>There are <strong>{{ hospital_queue_count }}</strong> hospital clinic visits scheduled for today.</p>
-    <table class="table-modern" style="margin-top: 1rem; width: 100%;">
-        <thead>
-            <tr><th>Time</th><th>Patient</th><th>Visit</th></tr>
-        </thead>
-        <tbody>
-            {% for visit in hospital_queue %}
-            <tr>
-                <td>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</td>
-                <td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td>
-                <td>{{ visit.title }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div>
-{% elif family and family.hospital %}
-<div class="card-pink">
-    <h3><i class="fas fa-user-clock"></i> Hospital Queue</h3>
-    <p>No hospital clinic visits are scheduled for today at {{ family.hospital.name }}.</p>
-</div>
-{% endif %}
-
-{% if available_clinics %}
-<div class="card-pink">
-    <h3><i class="fas fa-clinic-medical"></i> Available Hospital Clinics</h3>
-    <ul>
-        {% for clinic in available_clinics|slice:":3" %}
-            <li><strong>{{ clinic.name }}</strong> on {{ clinic.date }} at {{ clinic.time|time:"H:i"|default:"TBD" }} — {{ clinic.location }}</li>
-        {% endfor %}
-    </ul>
-    <a href="{% url 'dashboards:clinic_directory' %}" class="btn-pink">See all clinics</a>
-</div>
-{% endif %}
-
-{% endif %}
-</div>
+    <section class="card-pink dashboard-anchor" id="family-care-team">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-heart"></i> Family Care Team</h3><span class="dashboard-status">Account links</span></div>
+        <div class="dashboard-member-grid">
+            <article class="dashboard-member"><h4><i class="fas fa-person-pregnant"></i> Mother</h4><p>{% if family.mother %}{{ family.mother.user.get_full_name|default:family.mother.user.username }}{% else %}Not linked{% endif %}</p><div class="dashboard-member-actions"><button type="button" onclick="openModal('MOTHER')" class="btn-outline-pink"><i class="fas fa-pen"></i> {% if family.mother %}Change{% else %}Link{% endif %}</button>{% if family.mother %}<form method="post" action="{% url 'dashboards:remove_family_member' %}" onsubmit="return confirm('Remove the linked mother from this family?')">{% csrf_token %}<input type="hidden" name="family_id" value="{{ family.id }}"><input type="hidden" name="role" value="MOTHER"><button type="submit" class="btn-outline-pink"><i class="fas fa-unlink"></i> Remove</button></form>{% endif %}</div></article>
+            <article class="dashboard-member"><h4><i class="fas fa-user-nurse"></i> Midwife</h4><p>{% if family.midwife %}{{ family.midwife.user.get_full_name|default:family.midwife.user.username }}{% else %}Not linked{% endif %}</p><div class="dashboard-member-actions"><button type="button" onclick="openModal('MIDWIFE')" class="btn-outline-pink"><i class="fas fa-pen"></i> {% if family.midwife %}Change{% else %}Link{% endif %}</button>{% if family.midwife %}<form method="post" action="{% url 'dashboards:remove_family_member' %}" onsubmit="return confirm('Remove this midwife from the care team?')">{% csrf_token %}<input type="hidden" name="family_id" value="{{ family.id }}"><input type="hidden" name="role" value="MIDWIFE"><button type="submit" class="btn-outline-pink"><i class="fas fa-unlink"></i> Remove</button></form>{% endif %}</div></article>
+            <article class="dashboard-member"><h4><i class="fas fa-user-doctor"></i> Doctor</h4><p>{% if family.doctor %}Dr. {{ family.doctor.user.get_full_name|default:family.doctor.user.username }}{% else %}Not linked{% endif %}</p><div class="dashboard-member-actions"><button type="button" onclick="openModal('DOCTOR')" class="btn-outline-pink"><i class="fas fa-pen"></i> {% if family.doctor %}Change{% else %}Link{% endif %}</button>{% if family.doctor %}<form method="post" action="{% url 'dashboards:remove_family_member' %}" onsubmit="return confirm('Remove this doctor from the care team?')">{% csrf_token %}<input type="hidden" name="family_id" value="{{ family.id }}"><input type="hidden" name="role" value="DOCTOR"><button type="submit" class="btn-outline-pink"><i class="fas fa-unlink"></i> Remove</button></form>{% endif %}</div></article>
+            <article class="dashboard-member"><h4><i class="fas fa-hospital"></i> Hospital</h4><p>{% if family.hospital %}{{ family.hospital.name }}{% else %}Not linked{% endif %}</p><div class="dashboard-member-actions"><button type="button" onclick="openModal('HOSPITAL')" class="btn-outline-pink"><i class="fas fa-pen"></i> {% if family.hospital %}Change{% else %}Link{% endif %}</button>{% if family.hospital %}<form method="post" action="{% url 'dashboards:remove_family_member' %}" onsubmit="return confirm('Remove this hospital from the care team?')">{% csrf_token %}<input type="hidden" name="family_id" value="{{ family.id }}"><input type="hidden" name="role" value="HOSPITAL"><button type="submit" class="btn-outline-pink"><i class="fas fa-unlink"></i> Remove</button></form>{% endif %}</div></article>
+        </div>
+    </section>
+</main>
 
 <script>
-const events = [];
-{% for event in schedule_events %}
-events.push({ title: "{{ event.title|escapejs }}", start: "{{ event.scheduled_date|date:'Y-m-d' }}" });
-{% endfor %}
-const calendarEl = document.getElementById('scheduleCalendar');
-if (calendarEl) {
-    const calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth',
-        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
-        events: events,
-        eventColor: '#e85d8f'
-    });
-    calendar.render();
-}
-</script>
-<script>
-function onPregFSelect(){
-    const sel = document.getElementById('pregSelectF');
-    if(!sel) return;
-    const pid = sel.value;
-    const url = new URL(window.location.href);
-    url.searchParams.set('pregnancy', pid);
-    window.location.href = url.toString();
-}
+const events=[];{% for event in schedule_events %}events.push({title:"{{ event.title|escapejs }}",start:"{{ event.scheduled_date|date:'Y-m-d' }}{% if event.scheduled_time %}T{{ event.scheduled_time|time:'H:i:s' }}{% endif %}"});{% endfor %}
+const calendarEl=document.getElementById('scheduleCalendar');if(calendarEl){const calendar=new FullCalendar.Calendar(calendarEl,{initialView:'dayGridMonth',headerToolbar:{left:'prev,next today',center:'title',right:'dayGridMonth,listWeek'},events:events,eventColor:'#e85d8f',height:'auto'});calendar.render();}
+function onPregFSelect(){const select=document.getElementById('pregSelectF');if(!select)return;const url=new URL(window.location.href);url.searchParams.set('pregnancy',select.value);window.location.href=url.toString();}
 </script>
 {% endblock %}

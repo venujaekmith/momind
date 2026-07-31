@@ -187,7 +187,7 @@
         <p>{{ group.description }}</p>
     </div>
     {% if user.is_authenticated %}
-        {% if is_member %}
+        {% if can_manage_group and group.hospital_id %}
             <a href="{% url 'community:create_clinic_schedule' group.id %}" class="btn-gradient">
                 <i class="fas fa-plus"></i> New Schedule
             </a>

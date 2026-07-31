@@ -1,113 +1,49 @@
 {% extends 'basec.html' %}
-{% load static %}
 
-{% block extra_head %}
-{% include 'dashboard_role_theme.html' %}
-{% endblock %}
+{% block extra_head %}{% include 'dashboard_role_theme.html' %}{% endblock %}
 
 {% block content %}
-<div class="role-dashboard-page page-shell--wide">
-    <div class="card-pink">
-        <div class="flex-between">
-            <div>
-                <h2><i class="fas fa-user-nurse"></i> Hospital Staff Dashboard</h2>
-                <p>{{ hospital.name }} · Staff ID: <strong>{{ user.user_hospital_staff.staff_id }}</strong></p>
+<main class="role-dashboard-page page-shell--wide">
+    <header class="card-pink"><div class="flex-between"><div><h2><i class="fas fa-user-nurse"></i> Hospital Staff Dashboard</h2><p>{{ hospital.name }} · {{ staff.role_title|default:"Staff member" }} · ID: <strong>{{ staff.staff_id }}</strong></p></div><a href="{% url 'accounts:hospital_staff_details' %}" class="btn-outline-pink"><i class="fas fa-id-card"></i> My profile</a></div></header>
+
+    <p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+    <nav class="dashboard-quick-actions" aria-label="Hospital staff dashboard quick actions">
+        <a href="#today-staff-queue" class="dashboard-action"><i class="fas fa-user-clock"></i><span><strong>Today's Queue</strong><small>{{ today_queue_count }} assigned visits</small></span></a>
+        <a href="#assigned-clinics" class="dashboard-action"><i class="fas fa-clinic-medical"></i><span><strong>Assigned Clinics</strong><small>{{ assigned_clinics|length }} clinic{{ assigned_clinics|length|pluralize }}</small></span></a>
+        <a href="#staff-appointments" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Appointments</strong><small>{{ upcoming_appointments|length }} upcoming</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-people-group"></i><span><strong>Care Groups</strong><small>{{ groups|length }} communit{{ groups|length|pluralize:"y,ies" }}</small></span></a>
+    </nav>
+
+    <section class="dashboard-overview" aria-label="Staff workload overview">
+        <div class="stat-card"><i class="fas fa-user-clock"></i><h3>{{ today_queue_count }}</h3><p>Visits today</p></div>
+        <div class="stat-card"><i class="fas fa-clinic-medical"></i><h3>{{ assigned_clinics|length }}</h3><p>Assigned clinics</p></div>
+        <div class="stat-card"><i class="fas fa-calendar-check"></i><h3>{{ upcoming_appointments|length }}</h3><p>Upcoming visits</p></div>
+        <div class="stat-card"><i class="fas fa-people-group"></i><h3>{{ groups|length }}</h3><p>Care groups</p></div>
+    </section>
+
+    <div class="dashboard-focus-grid">
+        <section class="card-pink dashboard-anchor" id="today-staff-queue">
+            <div class="dashboard-toolbar"><h3><i class="fas fa-user-clock"></i> Today's Assigned Queue</h3><span class="dashboard-status">{{ today_queue_count }} visit{{ today_queue_count|pluralize }}</span></div>
+            <div class="dashboard-record-grid">
+                {% for visit in today_queue %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</strong><span class="dashboard-status">{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</span></header><p>{{ visit.title }}</p><div class="dashboard-record-meta"><div><span>Clinic</span><strong>{{ visit.clinic.name|default:"Not assigned" }}</strong></div><div><span>Location</span><strong>{{ visit.location|default:"Not specified" }}</strong></div></div></article>{% empty %}<div class="dashboard-empty"><i class="fas fa-calendar-check"></i>No assigned visits today.</div>{% endfor %}
             </div>
-        </div>
-    </div>
-
-    <div class="grid-2">
-        <section class="card-pink">
-            <h3><i class="fas fa-clinic-medical"></i> Assigned Clinics</h3>
-            <ul class="stack-list">
-                {% for clinic in assigned_clinics %}
-                <li class="section-card">
-                    <div class="flex-between">
-                        <div>
-                            <strong>{{ clinic.name }}</strong>
-                            <p class="text-muted">{{ clinic.date }} {% if clinic.time %}at {{ clinic.time }}{% endif %}</p>
-                        </div>
-                        <a href="{% url 'dashboards:edit_hospital_clinic' clinic.id %}" class="btn-outline-pink btn-outline-pink-sm">
-                            <i class="fas fa-pen"></i> Edit
-                        </a>
-                    </div>
-                    <form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" class="inline-form mt-2">
-                        {% csrf_token %}
-                        <input type="text" name="message" placeholder="Announcement message" class="form-control" aria-label="Announcement message">
-                        <button class="btn-pink btn-pink-sm" type="submit"><i class="fas fa-paper-plane"></i> Send</button>
-                    </form>
-                </li>
-                {% empty %}
-                <li class="empty-state">No clinics are currently assigned.</li>
-                {% endfor %}
-            </ul>
         </section>
 
-        <section class="card-pink">
-            <h3><i class="fas fa-users"></i> Create Group</h3>
-            <form method="post" action="{% url 'community:create_group_and_add_members' %}">
-                {% csrf_token %}
-                {{ group_form.as_p }}
-                <div class="form-group">
-                    <label for="group-members">Members (comma-separated usernames)</label>
-                    <input id="group-members" type="text" name="members" class="form-control">
-                </div>
-                <div class="form-actions">
-                    <button class="btn-pink" type="submit"><i class="fas fa-plus"></i> Create Group</button>
-                </div>
-            </form>
+        <section class="card-pink dashboard-anchor" id="assigned-clinics">
+            <div class="dashboard-toolbar"><h3><i class="fas fa-clinic-medical"></i> Assigned Clinics</h3></div>
+            <div class="dashboard-record-grid">
+                {% for clinic in assigned_clinics %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ clinic.name }}</strong><span class="dashboard-status">{{ clinic.date|date:"d M" }}</span></header><div class="dashboard-record-meta"><div><span>Time</span><strong>{{ clinic.time|time:"H:i"|default:"TBD" }}</strong></div><div><span>Location</span><strong>{{ clinic.location|default:"Not specified" }}</strong></div></div><div class="dashboard-record-actions"><a href="{% url 'dashboards:edit_hospital_clinic' clinic.id %}" class="btn-outline-pink"><i class="fas fa-pen"></i> Edit clinic</a></div><form method="post" action="{% url 'community:create_clinic_announcement' clinic.id %}" class="inline-form">{% csrf_token %}<input type="text" name="message" placeholder="Clinic announcement" class="form-control" aria-label="Announcement message" required><button class="btn-pink btn-pink-sm" type="submit"><i class="fas fa-paper-plane"></i> Send</button></form></article>{% empty %}<div class="dashboard-empty"><i class="fas fa-clinic-medical"></i>No clinics are currently assigned.</div>{% endfor %}
+            </div>
         </section>
     </div>
 
-    <section class="card-pink">
-        <h3><i class="fas fa-calendar-check"></i> Upcoming Appointments</h3>
-        <div class="table-responsive">
-            <table class="table-modern">
-                <thead>
-                    <tr><th>Date</th><th>Time</th><th>Patient</th><th>Clinic</th><th>Update Appointment</th></tr>
-                </thead>
-                <tbody>
-                    {% for appt in upcoming_appointments %}
-                    <tr>
-                        <td>{{ appt.scheduled_date }}</td>
-                        <td>{{ appt.scheduled_time }}</td>
-                        <td>{{ appt.pregnancy.mother.user.get_full_name|default:appt.pregnancy.mother.user.username }}</td>
-                        <td>{{ appt.clinic.name }}</td>
-                        <td>
-                            <form method="post" action="{% url 'community:reschedule_appointment' appt.id %}" class="inline-form">
-                                {% csrf_token %}
-                                <input type="date" name="date" value="{{ appt.scheduled_date|date:'Y-m-d' }}" class="form-control" aria-label="Appointment date">
-                                <input type="time" name="time" value="{{ appt.scheduled_time|time:'H:i' }}" class="form-control" aria-label="Appointment time">
-                                <select name="clinic_id" class="form-control" aria-label="Clinic">
-                                    <option value="">Keep clinic</option>
-                                    {% for clinic in clinics %}
-                                    <option value="{{ clinic.id }}" {% if appt.clinic and appt.clinic.id == clinic.id %}selected{% endif %}>{{ clinic.name }} · {{ clinic.date }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button class="btn-pink btn-pink-sm" type="submit">Update</button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr><td colspan="5" class="text-center text-muted">No upcoming appointments.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+    <section class="card-pink dashboard-anchor" id="staff-appointments">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-calendar-check"></i> Upcoming Appointments</h3></div>
+        {% if upcoming_appointments %}<div class="table-responsive"><table class="table-modern"><thead><tr><th>Date</th><th>Patient</th><th>Clinic</th><th>Update appointment</th></tr></thead><tbody>{% for appt in upcoming_appointments %}<tr><td><strong>{{ appt.scheduled_date|date:"d M Y" }}</strong><br><small>{{ appt.scheduled_time|time:"H:i"|default:"TBD" }}</small></td><td>{{ appt.pregnancy.mother.user.get_full_name|default:appt.pregnancy.mother.user.username }}</td><td>{{ appt.clinic.name|default:"Not assigned" }}</td><td><form method="post" action="{% url 'community:reschedule_appointment' appt.id %}" class="inline-form">{% csrf_token %}<input type="date" name="date" value="{{ appt.scheduled_date|date:'Y-m-d' }}" class="form-control" aria-label="Appointment date"><input type="time" name="time" value="{{ appt.scheduled_time|time:'H:i' }}" class="form-control" aria-label="Appointment time"><select name="clinic_id" class="form-control" aria-label="Clinic"><option value="">Keep clinic</option>{% for clinic in clinics %}<option value="{{ clinic.id }}" {% if appt.clinic and appt.clinic.id == clinic.id %}selected{% endif %}>{{ clinic.name }} · {{ clinic.date }}</option>{% endfor %}</select><button class="btn-pink btn-pink-sm" type="submit">Update</button></form></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="dashboard-empty"><i class="fas fa-calendar"></i>No upcoming appointments.</div>{% endif %}
     </section>
 
-    <section class="card-pink">
-        <h3><i class="fas fa-comments"></i> Groups</h3>
-        <ul class="stack-list">
-            {% for group in groups %}
-            <li class="section-card flex-between">
-                <div><strong>{{ group.name }}</strong><p class="text-muted">{{ group.description }}</p></div>
-                <a href="{% url 'community:group_detail' group.id %}" class="btn-outline-pink btn-outline-pink-sm">Manage</a>
-            </li>
-            {% empty %}
-            <li class="empty-state">No groups have been created yet.</li>
-            {% endfor %}
-        </ul>
-    </section>
-</div>
+    <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-comments"></i> Care Groups</h3><a href="{% url 'community:group_list' %}" class="btn-outline-pink">View all groups</a></div><div class="dashboard-record-grid">{% for group in groups %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ group.name }}</strong><span class="dashboard-status">Community</span></header><p>{{ group.description|default:"No description added."|truncatechars:110 }}</p><div class="dashboard-record-actions"><a href="{% url 'community:group_detail' group.id %}" class="btn-pink">Open group</a></div></article>{% empty %}<div class="dashboard-empty"><i class="fas fa-people-group"></i>No groups have been created yet.</div>{% endfor %}</div></section>
+
+    <details class="dashboard-disclosure"><summary><i class="fas fa-plus"></i> Create a care group <small>Occasional task</small></summary><div class="dashboard-disclosure-body"><form method="post" action="{% url 'community:create_group_and_add_members' %}">{% csrf_token %}{{ group_form.as_p }}<div class="form-group"><label for="group-members">Members</label><input id="group-members" type="text" name="members" class="form-control" placeholder="Comma-separated usernames"><small class="text-muted">You can add or remove members later.</small></div><div class="form-actions"><button class="btn-pink" type="submit"><i class="fas fa-plus"></i> Create group</button></div></form></div></details>
+</main>
 {% endblock %}

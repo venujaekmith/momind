@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
     
     <!-- Google Fonts & Font Awesome -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     
     <!-- Bootstrap 5 -->
@@ -163,7 +163,8 @@
             flex-wrap: wrap;
         }
 
-        .nav-links a {
+        .nav-links a,
+        .nav-links button {
             text-decoration: none;
             color: var(--secondary);
             font-weight: 500;
@@ -174,15 +175,22 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            background: transparent;
+            border: 0;
+            cursor: pointer;
         }
 
-        .nav-links a:hover {
+        .nav-links a:hover,
+        .nav-links button:hover {
             background: var(--primary-light);
             color: var(--primary-dark);
             transform: translateY(-1px);
         }
 
-        .nav-links a i {
+        .nav-links form { margin: 0; }
+
+        .nav-links a i,
+        .nav-links button i {
             font-size: 1rem;
         }
 
@@ -384,7 +392,15 @@
                 height: auto;
                 width: 100%;
                 margin-bottom: 1.5rem;
+                padding: 0.85rem;
             }
+
+            .sidebar-brand { display: none; }
+            .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+            .sidebar-nav a,
+            .sidebar-nav form,
+            .sidebar-nav > button { flex: 1 1 170px; }
+            .sidebar-nav form button { height: 100%; }
 
             .main-column {
                 margin-left: 0;
@@ -402,12 +418,31 @@
                 text-align: center;
                 padding: 1rem;
             }
-            .logo-area { flex-direction: column; }
+            .logo-area { width: 100%; flex-direction: row; justify-content: flex-start; text-align: left; }
             .logo-area h1 { font-size: 1.4rem; }
-            .nav-links a { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+            .nav-links a, .nav-links button { padding: 0.45rem 0.75rem; font-size: 0.8rem; }
             .sidebar {
-                display: none;
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 1200;
+                display: block;
+                width: min(86vw, 320px);
+                height: 100vh;
+                margin: 0;
+                padding: 1rem;
+                overflow-y: auto;
+                border-radius: 0 18px 18px 0;
+                opacity: 1;
+                transform: translateX(-110%);
+                transition: transform .25s ease;
             }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar .sidebar-brand { display: flex; }
+            .sidebar .sidebar-nav { flex-direction: column; flex-wrap: nowrap; }
+            .sidebar .sidebar-nav a,
+            .sidebar .sidebar-nav form,
+            .sidebar .sidebar-nav > button { flex: none; width: 100%; }
+            .main-layout.sidebar-collapsed { grid-template-columns: 1fr; }
             .sidebar-toggle {
                 display: inline-flex;
             }
@@ -415,6 +450,8 @@
                 justify-content: center;
                 width: 100%;
             }
+            .nav-links { width: 100%; justify-content: center; }
+            .navbar-momind .tagline { display: block; max-width: 230px; }
         }
 
         /* ===== CARDS ===== */
@@ -1473,8 +1510,16 @@
                 {% with request.resolver_match.url_name as active_url %}
                 <nav class="sidebar-nav">
                     <a href="{% url 'dashboards:dashboard' %}" class="{% if active_url == 'dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a>
-                    <a href="{% url 'chat:chatbot' %}" class="{% if active_url == 'chatbot' %}active{% endif %}"><i class="fas fa-robot"></i> Chatbot</a>
-                    <a href="{% url 'community:forum_home' %}" class="{% if active_url == 'forum_home' %}active{% endif %}"><i class="fas fa-users"></i> Forum</a>
+                    {% if user.role == 'MOTHER' %}<a href="{% url 'accounts:mother_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'FATHER' %}<a href="{% url 'accounts:father_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'MIDWIFE' %}<a href="{% url 'accounts:midwife_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'DOCTOR' %}<a href="{% url 'accounts:doctor_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'HOSPITAL' %}<a href="{% url 'accounts:hospital_details' %}"><i class="fas fa-id-card"></i> Hospital Profile</a>{% endif %}
+                    {% if user.role == 'HOSPITAL_STAFF' %}<a href="{% url 'accounts:hospital_staff_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    <a href="{% url 'chat:chatbot' %}" class="{% if active_url == 'chatbot' %}active{% endif %}"><i class="fas fa-robot"></i> AI Assistant</a>
+                    <a href="{% url 'community:forum_home' %}" class="{% if active_url == 'forum_home' %}active{% endif %}"><i class="fas fa-comments"></i> Community Forum</a>
+                    <a href="{% url 'community:group_list' %}" class="{% if active_url == 'group_list' %}active{% endif %}"><i class="fas fa-people-group"></i> Care Groups</a>
+                    <a href="{% url 'dashboards:clinic_directory' %}" class="{% if active_url == 'clinic_directory' %}active{% endif %}"><i class="fas fa-hospital-user"></i> Clinics</a>
                     <button type="button" id="showNotificationsBtn" onclick="showNotifications()" class="nav-bell" aria-haspopup="dialog" aria-controls="notificationsModal">
                         <i class="fas fa-bell"></i> Notifications
                         {% if unread_count %}<span class="badge-status active">{{ unread_count }}</span>{% endif %}
@@ -1489,7 +1534,7 @@
                 <!-- Navigation -->
                 <nav class="navbar-momind">
                     <div class="logo-area">
-                        <button class="sidebar-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                        <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Open navigation" aria-controls="siteSidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
                         <span class="logo-icon"><img src="{% static 'core/images/momind-logo.png' %}" alt="MoMind logo"></span>
                         <div>
                             <h1>MoMind</h1>
@@ -1498,8 +1543,8 @@
                     </div>
                     <div class="nav-right">
                         <div class="nav-links">
-                            <a href="{% url 'chat:chatbot' %}"><i class="fas fa-robot"></i> Chatbot</a>
-                            <a href="{% url 'community:forum_home' %}"><i class="fas fa-users"></i> Forum</a>
+                            <a href="{% url 'chat:chatbot' %}"><i class="fas fa-robot"></i> AI Assistant</a>
+                            <a href="{% url 'community:forum_home' %}"><i class="fas fa-users"></i> Community</a>
                             {% if user.is_authenticated %}
                             <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
                             {% endif %}
@@ -1509,6 +1554,15 @@
                 
                 <!-- Main Content -->
                 <main class="content-area">
+                    {% if messages %}
+                    <div aria-live="polite">
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
                     {% block content %}{% endblock %}
                 </main>
             </div>
@@ -1818,8 +1872,15 @@
             const sidebar = document.getElementById('siteSidebar');
             const layout = document.querySelector('.main-layout');
             if (!sidebar || !layout) return;
+            const toggle = document.querySelector('.sidebar-toggle');
+            if (window.innerWidth <= 768) {
+                const isOpen = sidebar.classList.toggle('mobile-open');
+                if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
+                return;
+            }
             sidebar.classList.toggle('collapsed');
             layout.classList.toggle('sidebar-collapsed');
+            if (toggle) toggle.setAttribute('aria-expanded', String(!sidebar.classList.contains('collapsed')));
 
             // FullCalendar measures its columns from the available width. Refresh
             // after the grid transition so day borders remain evenly divided.
@@ -1830,6 +1891,15 @@
                 window.dispatchEvent(new Event('resize'));
             }, 350);
         }
+
+        document.querySelectorAll('#siteSidebar a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('siteSidebar')?.classList.remove('mobile-open');
+                    document.querySelector('.sidebar-toggle')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
 
         // Close modal on backdrop click
         document.addEventListener('click', function(e) {

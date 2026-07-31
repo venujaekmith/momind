@@ -63,7 +63,7 @@ class AdvancedPregnancyRiskService:
             ml_score, ml_level, probabilities = self._predict_with_ml(features)
             rule_score, rule_factors = self._apply_rule_based(features)
 
-            final_score = round(0.7 * ml_score + 0.3 * rule_score, 2)
+            final_score = round(min(100.0, max(0.0, 0.7 * ml_score + 0.3 * rule_score)), 2)
             final_level = self._determine_risk_level(final_score)
 
             llm_explanation = self.llm.explain_risk(
@@ -387,16 +387,27 @@ class AdvancedPregnancyRiskService:
         return self._trigger_emergency_alert(pregnancy, risk_level, explanation)
 
     def get_risk_trend(self, pregnancy, days=30):
-        assessments = RiskAssessment.objects.filter(
+        assessments = list(RiskAssessment.objects.filter(
             pregnancy=pregnancy,
             created_at__gte=timezone.now() - timedelta(days=days)
-        ).order_by('created_at')
+        ).order_by('created_at'))
+
+        trend = "first_assessment"
+        if len(assessments) > 1:
+            first_score = assessments[0].risk_score
+            last_score = assessments[-1].risk_score
+            if last_score < first_score:
+                trend = "improving"
+            elif last_score > first_score:
+                trend = "worsening"
+            else:
+                trend = "stable"
 
         return {
             "dates": [a.created_at.strftime("%Y-%m-%d") for a in assessments],
             "scores": [float(a.risk_score) for a in assessments],
             "levels": [a.risk_level for a in assessments],
-            "trend": "improving" if len(assessments) > 1 and assessments.last().risk_score < assessments.first().risk_score else "stable"
+            "trend": trend,
         }
 
     def _calculate_bmi(self, details, pre_weight):

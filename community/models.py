@@ -113,8 +113,18 @@ class HospitalGroup(models.Model):
 
     hospital = models.ForeignKey(
         HospitalProfile,
+        null=True,
+        blank=True,
         on_delete=models.CASCADE,
         related_name='groups'
+    )
+
+    owner_midwife = models.ForeignKey(
+        MidwifeProfile,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='community_groups'
     )
 
     name = models.CharField(max_length=255)
@@ -131,6 +141,26 @@ class HospitalGroup(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=(
+                    models.Q(hospital__isnull=False)
+                    | models.Q(owner_midwife__isnull=False)
+                ),
+                name='community_group_has_owner',
+            )
+        ]
+
+    @property
+    def owner_name(self):
+        if self.hospital_id:
+            return self.hospital.name
+        if self.owner_midwife_id:
+            name = self.owner_midwife.user.get_full_name() or self.owner_midwife.user.username
+            return f"Midwife {name}"
+        return "Community"
+
     def __str__(self):
         return self.name
     
@@ -139,6 +169,7 @@ class GroupMember(models.Model):
     class Role(models.TextChoices):
         PATIENT = "PATIENT", "Patient"
         DOCTOR = "DOCTOR", "Doctor"
+        MIDWIFE = "MIDWIFE", "Midwife"
         NURSE = "NURSE", "Nurse"
         ADMIN = "ADMIN", "Admin"
 

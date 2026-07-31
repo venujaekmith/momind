@@ -1,166 +1,194 @@
 {% extends 'basec.html' %}
+{% load ai_formatting %}
 
 {% block extra_head %}
 <style>
-    .agent-hero { background: linear-gradient(135deg, #fff, #fff5f8); border: 1px solid var(--mm-border); }
-    .agent-status { display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .7rem;border-radius:999px;color:#743149;background:#fce4ec;font-size:.78rem;font-weight:700; }
-    .agent-trace { display:grid;gap:.75rem; }
-    .agent-step { display:grid;grid-template-columns:42px 1fr;gap:.8rem;padding:.9rem;background:#fffafb;border:1px solid #f0c4d0;border-radius:12px; }
-    .agent-step-number { width:36px;height:36px;display:grid;place-items:center;color:#fff;background:linear-gradient(135deg,#e85d8f,#cc4677);border-radius:10px;font-weight:800; }
-    .agent-step h6 { margin:0;color:#4b2735; }
-    .agent-step p { margin:.25rem 0 0;color:#876f79;font-size:.82rem; }
-    .agent-tool { display:inline-block;margin-top:.45rem;padding:.2rem .45rem;color:#a13e63;background:#fff;border:1px solid #f0c4d0;border-radius:6px;font-size:.7rem;font-family:monospace; }
-    .agent-safety { padding:.9rem 1rem;color:#743149;background:#fff5f8;border-left:4px solid #e85d8f;border-radius:10px; }
+    .risk-page { max-width: 1240px; margin: 0 auto; color: #4b2735; }
+    .risk-page * { box-sizing: border-box; }
+    .risk-hero, .risk-card { background: #fff; border: 1px solid #f0bdcc; border-radius: 18px; box-shadow: 0 10px 28px rgba(126,42,75,.09); }
+    .risk-hero { display: flex; justify-content: space-between; align-items: flex-start; gap: 1.25rem; padding: 1.5rem; background: linear-gradient(135deg,#fff 30%,#fff0f4); }
+    .risk-eyebrow { display: inline-flex; align-items: center; gap: .45rem; margin-bottom: .55rem; padding: .35rem .7rem; border-radius: 999px; color: #8f3658; background: #fce4ec; font-size: .78rem; font-weight: 800; }
+    .risk-hero h1 { margin: 0 0 .35rem; color: #743149; font-size: clamp(1.55rem,4vw,2.25rem); }
+    .risk-hero p { max-width: 720px; margin: 0; color: #806573; }
+    .risk-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
+    .risk-actions form { margin: 0; }
+    .risk-summary { display: grid; grid-template-columns: minmax(0,1.45fr) minmax(260px,.55fr); gap: 1rem; margin-top: 1rem; }
+    .risk-card { padding: 1.25rem; }
+    .risk-overview { display: grid; grid-template-columns: 150px 1fr; align-items: center; gap: 1.35rem; }
+    .risk-score { --score: 0; width: 140px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(#e85d8f calc(var(--score) * 1%),#f8dce5 0); }
+    .risk-score::before { content: ''; grid-area: 1/1; width: 108px; aspect-ratio: 1; border-radius: 50%; background: #fff; }
+    .risk-score-value { z-index: 1; text-align: center; font-size: 2rem; font-weight: 850; line-height: 1; color: #a13e63; }
+    .risk-score-value small { display: block; margin-top: .25rem; color: #987582; font-size: .7rem; font-weight: 650; }
+    .risk-level { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: .55rem; padding: .4rem .72rem; border-radius: 999px; font-weight: 850; font-size: .78rem; letter-spacing: .04em; text-transform: uppercase; }
+    .risk-level--low { color: #27654a; background: #e7f6ee; }
+    .risk-level--medium { color: #805d12; background: #fff4ce; }
+    .risk-level--high, .risk-level--critical { color: #9b2e3d; background: #ffe2e6; }
+    .risk-overview h2 { margin: 0 0 .35rem; color: #743149; font-size: 1.45rem; }
+    .risk-overview p { margin: 0; color: #765d68; }
+    .risk-meta { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: .7rem; margin-top: 1rem; }
+    .risk-meta div { padding: .72rem; border: 1px solid #f4d4de; border-radius: 12px; background: #fffafb; }
+    .risk-meta span { display: block; margin-bottom: .15rem; color: #957684; font-size: .72rem; }
+    .risk-meta strong { color: #5f3344; font-size: .9rem; overflow-wrap: anywhere; }
+    .risk-section-title { display: flex; align-items: center; gap: .55rem; margin: 0 0 .9rem; color: #743149; font-size: 1.15rem; }
+    .risk-section-title i { color: #e85d8f; }
+    .risk-copy { color: #664a56; line-height: 1.75; }
+    .risk-copy p:last-child { margin-bottom: 0; }
+    .risk-copy h3 { margin: 1.2rem 0 .55rem; padding-bottom: .45rem; color: #743149; font-size: 1.05rem; border-bottom: 1px solid #f2d3dc; }
+    .risk-copy h3:first-child { margin-top: 0; }
+    .risk-copy ol, .risk-copy ul { display: grid; gap: .5rem; margin: .55rem 0 1rem; padding-left: 1.4rem; }
+    .risk-copy li { padding-left: .2rem; }
+    .risk-copy strong { color: #653647; }
+    .risk-copy code { padding: .12rem .3rem; border-radius: 5px; color: #8c3557; background: #fce4ec; }
+    .ai-report-table-wrap { width: 100%; margin: .8rem 0 1.1rem; overflow-x: auto; border: 1px solid #f0c4d0; border-radius: 12px; }
+    .ai-report-table { width: 100%; min-width: 620px; border-collapse: collapse; font-size: .84rem; }
+    .ai-report-table th, .ai-report-table td { padding: .7rem .75rem; text-align: left; vertical-align: top; border-bottom: 1px solid #f3d6df; }
+    .ai-report-table th { color: #743149; background: #fce4ec; font-weight: 800; }
+    .ai-report-table tr:last-child td { border-bottom: 0; }
+    .ai-report-table tbody tr:nth-child(even) { background: #fffafb; }
+    .risk-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 1rem; margin-top: 1rem; }
+    .factor-list, .recommendation-list, .action-list, .lab-list { display: grid; gap: .65rem; margin: 0; padding: 0; list-style: none; }
+    .factor-list li, .recommendation-list li, .action-item, .lab-item { display: flex; align-items: flex-start; gap: .65rem; padding: .8rem; border: 1px solid #f3d2dc; border-radius: 12px; background: #fffafb; }
+    .factor-list i, .recommendation-list i { width: 20px; margin-top: .15rem; color: #d94f82; text-align: center; }
+    .positive-state { padding: 1rem; color: #356b54; background: #edf8f2; border: 1px solid #caead9; border-radius: 12px; }
+    .feature-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .65rem; }
+    .feature { padding: .75rem; border: 1px solid #f3d2dc; border-radius: 12px; background: #fffafb; }
+    .feature span { display: block; color: #94717f; font-size: .72rem; }
+    .feature strong { color: #653647; }
+    .trend-header { display: flex; align-items: center; justify-content: space-between; gap: .7rem; }
+    .trend-badge { padding: .32rem .62rem; border-radius: 999px; color: #823b56; background: #fce4ec; font-size: .75rem; font-weight: 750; }
+    .trend-points { display: grid; gap: .55rem; margin-top: .8rem; }
+    .trend-point { display: grid; grid-template-columns: 1fr auto; gap: .6rem; padding-bottom: .55rem; border-bottom: 1px solid #f5dbe3; }
+    .trend-point:last-child { padding-bottom: 0; border: 0; }
+    .trend-point span { color: #8b6c79; font-size: .8rem; }
+    .trend-point strong { color: #743149; }
+    .review-banner { display: flex; gap: .7rem; margin-top: .85rem; padding: .85rem; border-left: 4px solid #d94f82; border-radius: 10px; color: #743149; background: #fff1f5; }
+    .lab-item { display: block; }
+    .lab-item header { display: flex; justify-content: space-between; gap: .65rem; margin-bottom: .45rem; }
+    .lab-status { padding: .25rem .5rem; border-radius: 999px; color: #765d68; background: #f7e7ec; font-size: .7rem; font-weight: 750; }
+    .lab-status--abnormal { color: #9b2e3d; background: #ffe2e6; }
+    .lab-item p { margin: .35rem 0 0; color: #755b67; }
+    .action-item { align-items: center; }
+    .action-icon { flex: 0 0 36px; width: 36px; height: 36px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg,#e85d8f,#c84373); border-radius: 10px; }
+    .action-item strong, .action-item small { display: block; }
+    .action-item small { margin-top: .12rem; color: #896b78; }
+    .agent-details { margin-top: 1rem; overflow: hidden; }
+    .agent-details > summary { display: flex; align-items: center; gap: .55rem; padding: 1.1rem 1.25rem; color: #743149; cursor: pointer; font-weight: 800; list-style: none; }
+    .agent-details > summary::-webkit-details-marker { display: none; }
+    .agent-details > summary::after { content: '\f078'; margin-left: auto; font-family: 'Font Awesome 6 Free'; font-weight: 900; transition: transform .2s; }
+    .agent-details[open] > summary::after { transform: rotate(180deg); }
+    .agent-trace { display: grid; gap: .75rem; padding: 0 1.25rem 1.25rem; }
+    .agent-step { display: grid; grid-template-columns: 38px 1fr; gap: .75rem; padding: .85rem; border: 1px solid #f3d2dc; border-radius: 12px; background: #fffafb; }
+    .agent-step-number { width: 36px; height: 36px; display: grid; place-items: center; color: #fff; background: #d94f82; border-radius: 10px; font-weight: 800; }
+    .agent-step h3 { margin: 0; color: #673748; font-size: .95rem; }
+    .agent-step p { margin: .25rem 0 0; color: #826774; font-size: .82rem; }
+    .agent-tool-id { display:inline-block;margin-top:.4rem;padding:.2rem .45rem;border:1px solid #efd0d9;border-radius:6px;color:#8b6171;background:#fff;font:600 .68rem/1.3 monospace; }
+    .safety-note { display: flex; gap: .7rem; margin: 1rem 0 0; padding: 1rem; color: #684653; background: #fff7f9; border: 1px solid #f1ccd7; border-radius: 12px; }
+    @media (max-width: 900px) { .risk-summary, .risk-grid { grid-template-columns: 1fr; } .feature-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+    @media (max-width: 600px) { .risk-hero { flex-direction: column; padding: 1.1rem; } .risk-actions { width: 100%; justify-content: stretch; } .risk-actions a, .risk-actions form, .risk-actions button { width: 100%; } .risk-overview { grid-template-columns: 1fr; text-align: center; } .risk-score { margin: auto; } .risk-meta, .feature-grid { grid-template-columns: 1fr; } .risk-card { padding: 1rem; } }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="card agent-hero shadow-sm mb-4">
-        <div class="card-body d-flex flex-wrap align-items-center justify-content-between gap-3">
+<main class="risk-page">
+    <header class="risk-hero">
+        <div>
+            <span class="risk-eyebrow"><i class="fas fa-brain"></i> Maternal care agent</span>
+            <h1>Pregnancy risk assessment</h1>
+            <p>A structured summary of the latest recorded health information, the agent’s decision, and care-coordination actions.</p>
+        </div>
+        <div class="risk-actions">
+            <a href="{% url 'dashboards:pregnancy_detail' pregnancy.id %}" class="btn-outline-pink"><i class="fas fa-arrow-left"></i> Health record</a>
+            <form method="post" action="{% url 'ai_services:risk_assessment' pregnancy.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn-pink"><i class="fas fa-rotate"></i> Run new assessment</button>
+            </form>
+        </div>
+    </header>
+
+    <section class="risk-summary">
+        <article class="risk-card risk-overview">
+            <div class="risk-score" style="--score: {{ risk.risk_score|default:0 }}" aria-label="Risk score {{ risk.risk_score }} out of 100">
+                <div class="risk-score-value">{{ risk.risk_score|floatformat:0 }}<small>out of 100</small></div>
+            </div>
             <div>
-                <span class="agent-status"><i class="fas fa-brain"></i> Maternal Care Agent</span>
-                <h2 class="mt-2 mb-1">Pregnancy Risk Assessment</h2>
-                <p class="text-muted mb-0">An auditable agent reviewed the longitudinal record, reasoned about risk, and executed permitted care actions.</p>
-            </div>
-            {% if agent_run %}<small class="text-muted">Run {{ agent_run.id }}<br>{{ agent_run.created_at|date:"M j, Y · H:i" }}</small>{% endif %}
-        </div>
-    </div>
-
-    <div class="row">
-        <!-- Main Risk Card -->
-        <div class="col-lg-8">
-            <div class="card shadow mb-4">
-                <div class="card-header bg-{{ color }} text-white">
-                    <h4 class="mb-0">
-                        Current Risk Level: 
-                        <strong>{{ risk.risk_level|upper }}</strong>
-                    </h4>
-                </div>
-                <div class="card-body">
-                    <div class="text-center mb-4">
-                        <h1 class="display-1 fw-bold text-{{ color }}">
-                            {{ risk.risk_score }}
-                        </h1>
-                        <p class="text-muted">Risk Score (out of 100)</p>
-                    </div>
-
-                    <div class="alert alert-info">
-                        <strong>Week {{ pregnancy.get_pregnancy_week|default:"N/A" }} • 
-                        {{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong>
-                    </div>
-
-                    <!-- Explanation -->
-                    <h5 class="mt-4">AI Explanation</h5>
-                    <div class="border p-3 rounded bg-light">
-                        {{ risk.factors.llm_explanation|linebreaks }}
-                    </div>
-
-                    {% if family_note %}
-                        <hr>
-                        <h5>Family & Care Team Summary</h5>
-                        <div class="border p-3 rounded bg-light">
-                            {{ family_note|linebreaks }}
-                        </div>
-                    {% endif %}
-
-                    <hr>
-                    
-                    <!-- Recommendations -->
-                    <h5>Recommendations</h5>
-                    <ul class="list-group">
-                        <li class="list-group-item">Monitor fetal movements daily</li>
-                        <li class="list-group-item">Keep regular midwife visits</li>
-                        <li class="list-group-item">Control blood pressure and sugar levels</li>
-                    </ul>
+                <span class="risk-level risk-level--{{ risk.risk_level }}"><i class="fas {{ severity.icon }}"></i> {{ risk.risk_level }} risk</span>
+                <h2>{{ severity.title }}</h2>
+                <p>{{ severity.summary }}</p>
+                {% if human_review_required %}<div class="review-banner"><i class="fas fa-user-doctor"></i><span><strong>Human review required.</strong> The agent has flagged this record for a qualified care professional.</span></div>{% endif %}
+                <div class="risk-meta">
+                    <div><span>Mother</span><strong>{{ mother.user.get_full_name|default:mother.user.username }}</strong></div>
+                    <div><span>Pregnancy</span><strong>Week {{ pregnancy.get_pregnancy_week|default:"Not available" }}</strong></div>
+                    <div><span>Assessed</span><strong>{{ risk.created_at|date:"d M Y, H:i" }}</strong></div>
+                    <div><span>Assessment engine</span><strong>{{ risk.prediction_model_version|default:"Maternal care agent" }}</strong></div>
                 </div>
             </div>
-        </div>
+        </article>
 
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Trend -->
-            <div class="card shadow mb-4">
-                <div class="card-header">
-                    <h5>Risk Trend (Last 30 Days)</h5>
-                </div>
-                <div class="card-body">
-                    {% if trend.scores %}
-                        <p><strong>Trend:</strong> {{ trend.trend|title }}</p>
-                        <small class="text-muted">
-                            Latest: {{ trend.scores|last }} • 
-                            Previous: {{ trend.scores|first }}
-                        </small>
-                    {% else %}
-                        <p class="text-muted">No trend data yet.</p>
-                    {% endif %}
-                </div>
+        <aside class="risk-card">
+            <div class="trend-header">
+                <h2 class="risk-section-title"><i class="fas fa-chart-line"></i> 30-day trend</h2>
+                <span class="trend-badge">{{ trend.trend|title }}</span>
             </div>
+            {% if trend_points %}
+            <div class="trend-points">
+                {% for point in trend_points|slice:"-4:" %}
+                <div class="trend-point"><span>{{ point.date }}</span><strong>{{ point.score|floatformat:0 }}/100 · {{ point.level|title }}</strong></div>
+                {% endfor %}
+            </div>
+            {% else %}<p class="text-muted">The trend will appear after assessments are recorded.</p>{% endif %}
+        </aside>
+    </section>
 
-            <!-- Quick Info -->
-            <div class="card shadow">
-                <div class="card-body">
-                    <h6>Key Factors</h6>
-                    <ul>
-                        {% for factor in risk.factors.rule_factors %}
-                            <li class="text-danger">{{ factor }}</li>
-                        {% empty %}
-                            <li class="text-success">No major risk factors detected</li>
-                        {% endfor %}
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </div>
+    <section class="risk-grid">
+        <article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-file-waveform"></i> What the assessment means</h2>
+            <div class="risk-copy">{{ explanation|format_ai_summary }}</div>
+        </article>
+        <article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-list-check"></i> Recommended next steps</h2>
+            <ol class="recommendation-list">
+                {% for recommendation in recommendations %}<li><i class="fas fa-circle-check"></i><span>{{ recommendation }}</span></li>{% endfor %}
+            </ol>
+        </article>
+    </section>
 
-    {% if agent_run %}
-    <div class="row mt-4">
-        <div class="col-lg-8">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h4 class="mb-0"><i class="fas fa-route"></i> Agent reasoning trace</h4>
-                    <span class="badge bg-success">{{ agent_run.status|title }}</span>
-                </div>
-                <div class="card-body agent-trace">
-                    {% for step in agent_steps %}
-                    <article class="agent-step">
-                        <div class="agent-step-number">{{ step.sequence }}</div>
-                        <div>
-                            <h6>{{ step.label }}</h6>
-                            <p>{{ step.rationale }}</p>
-                            <span class="agent-tool">{{ step.tool_name }}</span>
-                            {% if step.output_data.risk_level %}<p><strong>Result:</strong> {{ step.output_data.risk_level|upper }} · {{ step.output_data.risk_score }}/100</p>{% endif %}
-                            {% if step.output_data.recipient_count %}<p><strong>Action:</strong> {{ step.output_data.recipient_count }} care-team notification{{ step.output_data.recipient_count|pluralize }} created.</p>{% endif %}
-                            {% if step.error %}<p class="text-danger">{{ step.error }}</p>{% endif %}
-                        </div>
-                    </article>
-                    {% endfor %}
-                </div>
+    <section class="risk-grid">
+        <article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-magnifying-glass-chart"></i> Contributing factors</h2>
+            {% if clinical_factors %}
+            <ul class="factor-list">{% for factor in clinical_factors %}<li><i class="fas fa-circle-exclamation"></i><span>{{ factor }}</span></li>{% endfor %}</ul>
+            {% else %}<div class="positive-state"><i class="fas fa-circle-check"></i> No major rule-based warning factors were detected in the recorded data.</div>{% endif %}
+        </article>
+        <article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-clipboard-list"></i> Information reviewed</h2>
+            <div class="feature-grid">
+                {% for item in feature_summary %}<div class="feature"><span>{{ item.label }}</span><strong>{{ item.value }}{% if item.unit %} {{ item.unit }}{% endif %}</strong></div>{% empty %}<p class="text-muted">No structured measurements were available.</p>{% endfor %}
             </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header"><h5 class="mb-0">Decision and actions</h5></div>
-                <div class="card-body">
-                    <p>{{ agent_run.result.reasoning }}</p>
-                    {% for action in agent_run.result.actions %}
-                    <div class="border rounded p-2 mb-2">
-                        <strong>{{ action.tool|cut:"_"|title }}</strong><br>
-                        <small class="text-muted">{{ action.status|title }}{% if action.recipient_count %} · {{ action.recipient_count }} recipients{% endif %}{% if action.alert_id %} · Alert #{{ action.alert_id }}{% endif %}</small>
-                    </div>
-                    {% endfor %}
-                    <div class="agent-safety mt-3"><i class="fas fa-user-doctor"></i> {{ agent_run.result.safety_boundary }}</div>
-                </div>
-            </div>
-        </div>
-    </div>
+        </article>
+    </section>
+
+    {% if lab_reports or actions %}
+    <section class="risk-grid">
+        {% if lab_reports %}<article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-flask-vial"></i> Lab reports reviewed</h2>
+            <div class="lab-list">{% for lab in lab_reports %}<article class="lab-item"><header><strong>{{ lab.test_name }}</strong><span class="lab-status {% if lab.is_abnormal %}lab-status--abnormal{% endif %}">{% if lab.is_abnormal %}Needs review{% else %}Recorded{% endif %}</span></header><p>{{ lab.plain_language|default:lab.summary }}</p>{% if lab.result_value %}<p><strong>Result:</strong> {{ lab.result_value }} {{ lab.unit }}{% if lab.normal_range %} · Reference: {{ lab.normal_range }}{% endif %}</p>{% endif %}</article>{% endfor %}</div>
+        </article>{% endif %}
+        {% if actions %}<article class="risk-card">
+            <h2 class="risk-section-title"><i class="fas fa-bell"></i> Care actions taken</h2>
+            <div class="action-list">{% for action in actions %}<div class="action-item"><span class="action-icon"><i class="fas fa-check"></i></span><div><strong>{{ action.label }}</strong><small>{{ action.detail }} · {{ action.status|title }}</small></div></div>{% endfor %}</div>
+        </article>{% endif %}
+    </section>
     {% endif %}
 
-    <form method="post" action="{% url 'ai_services:risk_assessment' pregnancy.id %}" class="mt-3">
-        {% csrf_token %}
-        <button type="submit" class="btn-pink">
-            <i class="fas fa-rotate"></i> Run Agent Again
-        </button>
-    </form>
-</div>
+    {% if agent_run %}
+    <details class="risk-card agent-details">
+        <summary><i class="fas fa-route"></i> Agent reasoning trace: view how this result was reached <span class="trend-badge">{{ agent_run.status|title }}</span></summary>
+        <div class="agent-trace">
+            {% for step in agent_steps %}<article class="agent-step"><div class="agent-step-number">{{ step.sequence }}</div><div><h3>{{ step.label }}</h3><p>{{ step.rationale }}</p><span class="agent-tool-id">Tool: {{ step.tool_name }}</span>{% if step.output_data.risk_level %}<p><strong>Result:</strong> {{ step.output_data.risk_level|upper }} · {{ step.output_data.risk_score|floatformat:0 }}/100</p>{% endif %}{% if step.output_data.recipient_count %}<p><strong>Action:</strong> {{ step.output_data.recipient_count }} care-team notification{{ step.output_data.recipient_count|pluralize }} created.</p>{% endif %}{% if step.error %}<p class="text-danger"><strong>Step error:</strong> {{ step.error }}</p>{% endif %}</div></article>{% empty %}<p class="text-muted">No step trace is available for this assessment.</p>{% endfor %}
+        </div>
+    </details>
+    {% endif %}
+
+    <aside class="safety-note"><i class="fas fa-shield-heart"></i><span><strong>This is decision support, not a diagnosis.</strong> A qualified clinician should interpret the result. For severe symptoms or an emergency, contact the maternity care team or local emergency services immediately.</span></aside>
+</main>
 {% endblock %}

@@ -12,7 +12,7 @@ from .forms import (
     ClinicScheduleForm,
     GroupForm,
 )
-from accounts.models import HospitalProfile, HospitalStaffProfile
+from accounts.models import HospitalProfile, HospitalStaffProfile, MidwifeProfile, Role
 from dashboards.models import ScheduleEvent, Clinics
 from django.http import JsonResponse
 from django.contrib.auth import get_user_model
@@ -33,6 +33,36 @@ def managed_hospital(user):
         user=user, is_active=True
     ).select_related("hospital").first()
     return staff.hospital if staff else None
+
+
+def midwife_group_owner(user):
+    if getattr(user, "role", None) != Role.MIDWIFE:
+        return None
+    return MidwifeProfile.objects.filter(user=user).first()
+
+
+def can_create_groups(user):
+    return managed_hospital(user) is not None or midwife_group_owner(user) is not None
+
+
+def can_manage_group(user, group):
+    hospital = managed_hospital(user)
+    if hospital and hospital == group.hospital:
+        return True
+    if group.created_by_id == user.id:
+        return True
+    return GroupMember.objects.filter(
+        group=group,
+        user=user,
+        role__in=[GroupMember.Role.ADMIN, GroupMember.Role.MIDWIFE],
+    ).exists()
+
+
+def midwife_linked_hospitals(user):
+    """Hospitals in care teams to which this midwife is currently linked."""
+    return HospitalProfile.objects.filter(
+        hospital_familiy__midwife__user=user,
+    ).distinct().order_by("name")
 
 
 def create_notification(user, notification_type, title, message, forum_post=None, hospital_group=None, clinic_schedule=None):
@@ -333,19 +363,39 @@ def post_detail(request, pk):
 
 @login_required
 def create_group(request):
-    """Hospital staff create custom groups"""
-    # Check if user is hospital staff
+    """Hospital teams and midwives create custom community groups."""
     hospital = managed_hospital(request.user)
-    
-    if not hospital:
-        messages.error(request, 'You must be a hospital staff member to create groups.')
+    midwife = midwife_group_owner(request.user)
+    if not hospital and not midwife:
+        messages.error(request, 'Only hospital teams and registered midwives can create groups.')
         return redirect('community:group_list')
+
+    linked_hospitals = midwife_linked_hospitals(request.user) if midwife else HospitalProfile.objects.none()
     
     if request.method == 'POST':
         form = GroupForm(request.POST)
         if form.is_valid():
             group = form.save(commit=False)
-            group.hospital = hospital
+            if hospital:
+                group.hospital = hospital
+            else:
+                selected_hospital_id = request.POST.get("hospital_id", "").strip()
+                selected_hospital = (
+                    linked_hospitals.filter(id=selected_hospital_id).first()
+                    if selected_hospital_id
+                    else None
+                )
+                if selected_hospital_id and not selected_hospital:
+                    form.add_error(None, "Select a hospital linked to your care teams.")
+                    return render(request, 'group_create.html', {
+                        'form': form,
+                        'hospital': None,
+                        'owner_label': f"Midwife {request.user.get_full_name() or request.user.username}",
+                        'available_hospitals': linked_hospitals,
+                        'is_midwife_owner': True,
+                    }, status=400)
+                group.hospital = selected_hospital
+                group.owner_midwife = midwife
             group.created_by = request.user
             group.save()
             GroupMember.objects.get_or_create(
@@ -361,7 +411,10 @@ def create_group(request):
     
     return render(request, 'group_create.html', {
         'form': form,
-        'hospital': hospital
+        'hospital': hospital,
+        'owner_label': hospital.name if hospital else f"Midwife {request.user.get_full_name() or request.user.username}",
+        'available_hospitals': linked_hospitals,
+        'is_midwife_owner': midwife is not None,
     })
 
 
@@ -429,7 +482,7 @@ def group_list(request):
     return render(request, 'group_list.html', {
         'groups': groups,
         'user_subscriptions': user_subscriptions,
-        'can_manage_groups': managed_hospital(request.user) is not None,
+        'can_manage_groups': can_create_groups(request.user),
         'user_group_ids': set(
             GroupMember.objects.filter(user=request.user).values_list('group_id', flat=True)
         ),
@@ -439,9 +492,9 @@ def group_list(request):
 @login_required
 def group_detail(request, pk):
     group = get_object_or_404(HospitalGroup, pk=pk)
-    can_manage_group = managed_hospital(request.user) == group.hospital
+    user_can_manage_group = can_manage_group(request.user, group)
     is_member = (
-        can_manage_group
+        user_can_manage_group
         or GroupMember.objects.filter(group=group, user=request.user).exists()
     )
     
@@ -450,9 +503,13 @@ def group_detail(request, pk):
         return redirect('community:group_list')
     
     posts = group.posts.all().order_by('-created_at')
-    clinic_schedules = group.hospital.clinic_schedules.filter(
-        scheduled_date__gte=timezone.now().date()
-    ).order_by('scheduled_date')[:10]
+    clinic_schedules = (
+        group.hospital.clinic_schedules.filter(
+            scheduled_date__gte=timezone.now().date()
+        ).order_by('scheduled_date')[:10]
+        if group.hospital_id
+        else ClinicSchedule.objects.none()
+    )
     
     # Get subscription info
     subscription = None
@@ -491,7 +548,7 @@ def group_detail(request, pk):
         'is_member': is_member,
         'form': form,
         'subscription': subscription,
-        'can_manage_group': can_manage_group,
+        'can_manage_group': user_can_manage_group,
     })
 
 
@@ -499,7 +556,7 @@ def group_detail(request, pk):
 @require_POST
 def join_group(request, pk):
     group = get_object_or_404(HospitalGroup, pk=pk)
-    if group.is_private and managed_hospital(request.user) != group.hospital:
+    if group.is_private and not can_manage_group(request.user, group):
         return HttpResponseForbidden("This group is private and requires an invitation.")
     # Default role set to PATIENT as per your model requirements
     member, created = GroupMember.objects.get_or_create(
@@ -508,7 +565,7 @@ def join_group(request, pk):
         defaults={
             'role': (
                 GroupMember.Role.ADMIN
-                if managed_hospital(request.user) == group.hospital
+                if can_manage_group(request.user, group)
                 else GroupMember.Role.PATIENT
             )
         }
@@ -561,21 +618,26 @@ def clinic_schedules(request, group_id):
     
     # Check if user is authorized to view (member of group or hospital staff)
     is_member = (
-        managed_hospital(request.user) == group.hospital
+        can_manage_group(request.user, group)
         or GroupMember.objects.filter(group=group, user=request.user).exists()
     )
     if group.is_private and not is_member:
         messages.error(request, 'You do not have access to this content.')
         return redirect('community:group_list')
     
-    schedules = group.hospital.clinic_schedules.filter(
-        scheduled_date__gte=timezone.now().date()
-    ).order_by('scheduled_date')
+    schedules = (
+        group.hospital.clinic_schedules.filter(
+            scheduled_date__gte=timezone.now().date()
+        ).order_by('scheduled_date')
+        if group.hospital_id
+        else ClinicSchedule.objects.none()
+    )
     
     return render(request, 'clinic_schedules.html', {
         'group': group,
         'schedules': schedules,
-        'is_member': is_member
+        'is_member': is_member,
+        'can_manage_group': can_manage_group(request.user, group),
     })
 
 
@@ -584,12 +646,11 @@ def create_clinic_schedule(request, group_id):
     """Hospital staff create clinic schedules"""
     group = get_object_or_404(HospitalGroup, pk=group_id)
     
-    # Check if user is authorized (hospital staff)
-    if group.hospital.user != request.user and not GroupMember.objects.filter(
-        group=group, 
-        user=request.user, 
-        role__in=['DOCTOR', 'NURSE', 'ADMIN']
-    ).exists():
+    if not group.hospital_id:
+        messages.error(request, 'Independent midwife groups do not have hospital clinic schedules.')
+        return redirect('community:group_detail', pk=group_id)
+
+    if not can_manage_group(request.user, group):
         messages.error(request, 'You are not authorized to create schedules.')
         return redirect('community:group_detail', pk=group_id)
     
@@ -614,6 +675,74 @@ def create_clinic_schedule(request, group_id):
         'form': form,
         'group': group
     })
+
+
+@login_required
+def manage_group(request, group_id):
+    group = get_object_or_404(HospitalGroup, pk=group_id)
+    if not can_manage_group(request.user, group):
+        return HttpResponseForbidden("You cannot manage this group.")
+
+    form = GroupForm(instance=group)
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'update_group':
+            form = GroupForm(request.POST, instance=group)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Group details updated.')
+                return redirect('community:manage_group', group_id=group.id)
+        elif action == 'add_member':
+            identifier = request.POST.get('username', '').strip()
+            role = request.POST.get('role', GroupMember.Role.PATIENT)
+            if role not in GroupMember.Role.values:
+                messages.error(request, 'Select a valid member role.')
+            else:
+                user = User.objects.filter(username__iexact=identifier).first()
+                if not user:
+                    messages.error(request, 'No user was found with that username.')
+                else:
+                    member, created = GroupMember.objects.get_or_create(
+                        group=group,
+                        user=user,
+                        defaults={'role': role},
+                    )
+                    if not created and member.role != role:
+                        member.role = role
+                        member.save(update_fields=['role'])
+                    HospitalGroupSubscription.objects.get_or_create(
+                        user=user,
+                        hospital_group=group,
+                    )
+                    messages.success(request, f'{user.username} is now a group member.')
+                    return redirect('community:manage_group', group_id=group.id)
+
+    return render(request, 'group_manage.html', {
+        'group': group,
+        'form': form,
+        'members': group.members.select_related('user').order_by('role', 'user__username'),
+        'role_choices': GroupMember.Role.choices,
+    })
+
+
+@login_required
+@require_POST
+def remove_group_member(request, group_id, member_id):
+    group = get_object_or_404(HospitalGroup, pk=group_id)
+    if not can_manage_group(request.user, group):
+        return HttpResponseForbidden("You cannot manage this group.")
+    member = get_object_or_404(GroupMember, pk=member_id, group=group)
+    if member.user_id == group.created_by_id:
+        messages.error(request, 'The group creator cannot be removed.')
+    else:
+        username = member.user.username
+        HospitalGroupSubscription.objects.filter(
+            user=member.user,
+            hospital_group=group,
+        ).delete()
+        member.delete()
+        messages.success(request, f'{username} was removed from the group.')
+    return redirect('community:manage_group', group_id=group.id)
 
 
 @login_required

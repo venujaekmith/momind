@@ -54,13 +54,38 @@
 
 html { accent-color: var(--mm-primary-dark); }
 
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
+    margin: 0;
     color: var(--mm-text);
     background:
         radial-gradient(circle at 8% 9%, rgba(232, 93, 143, .12), transparent 28%),
         radial-gradient(circle at 92% 91%, rgba(255, 184, 203, .18), transparent 30%),
         linear-gradient(145deg, #fff5f8 0%, #fff 48%, #fdeaf0 100%);
 }
+
+body, button, input, select, textarea {
+    font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6,
+.logo h1, .logo-area h1, .sidebar-brand h2, .pp-brand strong {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+}
+
+p, ul, ol { margin-top: 0; }
+img, svg, canvas { max-width: 100%; }
+button, a, input, select, textarea { min-width: 0; }
+button, a { -webkit-tap-highlight-color: transparent; }
 
 ::selection { color: #fff; background: var(--mm-primary-dark); }
 
@@ -71,6 +96,56 @@ body {
 
 :where(input, select, textarea) {
     caret-color: var(--mm-primary-dark);
+}
+
+:where(.btn-gradient, .btn-pink, .btn-outline-pink, .pp-button, .submit-btn, .continue-button) {
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
+}
+
+:where(.grid-2, .grid-3, .grid-4, .stats-grid, .dashboard-quick-actions) > * {
+    min-width: 0;
+    height: 100%;
+}
+
+:where(.flex-between, .inline-form, .form-actions, .pp-button-row) > * {
+    min-width: 0;
+}
+
+:where(.card-pink, .glass-card, .details-card, .pp-card, .section-card) {
+    width: 100%;
+}
+
+:where(.table-responsive) {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+:where(.table-modern, table) {
+    max-width: 100%;
+    border-collapse: collapse;
+}
+
+:where(.form-group, form > p) label {
+    display: block;
+    margin-bottom: .35rem;
+}
+
+:where(.form-group, form > p) input:not([type="checkbox"]):not([type="radio"]),
+:where(.form-group, form > p) select,
+:where(.form-group, form > p) textarea {
+    width: 100%;
+}
+
+.login-card a, .register-card a, .details-card a {
+    color: var(--mm-primary-dark);
+    font-weight: 650;
+    text-underline-offset: 3px;
 }
 
 :where(.page-shell, .register-page, .login-page, .role-page) {
@@ -108,5 +183,26 @@ body {
         animation-duration: .01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: .01ms !important;
+    }
+}
+
+@media (max-width: 768px) {
+    html { font-size: 15px; }
+    :where(.page-shell, .register-page, .login-page, .role-page, .details-page) {
+        padding-inline: 1rem;
+    }
+    :where(.login-card, .register-card, .details-card, .role-card) {
+        padding: 1.5rem 1.15rem;
+        border-radius: 18px;
+    }
+    :where(.flex-between) {
+        align-items: stretch;
+    }
+    :where(.table-modern) {
+        display: block;
+        width: 100%;
+        overflow-x: auto;
+        white-space: nowrap;
+        -webkit-overflow-scrolling: touch;
     }
 }

@@ -138,6 +138,29 @@
     <div id="qrcode" style="margin-top: 1rem;"></div>
 </div>
 
+{% if pregnancy %}
+<p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+<nav class="dashboard-quick-actions" aria-label="Mother dashboard quick actions">
+    <a href="{% url 'dashboards:pregnancy_detail' pregnancy.id %}" class="dashboard-action">
+        <i class="fas fa-notes-medical"></i><span><strong>My Health Record</strong><small>Details, reports and care notes</small></span>
+    </a>
+    <a href="{% url 'ai_services:show_risk' pregnancy.id %}" class="dashboard-action">
+        <i class="fas fa-brain"></i><span><strong>AI Risk Review</strong><small>Run the maternal care agent</small></span>
+    </a>
+    <a href="#my-schedule" class="dashboard-action">
+        <i class="fas fa-calendar-check"></i><span><strong>My Schedule</strong><small>{% if next_event %}Next: {{ next_event.scheduled_date|date:'d M' }}{% else %}Add an appointment{% endif %}</small></span>
+    </a>
+    <a href="{% url 'accounts:mother_details' %}" class="dashboard-action">
+        <i class="fas fa-user-pen"></i><span><strong>Update My Profile</strong><small>Personal and health information</small></span>
+    </a>
+    {% if is_postpartum %}
+    <a href="{% url 'postpartum:postpartum_dashboard' %}?pregnancy={{ pregnancy.id }}" class="dashboard-action">
+        <i class="fas fa-spa"></i><span><strong>Postpartum Care</strong><small>Mood, recovery and wellbeing</small></span>
+    </a>
+    {% endif %}
+</nav>
+{% endif %}
+
 {% if warning %}
 <div class="alert alert-warning">
     <i class="fas fa-exclamation-triangle"></i> Please add your partner and midwife for your account!
@@ -162,7 +185,6 @@
         <p>Kick Sessions</p>
     </div>
 </div>
-
 {% if not is_postpartum and pregnancy %}
 <div class="alert alert-info">
     <i class="fas fa-info-circle"></i> You're in your pregnancy journey!
@@ -291,7 +313,7 @@
 {% endif %}
 
 <!-- Calendar Schedule -->
-<div class="calendar-wrapper">
+<div class="calendar-wrapper dashboard-anchor" id="my-schedule">
     <h3><i class="fas fa-calendar-alt"></i> Your Schedule</h3>
     <div id="scheduleCalendar"></div>
     <div style="margin-top: 1rem;">
@@ -301,27 +323,16 @@
     </div>
 </div>
 
-{% if hospital_queue_count and hospital_name %}
+{% if my_hospital_visit and hospital_name %}
 <div class="card-pink">
-    <h3><i class="fas fa-user-clock"></i> Hospital Queue for {{ hospital_name }}</h3>
-    <p>There are <strong>{{ hospital_queue_count }}</strong> hospital clinic visits scheduled for today.</p>
-    <table class="table-modern" style="margin-top: 1rem; width: 100%;">
-        <thead>
-            <tr><th>Time</th><th>Patient</th><th>Visit</th></tr>
-        </thead>
-        <tbody>
-            {% for visit in hospital_queue %}
-            <tr>
-                <td>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</td>
-                <td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td>
-                <td>{{ visit.title }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% if hospital_queue_next %}
-    <p style="margin-top: 1rem;"><strong>Next in queue:</strong> {{ hospital_queue_next.pregnancy.mother.user.get_full_name|default:hospital_queue_next.pregnancy.mother.user.username }} at {{ hospital_queue_next.scheduled_time|time:"H:i"|default:"TBD" }}</p>
-    {% endif %}
+    <h3><i class="fas fa-user-clock"></i> Your Hospital Visit</h3>
+    <div class="dashboard-visit-summary">
+        <div><span>Hospital</span><strong>{{ hospital_name }}</strong></div>
+        <div><span>Scheduled time</span><strong>{{ my_hospital_visit.scheduled_time|time:"H:i"|default:"TBD" }}</strong></div>
+        <div><span>Your queue position</span><strong>#{{ my_queue_position }} of {{ hospital_queue_count }}</strong></div>
+        <div><span>Visit</span><strong>{{ my_hospital_visit.title }}</strong></div>
+    </div>
+    <p class="text-muted">Only your own appointment is shown to protect other patients' privacy.</p>
 </div>
 {% elif family != 'none' and family.hospital %}
 <div class="card-pink">
@@ -400,6 +411,7 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <!-- Water Tracker -->
+<div class="dashboard-tracker-grid">
 <div class="card-pink">
     <h3><i class="fas fa-tint"></i> Daily Water Intake</h3>
     <progress value="{{ daily_water }}" max="2500" style="width: 100%; height: 20px; border-radius: 10px;"></progress>
@@ -437,6 +449,7 @@ document.addEventListener('DOMContentLoaded', function() {
         </tbody>
     </table>
     {% endif %}
+</div>
 </div>
 
 <!-- Pregnancy Progress -->
@@ -491,6 +504,6 @@ document.addEventListener('DOMContentLoaded', function() {
     {% endif %}
 </div>
 
-<a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-outline-pink">View My Details</a>
+<a href="{% url 'dashboards:pregnancy_detail' pregnancy.id %}" class="btn-outline-pink">View Complete Health Record</a>
 </div>
 {% endblock %} 

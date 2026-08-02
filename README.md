@@ -166,8 +166,14 @@ dependencies are:
 
 Frontend templates also load Bootstrap, Font Awesome, FullCalendar, Chart.js,
 Marked, QRCode.js, html5-qrcode, and Google Fonts from their respective CDNs.
-Before public distribution, the team should select a project license and retain
-the required notices for every redistributed third-party asset.
+
+## License and third-party software
+
+Momind's original source code is available under the [MIT License](LICENSE).
+Dependencies, hosted AI services, models, icons, and fonts remain subject to
+their own licenses and service terms. See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)
+for the applicable acknowledgements and redistribution notes. Uploaded or
+user-provided files are not automatically covered by the project's MIT License.
 
 ## Future enhancement roadmap
 

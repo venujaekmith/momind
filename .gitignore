@@ -8,4 +8,8 @@ __pycache__/
 htmlcov/
 staticfiles/
 media/
+*.sqlite3
 *.sqlite3-journal
+/api
+labs_attachments/
+forum_attachments/

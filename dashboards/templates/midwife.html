@@ -10,7 +10,7 @@
     <nav class="dashboard-quick-actions" aria-label="Midwife dashboard quick actions">
         <a href="#active-mothers" class="dashboard-action"><i class="fas fa-person-pregnant"></i><span><strong>Active Mothers</strong><small>{{ total_active }} records</small></span></a>
         <a href="#care-schedule" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Care Schedule</strong><small>{{ upcoming_visits|length }} upcoming visits</small></span></a>
-        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-people-group"></i><span><strong>Care Groups</strong><small>Create and manage</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-users"></i><span><strong>Care Groups</strong><small>Create and manage</small></span></a>
         <a href="{% url 'accounts:midwife_details' %}" class="dashboard-action"><i class="fas fa-id-card"></i><span><strong>My Profile</strong><small>Credentials and service area</small></span></a>
     </nav>
 
@@ -32,7 +32,7 @@
 
     <div class="dashboard-focus-grid">
         <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-baby"></i> Postpartum Care</h3><span class="dashboard-status">{{ total_postpartum }}</span></div><div class="dashboard-record-grid">{% for pregnancy in postpartum_pregnancies %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ pregnancy.mother.user.get_full_name|default:pregnancy.mother.user.username }}</strong><span class="dashboard-status">{{ pregnancy.status|capfirst }}</span></header><div class="dashboard-record-meta"><div><span>Pregnancy</span><strong>#{{ pregnancy.pregnancy_number }}</strong></div><div><span>Delivery</span><strong>{{ pregnancy.actual_delivery_date|date:"d M Y"|default:"Not recorded" }}</strong></div></div><div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' pregnancy.id %}" class="btn-pink">Open record</a><a href="{% url 'dashboards:add_schedule' pregnancy.id %}" class="btn-outline-pink">Schedule follow-up</a></div></article>{% empty %}<div class="dashboard-empty">No postpartum mothers currently assigned.</div>{% endfor %}</div></section>
-        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-people-group"></i> Community Support</h3><a href="{% url 'community:group_list' %}" class="btn-outline-pink">View groups</a></div><p>Create support groups for mothers or manage hospital communities where you are a linked midwife.</p><a href="{% url 'community:create_group' %}" class="btn-pink"><i class="fas fa-plus"></i> Create care group</a></section>
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-users"></i> Community Support</h3><a href="{% url 'community:group_list' %}" class="btn-outline-pink">View groups</a></div><p>Create support groups for mothers or manage hospital communities where you are a linked midwife.</p><a href="{% url 'community:create_group' %}" class="btn-pink"><i class="fas fa-plus"></i> Create care group</a></section>
     </div>
 
     <section class="card-pink">

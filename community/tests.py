@@ -5,9 +5,14 @@ from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.models import HospitalProfile, MidwifeProfile, Role
-from dashboards.models import Clinics
-from .models import GroupMember, HospitalGroup, HospitalGroupSubscription
+from accounts.models import HospitalProfile, MidwifeProfile, MotherProfile, Role
+from dashboards.models import Clinics, Pregnancy, ScheduleEvent
+from .models import (
+    CommunityNotification,
+    GroupMember,
+    HospitalGroup,
+    HospitalGroupSubscription,
+)
 
 
 class CommunityPermissionTests(TestCase):
@@ -68,6 +73,41 @@ class CommunityPermissionTests(TestCase):
             {"message": "Changed"},
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_clinic_announcement_notifies_booked_patients_and_subscribers_once(self):
+        clinic = Clinics.objects.create(
+            hospital=self.hospital,
+            name="Antenatal clinic",
+            date=timezone.localdate() + timedelta(days=1),
+        )
+        mother = MotherProfile.objects.create(
+            user=self.regular_user,
+            mother_id="M-COMMUNITY",
+        )
+        pregnancy = Pregnancy.objects.create(mother=mother)
+        ScheduleEvent.objects.create(
+            pregnancy=pregnancy,
+            title="Antenatal appointment",
+            event_type="hospital_clinic",
+            scheduled_date=clinic.date,
+            clinic=clinic,
+        )
+        HospitalGroupSubscription.objects.create(
+            user=self.regular_user,
+            hospital_group=self.group,
+        )
+
+        self.client.force_login(self.hospital_user)
+        response = self.client.post(
+            reverse("community:create_clinic_announcement", args=[clinic.id]),
+            {"message": "The clinic will begin at 9:00 AM."},
+        )
+
+        self.assertRedirects(response, reverse("community:hospital_dashboard"))
+        notification = CommunityNotification.objects.get(user=self.regular_user)
+        self.assertEqual(notification.notification_type, "hospital_announcement")
+        self.assertEqual(notification.hospital_group, self.group)
+        self.assertIsNone(notification.clinic_schedule)
 
     def test_forum_creation_requires_login(self):
         response = self.client.get(reverse("community:create_post"))

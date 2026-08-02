@@ -1518,7 +1518,7 @@
                     {% if user.role == 'HOSPITAL_STAFF' %}<a href="{% url 'accounts:hospital_staff_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
                     <a href="{% url 'chat:chatbot' %}" class="{% if active_url == 'chatbot' %}active{% endif %}"><i class="fas fa-robot"></i> AI Assistant</a>
                     <a href="{% url 'community:forum_home' %}" class="{% if active_url == 'forum_home' %}active{% endif %}"><i class="fas fa-comments"></i> Community Forum</a>
-                    <a href="{% url 'community:group_list' %}" class="{% if active_url == 'group_list' %}active{% endif %}"><i class="fas fa-people-group"></i> Care Groups</a>
+                    <a href="{% url 'community:group_list' %}" class="{% if active_url == 'group_list' %}active{% endif %}"><i class="fas fa-users"></i> Care Groups</a>
                     <a href="{% url 'dashboards:clinic_directory' %}" class="{% if active_url == 'clinic_directory' %}active{% endif %}"><i class="fas fa-hospital-user"></i> Clinics</a>
                     <button type="button" id="showNotificationsBtn" onclick="showNotifications()" class="nav-bell" aria-haspopup="dialog" aria-controls="notificationsModal">
                         <i class="fas fa-bell"></i> Notifications

@@ -19,7 +19,7 @@
     <nav class="dashboard-quick-actions" aria-label="Doctor dashboard quick actions">
         <a href="#doctor-appointments" class="dashboard-action"><i class="fas fa-calendar-check"></i><span><strong>Appointments</strong><small>{{ my_appointments|length }} upcoming</small></span></a>
         <a href="#assigned-pregnancies" class="dashboard-action"><i class="fas fa-notes-medical"></i><span><strong>Patient Records</strong><small>{{ pregnancies|length }} assigned</small></span></a>
-        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-people-group"></i><span><strong>Care Groups</strong><small>Open communities</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-users"></i><span><strong>Care Groups</strong><small>Open communities</small></span></a>
         <a href="{% url 'accounts:doctor_details' %}" class="dashboard-action"><i class="fas fa-id-card"></i><span><strong>My Profile</strong><small>Credentials and specialty</small></span></a>
     </nav>
 

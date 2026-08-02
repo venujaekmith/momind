@@ -70,6 +70,12 @@ python3 manage.py createsuperuser
 python3 manage.py runserver
 ```
 
+If the virtual environment is not activated, run it directly with:
+
+```bash
+env/bin/python manage.py runserver
+```
+
 7. Open the app in your browser at `http://127.0.0.1:8000/`.
 
 ## Demo data
@@ -163,15 +169,122 @@ Marked, QRCode.js, html5-qrcode, and Google Fonts from their respective CDNs.
 Before public distribution, the team should select a project license and retain
 the required notices for every redistributed third-party asset.
 
-## Future plans
+## Future enhancement roadmap
+
+The items below are planned enhancements, not claims about the current
+prototype. Development will remain human-supervised, privacy-conscious, and
+clinically reviewed.
+
+### 1. Independent doctors and broader care networks
+
+- Allow verified independent doctors to join without requiring employment by a
+  registered hospital.
+- Add credential verification, specialty, service area, availability, referral
+  acceptance, and professional-status workflows.
+- Support consent-based links between independent clinicians, mothers,
+  midwives, laboratories, and hospitals, with time-limited access where needed.
+- Add referral, second-opinion, handover, and clinician substitution workflows
+  while preserving a complete audit history.
+
+### 2. Shared doctor-midwife care workspace
+
+- Introduce a shared dashboard for care plans, observations, appointments,
+  tasks, referrals, and follow-up ownership.
+- Add structured handover notes, secure team messaging, mentions, and read
+  receipts so important updates are not lost between visits.
+- Show which professional is responsible for each next action and when it is
+  due, with escalation for overdue reviews.
+- Require human acknowledgement and resolution notes for high-risk agent
+  alerts; the AI remains decision support rather than an autonomous clinician.
+
+### 3. A richer mother experience
+
+- Add a personalized daily and weekly care plan, appointment preparation,
+  symptom journaling, medicine and supplement reminders, and easier access to
+  personal health details.
+- Provide pregnancy and postpartum education reviewed by clinicians and adapted
+  to pregnancy stage, language, and recorded needs.
+- Add consent controls that clearly show who can access each part of the record,
+  plus self-service export, correction, and access-revocation requests.
+- Expand postpartum recovery, mental-wellness, breastfeeding, newborn-care,
+  and family-support workflows without replacing professional care.
+
+### 4. Secure and encrypted lab-report handling
+
+- Encrypt uploaded reports in transit and at rest using envelope encryption,
+  with keys held outside application storage by a managed key service.
+- Use role- and relationship-based authorization, short-lived signed download
+  links, access logs, key rotation, secure backups, and configurable retention
+  and deletion policies.
+- Add malware scanning, file-type validation, integrity hashes, upload limits,
+  and protection against unsafe document parsing.
+- Keep AI processing consent-based, minimize the information sent to external
+  providers, and support private or locally hosted analysis where required.
+
+### 5. Stronger hospital alignment and interoperability
+
+- Integrate with authorized hospital registration, laboratory, appointment,
+  referral, pharmacy, and discharge workflows.
+- Use documented healthcare interoperability approaches such as HL7 FHIR where
+  appropriate instead of creating irreversible vendor-specific integrations.
+- Add hospital-configurable roles, departments, clinic rules, escalation paths,
+  approval queues, and service-level reporting.
+- Preserve data provenance so clinicians can distinguish patient-entered,
+  device-generated, imported, and professionally verified observations.
+
+### 6. Hospital-scale data and operations
+
+- Move production workloads from SQLite to PostgreSQL and use background jobs,
+  caching, object storage, pagination, and indexed search for large datasets.
+- Add tenant isolation, rate limits, idempotent imports, bulk scheduling,
+  duplicate detection, and safe retry handling.
+- Introduce monitoring, audit-event pipelines, encrypted backups, disaster
+  recovery, performance testing, and capacity planning.
+- Give hospitals privacy-preserving operational dashboards for clinic demand,
+  waiting times, workload, missed follow-ups, and resource planning.
+
+### 7. Smart midwife matching and route planning
+
+- Recommend midwives using consented location, availability, workload,
+  language, verified skills, care continuity, risk needs, and travel time.
+- Explain why a match was recommended, monitor fairness, and always allow the
+  mother or authorized coordinator to choose or override the recommendation.
+- Create optimized visit routes with time windows, priority, transport limits,
+  and emergency constraints while revealing precise locations only to
+  authorized users.
+- Add offline visit lists, safe check-in, navigation handoff, route changes, and
+  workload balancing for community care teams.
+
+### 8. Wearables and connected health data
+
+- Integrate consented sources such as Apple Health, Android Health Connect, and
+  supported clinical devices for activity, sleep, heart rate, blood pressure,
+  glucose, and other relevant observations.
+- Normalize units, record device provenance and quality, detect missing or
+  implausible readings, and let users pause or revoke synchronization.
+- Summarize trends for clinicians without treating consumer-device readings as
+  diagnoses; safety alerts will use clinically reviewed thresholds and human
+  confirmation.
+
+### 9. Accessibility, inclusion, and continuity of care
+
+- Add Sinhala and Tamil interfaces, locally reviewed safety language, accessible
+  forms, screen-reader support, and low-literacy presentation modes.
+- Build an offline-friendly progressive web experience with queued sync for
+  communities with intermittent connectivity.
+- Add teleconsultation, referral tracking, emergency contact guidance, and
+  continuity plans when a clinician becomes unavailable.
+
+### 10. Responsible AI and measurable outcomes
 
 - Validate thresholds and model performance with clinicians and representative,
-  consented datasets.
-- Add clinician approval queues for urgent actions and escalation resolution.
-- Add model/tool versioning, evaluation datasets, and false-positive monitoring.
-- Add Sinhala and Tamil interfaces and locally reviewed safety language.
-- Encrypt sensitive fields and add retention/export/deletion workflows.
-- Integrate authorized hospital scheduling and notification providers.
+  consented datasets before clinical deployment.
+- Add versioned models and tools, evaluation datasets, bias and drift checks,
+  false-positive monitoring, and rollback controls.
+- Measure useful outcomes such as earlier reviewed warning signs, completed
+  follow-ups, reduced coordination delays, and clinic waiting-time improvements.
+- Support de-identified research and public-health analysis only with suitable
+  governance, consent or legal authority, and re-identification safeguards.
 
 ## Prototype evolution
 

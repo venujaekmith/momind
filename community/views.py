@@ -133,33 +133,33 @@ def notify_clinic_schedule(clinic_schedule):
             )
 
 
-def notify_clinic_patients(clinic_schedule, title, message):
-        """Notify all patients who have appointments in the given clinic (ScheduleEvent).
-        Also notify hospital group subscribers via existing helper.
-        """
-        # Notify patients with appointments in this clinic
-        appointments = ScheduleEvent.objects.filter(clinic=clinic_schedule)
-        users = set()
-        for appt in appointments.select_related('pregnancy__mother__user'):
-            try:
-                user = appt.pregnancy.mother.user
-                users.add(user)
-            except Exception:
-                continue
-
-        for user in users:
-            create_notification(
-                user=user,
-                notification_type='clinic_schedule',
-                title=title,
-                message=message,
-                clinic_schedule=clinic_schedule
+def notify_clinic_patients(clinic, title, message):
+        """Notify booked patients and opted-in hospital group subscribers."""
+        patient_ids = set(
+            ScheduleEvent.objects.filter(clinic=clinic).values_list(
+                'pregnancy__mother__user_id', flat=True
             )
+        )
+        recipient_groups = {user_id: None for user_id in patient_ids}
 
-        # Also notify hospital group subscribers
-        group = HospitalGroup.objects.filter(hospital=clinic_schedule.hospital).first()
-        if group:
-            notify_hospital_group_subscribers(None, group)
+        subscriptions = HospitalGroupSubscription.objects.filter(
+            hospital_group__hospital=clinic.hospital,
+            notify_announcements=True,
+        ).select_related('hospital_group')
+        for subscription in subscriptions:
+            recipient_groups[subscription.user_id] = subscription.hospital_group
+
+        users = User.objects.in_bulk(recipient_groups)
+        for user_id, group in recipient_groups.items():
+            user = users.get(user_id)
+            if user:
+                create_notification(
+                    user=user,
+                    notification_type='hospital_announcement',
+                    title=title,
+                    message=message,
+                    hospital_group=group,
+                )
 
 
 @login_required
@@ -205,7 +205,10 @@ def create_clinic_announcement(request, clinic_id):
             return HttpResponseForbidden("You cannot manage this clinic.")
 
         title = request.POST.get('title') or f"Announcement: {clinic.name}"
-        message = request.POST.get('message') or ''
+        message = (request.POST.get('message') or '').strip()
+        if not message:
+            messages.error(request, 'Enter an announcement message.')
+            return redirect('community:hospital_dashboard')
 
         # Notify patients booked for this clinic and subscribers
         notify_clinic_patients(clinic, title, message)

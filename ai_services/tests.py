@@ -52,6 +52,16 @@ class LabReportAnalysisServiceTests(SimpleTestCase):
 
         self.assertEqual(analysis["urgency"], "monitor")
 
+    def test_normalizes_descriptive_model_urgency(self):
+        service = LabReportAnalysisService()
+
+        urgency = service._normalize_urgency(
+            "Non‑urgent – no immediate action required.",
+            is_abnormal=False,
+        )
+
+        self.assertEqual(urgency, "monitor")
+
 
 class AISummaryFormattingTests(SimpleTestCase):
     def test_formats_headings_lists_tables_and_escapes_model_output(self):

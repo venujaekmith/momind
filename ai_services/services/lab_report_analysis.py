@@ -118,13 +118,32 @@ class LabReportAnalysisService:
             "plain_language": payload.get("plain_language") or payload.get("summary") or self._fallback_summary(lab_test, context),
             "key_findings": payload.get("key_findings") or self._derive_findings(lab_test, context),
             "recommendations": payload.get("recommendations") or payload.get("next_steps") or self._default_recommendations(lab_test, context),
-            "urgency": payload.get("urgency") or ("urgent" if lab_test.is_abnormal else "monitor"),
+            "urgency": self._normalize_urgency(payload.get("urgency"), lab_test.is_abnormal),
             "result_value": context.get("result_value"),
             "unit": context.get("unit"),
             "normal_range": context.get("normal_range"),
             "is_abnormal": lab_test.is_abnormal,
             "taken_date": lab_test.taken_date,
         }
+
+    @staticmethod
+    def _normalize_urgency(value: Any, is_abnormal: bool) -> str:
+        """Convert model-generated urgency text into a stable API value."""
+        default = "urgent" if is_abnormal else "monitor"
+        if not isinstance(value, str):
+            return default
+
+        normalized = value.strip().lower()
+        if normalized in {"urgent", "monitor"}:
+            return normalized
+
+        urgent_terms = ("urgent", "immediate", "emergency", "critical")
+        non_urgent_terms = ("non-urgent", "non urgent", "non‑urgent", "routine", "monitor")
+        if any(term in normalized for term in non_urgent_terms):
+            return "monitor"
+        if any(term in normalized for term in urgent_terms):
+            return "urgent"
+        return default
 
     def _fallback_analysis(self, lab_test: LabTest, context: Dict[str, Any]) -> Dict[str, Any]:
         return {

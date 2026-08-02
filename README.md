@@ -34,7 +34,7 @@ remembers previous assessments, and takes bounded care-coordination actions.
 
 ```bash
 python3 -m venv env
-source env/bin/activate
+source venv/bin/activate
 ```
 
 2. Install dependencies.

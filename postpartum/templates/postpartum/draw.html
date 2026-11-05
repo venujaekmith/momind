@@ -1,0 +1,41 @@
+{% extends 'postpartum/base.html' %}
+{% block title %}Draw your feelings{% endblock %}
+{% block nav_companion %}active{% endblock %}
+{% block extra_css %}
+.canvas-card{padding:1rem;background:#fff;border:1px solid var(--pp-border);border-radius:17px;box-shadow:var(--pp-shadow)}.canvas-wrap{position:relative;overflow:hidden;border:2px solid #efc8d3;border-radius:12px;background:#fff}canvas{display:block;width:100%;height:auto;touch-action:none;cursor:crosshair}.draw-tools{display:flex;align-items:center;gap:.55rem;flex-wrap:wrap;margin-top:.8rem}.swatch{width:30px;height:30px;padding:0;border:3px solid #fff;border-radius:50%;box-shadow:0 0 0 1px #dab0bc;cursor:pointer;transition:.15s}.swatch:hover,.swatch.on{transform:scale(1.13);box-shadow:0 0 0 2px var(--pp-primary-dark)}.tool-separator{width:1px;height:28px;background:var(--pp-border)}.brush-size{display:flex;align-items:center;gap:.45rem;color:var(--pp-muted);font-size:.72rem}.brush-size input{accent-color:var(--pp-primary-dark)}@media(max-width:600px){.tool-separator{display:none}.draw-tools .pp-button{min-height:40px;padding:.55rem .7rem}}
+{% endblock %}
+{% block content %}
+<header class="pp-page-header"><div><span class="pp-eyebrow">Creative reflection</span><h1>Draw how you feel</h1><p>There is no right or wrong. Use color, shape, and movement to express whatever is present.</p></div><a href="{% url 'postpartum:ai_dash' %}" class="pp-button pp-button-secondary"><i class="fas fa-arrow-left"></i> Companion</a></header>
+<div class="canvas-card">
+    <div class="canvas-wrap"><canvas id="drawing-canvas" width="900" height="440" aria-label="Drawing canvas"></canvas></div>
+    <div class="draw-tools" aria-label="Drawing tools">
+        <button type="button" class="swatch on" style="background:#3f2630" data-color="#3f2630" onclick="setColor(this)" aria-label="Dark plum"></button><button type="button" class="swatch" style="background:#e85d8f" data-color="#e85d8f" onclick="setColor(this)" aria-label="Pink"></button><button type="button" class="swatch" style="background:#e18a45" data-color="#e18a45" onclick="setColor(this)" aria-label="Orange"></button><button type="button" class="swatch" style="background:#49a579" data-color="#49a579" onclick="setColor(this)" aria-label="Green"></button><button type="button" class="swatch" style="background:#4e8ed1" data-color="#4e8ed1" onclick="setColor(this)" aria-label="Blue"></button><button type="button" class="swatch" style="background:#826dc7" data-color="#826dc7" onclick="setColor(this)" aria-label="Purple"></button>
+        <span class="tool-separator"></span><label class="brush-size" for="brush-size">Brush <input type="range" id="brush-size" min="1" max="24" value="5"></label>
+        <button type="button" class="pp-button pp-button-secondary" onclick="setEraser()" id="eraser-button"><i class="fas fa-eraser"></i> Eraser</button><button type="button" class="pp-button pp-button-secondary" onclick="undoDrawing()"><i class="fas fa-rotate-left"></i> Undo</button><button type="button" class="pp-button pp-button-danger" onclick="clearDrawing()"><i class="fas fa-trash"></i> Clear</button><button type="button" class="pp-button pp-button-secondary" onclick="downloadDrawing()"><i class="fas fa-download"></i> Save image</button><button type="button" class="pp-button" onclick="analyzeDrawing()" id="analyze-button"><i class="fas fa-sparkles"></i> Reflect on drawing</button>
+    </div>
+</div>
+<div id="drawing-error" class="pp-error" style="display:none;margin-top:.8rem;" role="alert"></div>
+<section id="result-card" class="pp-card" style="display:none;margin-top:1rem;">
+    <div class="pp-card-title"><div><i class="fas fa-heart-pulse"></i><h2>Reflection from your drawing</h2></div><span class="pp-badge" id="result-tag"></span></div><div class="pp-score"><strong id="result-score">—</strong><span>/ 100</span></div><div class="pp-progress-wrap"><div class="pp-progress" id="result-bar" style="width:0%"></div></div><p id="result-insight" style="margin:.9rem 0 0;"></p><div class="pp-button-row"><a href="{% url 'postpartum:wellness' %}" class="pp-button">View wellness summary <i class="fas fa-arrow-right"></i></a></div>
+</section>
+<div class="pp-safety-note"><i class="fas fa-palette"></i><span>Drawing analysis is reflective rather than diagnostic. Your image stays associated with your private account.</span></div>
+{% endblock %}
+{% block extra_js %}
+<script>
+const canvas=document.getElementById('drawing-canvas'),ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.lineCap='round';ctx.lineJoin='round';let drawing=false,erasing=false,color='#3f2630',lastX=0,lastY=0,hasDrawing=false,history=[];
+function saveState(){if(history.length>=12)history.shift();history.push(ctx.getImageData(0,0,canvas.width,canvas.height))}
+function position(event){const rect=canvas.getBoundingClientRect(),point=event.touches?event.touches[0]:event;return{x:(point.clientX-rect.left)*(canvas.width/rect.width),y:(point.clientY-rect.top)*(canvas.height/rect.height)}}
+function begin(event){event.preventDefault();saveState();drawing=true;const p=position(event);lastX=p.x;lastY=p.y}
+function move(event){if(!drawing)return;event.preventDefault();const p=position(event);ctx.beginPath();ctx.moveTo(lastX,lastY);ctx.lineTo(p.x,p.y);ctx.strokeStyle=erasing?'#fff':color;ctx.lineWidth=parseInt(document.getElementById('brush-size').value);ctx.stroke();lastX=p.x;lastY=p.y;hasDrawing=true}
+function end(){drawing=false}
+canvas.addEventListener('pointerdown',begin);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointerleave',end);
+function setColor(button){document.querySelectorAll('.swatch').forEach(item=>item.classList.remove('on'));button.classList.add('on');color=button.dataset.color;erasing=false;document.getElementById('eraser-button').classList.remove('active')}
+function setEraser(){erasing=true;document.querySelectorAll('.swatch').forEach(item=>item.classList.remove('on'))}
+function clearDrawing(){saveState();ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);hasDrawing=false}
+function undoDrawing(){const state=history.pop();if(state){ctx.putImageData(state,0,0);hasDrawing=true}}
+function downloadDrawing(){const link=document.createElement('a');link.download='momind-reflection.png';link.href=canvas.toDataURL('image/png');link.click()}
+function showDrawingError(text){const el=document.getElementById('drawing-error');el.textContent=text;el.style.display='block'}
+async function analyzeDrawing(){if(!hasDrawing){showDrawingError('Add something to the canvas before requesting a reflection.');return}const btn=document.getElementById('analyze-button');btn.disabled=true;btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Reflecting…';document.getElementById('drawing-error').style.display='none';const image=canvas.toDataURL('image/jpeg',.72).split(',')[1];try{const response=await fetch("{% url 'postpartum:analyze_drawing' %}",{method:'POST',headers:{'Content-Type':'application/json','X-CSRFToken':'{{ csrf_token }}'},body:JSON.stringify({image_data:image})}),data=await response.json();if(!response.ok)throw new Error(data.error||'Could not reflect on this drawing.');showResult(data)}catch(error){showDrawingError(error.message||'Could not reflect on this drawing. Please try again.')}finally{btn.disabled=false;btn.innerHTML='<i class="fas fa-sparkles"></i> Reflect on drawing'}}
+function showResult(data){const card=document.getElementById('result-card'),tag=document.getElementById('result-tag'),bar=document.getElementById('result-bar');card.style.display='block';document.getElementById('result-score').textContent=data.score;tag.textContent=data.level+' stress';tag.className='pp-badge '+data.level;bar.className='pp-progress '+data.level;bar.style.width=data.score+'%';document.getElementById('result-insight').textContent=data.insight+' — '+data.recommendation;card.scrollIntoView({behavior:'smooth'})}
+</script>
+{% endblock %}

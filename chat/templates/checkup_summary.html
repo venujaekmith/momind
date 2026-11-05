@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Checkup Summary</title>
+    <style>
+        body { margin:0; padding:2rem; background:#fff5f8; color:#4b2735; font-family:Arial,sans-serif; }
+        main { max-width:850px; margin:auto; background:#fff; padding:2rem; border:1px solid #f0bdcc; border-radius:18px; box-shadow:0 12px 35px #7e2a4b18; }
+        h1 { color:#a13e63; } h2 { margin-top:1.6rem; color:#743149; }
+        .meta { padding:1rem; background:#fff4f7; border-radius:12px; } .report { white-space:pre-wrap; line-height:1.6; }
+        .event { padding:.8rem; margin:.5rem 0; border-left:3px solid #e85d8f; background:#fff8fa; }
+        a { color:#a13e63; }
+    </style>
+</head>
+<body>
+<main>
+    <a href="{% url 'dashboards:dashboard' %}">← Dashboard</a>
+    <h1>Checkup Summary</h1>
+    <div class="meta">
+        <strong>{{ mother.user.get_full_name|default:mother.user.username }}</strong>
+        {% if checkup %}<br>Completed: {{ checkup.completed_at|date:"d M Y H:i" }}{% endif %}
+    </div>
+    {% if checkup and agent_run %}
+        <h2>Maternal Care Agent review</h2>
+        <p>Risk level: <strong>{{ agent_run.result.risk_level|default:agent_run.risk_assessment.risk_level|default:"Review required" }}</strong></p>
+        <p>Risk score: {{ agent_run.result.risk_score|default:agent_run.risk_assessment.risk_score|default:"Not available" }}</p>
+        <div class="report">{{ agent_run.result.reasoning|default:"The agent review is available for clinical interpretation." }}</div>
+        <h2>Checkup answers</h2>
+        {% for answer in checkup.checkins.all %}
+            <div class="event"><strong>{{ answer.question }}</strong><br>{{ answer.answer|default:"Not answered" }}</div>
+        {% endfor %}
+        <p><small>Decision support only. A doctor or midwife must verify the answers and assessment.</small></p>
+    {% else %}
+        <p>No completed Checkup Bot review is available yet.</p>
+    {% endif %}
+</main>
+</body>
+</html>

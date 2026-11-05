@@ -1,0 +1,934 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MoMind - Care Beyond Birth | Empowering Mothers Together</title>
+    <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <!-- Font Awesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #fff5f8 0%, #ffe0e8 100%);
+            color: #3b2c35;
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 1rem 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            box-shadow: 0 4px 20px rgba(232, 93, 143, 0.08);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(232, 93, 143, 0.2);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+        }
+
+        .logo img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            flex-shrink: 0;
+        }
+
+        .logo h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .logo p {
+            font-size: 0.75rem;
+            color: #b66882;
+            font-weight: 500;
+            letter-spacing: 0.3px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: #a13e63;
+            font-weight: 500;
+            transition: 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .nav-links a:hover {
+            color: #e85d8f;
+            transform: translateY(-2px);
+        }
+
+        .btn-login {
+            background: transparent;
+            border: 2px solid #e85d8f;
+            padding: 0.5rem 1.5rem;
+            border-radius: 40px;
+            color: #e85d8f;
+            font-weight: 600;
+        }
+
+        .btn-login:hover {
+            background: #e85d8f;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-signup {
+            background: linear-gradient(95deg, #e85d8f, #cf4679);
+            padding: 0.5rem 1.8rem;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(232, 93, 143, 0.3);
+        }
+
+        .btn-signup:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(232, 93, 143, 0.4);
+            background: linear-gradient(95deg, #cf4679, #b12e60);
+        }
+
+        /* Hero Section */
+        .hero {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 3rem;
+            padding: 3rem 5% 4rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .hero-content {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .hero-content .badge {
+            background: rgba(232, 93, 143, 0.15);
+            color: #cf4679;
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-content h1 {
+            font-size: 3.2rem;
+            font-weight: 800;
+            line-height: 1.2;
+            margin-bottom: 1.2rem;
+            background: linear-gradient(135deg, #2d1b24, #a13e63);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .hero-content .tagline {
+            font-size: 1.2rem;
+            color: #b66882;
+            margin-bottom: 1.5rem;
+            font-weight: 500;
+        }
+
+        .hero-content p {
+            color: #5a4a54;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(95deg, #e85d8f, #cf4679);
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            color: white;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+            box-shadow: 0 6px 14px rgba(232, 93, 143, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 22px rgba(232, 93, 143, 0.4);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid #e85d8f;
+            padding: 0.9rem 2rem;
+            border-radius: 50px;
+            color: #e85d8f;
+            font-weight: 700;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .btn-secondary:hover {
+            background: #e85d8f;
+            color: white;
+            transform: translateY(-3px);
+        }
+
+        .hero-image {
+            flex: 1;
+            min-width: 280px;
+            text-align: center;
+        }
+
+        .hero-image img {
+            max-width: 100%;
+            border-radius: 3rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Features Section */
+        .features {
+            padding: 4rem 5%;
+            background: rgba(255, 255, 255, 0.6);
+            margin-top: 1rem;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #2d1b24;
+            margin-bottom: 3rem;
+        }
+
+        .section-title span {
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 2rem 1.5rem;
+            border-radius: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #ffe0e8;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 35px rgba(232, 93, 143, 0.12);
+            border-color: #ffcdda;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            color: #e85d8f;
+            margin-bottom: 1.2rem;
+        }
+
+        .feature-card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.8rem;
+            color: #3b2c35;
+        }
+
+        .feature-card p {
+            color: #7a6672;
+            line-height: 1.5;
+        }
+
+        /* Testimonials */
+        .testimonials {
+            padding: 4rem 5%;
+            background: #fffafc;
+        }
+
+        .testimonial-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1.8rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+            border-left: 6px solid #e85d8f;
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            color: #4a3a44;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+        }
+
+        .testimonial-author {
+            font-weight: 700;
+            color: #e85d8f;
+        }
+
+        /* CTA Section */
+        .cta {
+            background: linear-gradient(135deg, #e85d8f, #b83b6e);
+            margin: 3rem 5%;
+            padding: 3rem 2rem;
+            border-radius: 3rem;
+            text-align: center;
+            color: white;
+        }
+
+        .cta h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .cta p {
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .btn-cta {
+            background: white;
+            color: #e85d8f;
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 700;
+            text-decoration: none;
+            display: inline-block;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-cta:hover {
+            transform: scale(1.05);
+            background: #fff0f5;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2d1b24;
+            color: #e0cbd4;
+            padding: 3rem 5% 2rem;
+            margin-top: 2rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 2rem;
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+
+        .footer-col h4 {
+            color: #ffb8d0;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .footer-brand img {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+        }
+
+        .footer-col p, .footer-col a {
+            color: #d4b9c4;
+            text-decoration: none;
+            line-height: 1.8;
+            font-size: 0.9rem;
+        }
+
+        .footer-col a:hover {
+            color: #e85d8f;
+        }
+
+        .social-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .social-links a {
+            font-size: 1.3rem;
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 2rem;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            font-size: 0.8rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                text-align: center;
+                padding: 1rem;
+            }
+            .hero-content h1 {
+                font-size: 2.2rem;
+            }
+            .hero {
+                padding: 2rem 1.5rem;
+                text-align: center;
+            }
+            .hero-buttons {
+                justify-content: center;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+        }
+
+        /* Floating decoration */
+        .floating-heart {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #e85d8f;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: 0.3s;
+            z-index: 99;
+        }
+        .floating-heart:hover {
+            transform: scale(1.1);
+            background: #cf4679;
+        }
+        .floating-heart i {
+            color: white;
+            font-size: 1.6rem;
+        }
+
+        /* Landing page layout polish */
+        :root {
+            --page-gutter: clamp(1.25rem, 5vw, 5rem);
+            --content-width: 1300px;
+            --section-space: clamp(4rem, 8vw, 7rem);
+        }
+
+        body {
+            overflow-x: hidden;
+            background:
+                radial-gradient(circle at 8% 8%, rgba(232, 93, 143, 0.14), transparent 28rem),
+                radial-gradient(circle at 92% 85%, rgba(255, 184, 203, 0.2), transparent 30rem),
+                linear-gradient(145deg, #fff5f8 0%, #ffffff 48%, #fdeaf0 100%);
+        }
+
+        .navbar {
+            min-height: 76px;
+            padding: 0.85rem var(--page-gutter);
+        }
+
+        .logo {
+            min-width: 0;
+        }
+
+        .logo h1 {
+            line-height: 1;
+        }
+
+        .logo p {
+            max-width: 265px;
+            line-height: 1.25;
+        }
+
+        .nav-links {
+            justify-content: flex-end;
+            row-gap: 0.65rem;
+        }
+
+        .nav-links a,
+        .nav-links form {
+            display: inline-flex;
+            align-items: center;
+            min-height: 40px;
+        }
+
+        .nav-links form {
+            margin: 0;
+        }
+
+        .nav-links button {
+            border: 0;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .hero {
+            width: min(100%, var(--content-width));
+            min-height: min(680px, calc(100vh - 76px));
+            padding: clamp(4rem, 8vw, 7rem) var(--page-gutter);
+            gap: clamp(2.5rem, 6vw, 6rem);
+        }
+
+        .hero-content,
+        .hero-image {
+            flex: 1 1 0;
+            min-width: min(100%, 360px);
+        }
+
+        .hero-content {
+            max-width: 600px;
+        }
+
+        .hero-content h1 {
+            max-width: 560px;
+            font-size: clamp(2.65rem, 5vw, 4.6rem);
+            letter-spacing: -0.05em;
+        }
+
+        .hero-content .tagline {
+            max-width: 560px;
+        }
+
+        .hero-content > p {
+            max-width: 540px;
+        }
+
+        .hero-image {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .hero-art {
+            width: min(100%, 520px);
+            min-height: 360px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2.5rem;
+            border: 1px solid rgba(232, 93, 143, 0.18);
+            border-radius: 2.5rem;
+            background:
+                radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.85), transparent 42%),
+                linear-gradient(145deg, #ffeaf0, #ffd0dc);
+            box-shadow: 0 24px 55px rgba(126, 42, 75, 0.14);
+        }
+
+        .hero-art .fa-baby-carriage {
+            margin-bottom: 1.25rem !important;
+            filter: drop-shadow(0 12px 12px rgba(184, 59, 110, 0.16));
+        }
+
+        .hero-art p {
+            margin: 1.25rem 0 0;
+            text-align: center;
+        }
+
+        .features,
+        .testimonials {
+            padding: var(--section-space) var(--page-gutter);
+        }
+
+        .section-title {
+            margin: 0 auto 2.75rem;
+            max-width: var(--content-width);
+            line-height: 1.15;
+        }
+
+        .features-grid,
+        .testimonial-grid {
+            width: min(100%, var(--content-width));
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            align-items: stretch;
+        }
+
+        .feature-card,
+        .testimonial-card {
+            height: 100%;
+        }
+
+        .feature-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2.25rem 1.75rem;
+        }
+
+        .feature-card p {
+            max-width: 30ch;
+            margin-bottom: 0;
+        }
+
+        .testimonial-card {
+            display: flex;
+            flex-direction: column;
+            padding: 2rem 2rem 2rem 2.25rem;
+        }
+
+        .testimonial-text {
+            flex: 1;
+        }
+
+        .cta {
+            width: min(calc(100% - (var(--page-gutter) * 2)), var(--content-width));
+            margin: var(--section-space) auto;
+            padding: clamp(2.5rem, 6vw, 4.5rem) var(--page-gutter);
+            box-shadow: 0 22px 48px rgba(126, 42, 75, 0.16);
+        }
+
+        .cta p {
+            max-width: 600px;
+            margin-inline: auto;
+        }
+
+        .footer {
+            padding: var(--section-space) var(--page-gutter) 2rem;
+        }
+
+        .footer-content {
+            width: min(100%, var(--content-width));
+            grid-template-columns: 1.4fr repeat(3, 1fr);
+        }
+
+        .footer-col {
+            min-width: 0;
+        }
+
+        .footer-col a,
+        .footer-col p {
+            display: block;
+        }
+
+        .social-links {
+            align-items: center;
+        }
+
+        .social-links span {
+            display: grid;
+            width: 36px;
+            height: 36px;
+            place-items: center;
+            border: 1px solid rgba(255, 184, 208, 0.28);
+            border-radius: 50%;
+            color: #ffb8d0;
+            transition: 0.2s ease;
+        }
+
+        .social-links span:hover {
+            color: white;
+            background: #e85d8f;
+            transform: translateY(-2px);
+        }
+
+        .copyright {
+            width: min(100%, var(--content-width));
+            margin-inline: auto;
+        }
+
+        @media (max-width: 980px) {
+            .nav-links {
+                gap: 0.75rem 1rem;
+            }
+
+            .hero {
+                min-height: auto;
+            }
+
+            .features-grid,
+            .testimonial-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .footer-content {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .nav-links {
+                justify-content: center;
+            }
+
+            .hero-content,
+            .hero-image {
+                min-width: 100%;
+            }
+
+            .hero-art {
+                min-height: 300px;
+                padding: 2rem 1rem;
+            }
+
+            .features-grid,
+            .testimonial-grid,
+            .footer-content {
+                grid-template-columns: 1fr;
+            }
+
+            .cta {
+                border-radius: 2rem;
+            }
+        }
+
+    </style>
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="logo">
+            <img src="{% static 'core/images/momind-logo.png' %}" alt="MoMind logo">
+            <div>
+                <h1>MoMind</h1>
+                <p>care beyond birth, empowering mothers, together</p>
+            </div>
+        </div>
+        <div class="nav-links">
+            <a href="#home">Home</a>
+            <a href="#features">Features</a>
+            <a href="#testimonials">Stories</a>
+            <a href="#contact">Support</a>
+            {% if request.user.is_authenticated %}
+                <a href="{% url 'dashboards:dashboard' %}" class="btn-login"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <form method="post" action="{% url 'accounts:logout' %}" style="display:inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-signup"><i class="fas fa-sign-out-alt"></i> Logout</button>
+                </form>
+            {% else %}
+                <a href="{% url 'accounts:login' %}" class="btn-login"><i class="fas fa-sign-in-alt"></i> Login</a>
+                <a href="{% url 'accounts:register' %}" class="btn-signup"><i class="fas fa-user-plus"></i> Sign Up</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <div class="badge">
+                <i class="fas fa-heartbeat"></i> Trusted by 5,000+ mothers
+            </div>
+            <h1>Your Journey,<br>Our Gentle Care</h1>
+            <div class="tagline">MoMind — AI-powered maternal wellness, from pregnancy to postpartum.</div>
+            <p>Track baby development, connect with midwives & doctors, access AI health insights, and join a supportive community — all in one safe, beautiful space.</p>
+            <div class="hero-buttons">
+                {% if request.user.is_authenticated %}
+                    <a href="{% url 'dashboards:dashboard' %}" class="btn-primary"><i class="fas fa-arrow-right"></i> Go to Dashboard</a>
+                {% else %}
+                    <a href="{% url 'accounts:register' %}" class="btn-primary"><i class="fas fa-heart"></i> Start Free Journey</a>
+                    <a href="{% url 'accounts:login' %}" class="btn-secondary">Existing Member →</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-image">
+            <!-- Modern placeholder illustration (emoji / CSS art) -->
+            <div class="hero-art">
+                <i class="fas fa-baby-carriage" style="font-size: 7rem; color: #e85d8f; margin-bottom: 0.5rem; display: block;"></i>
+                <i class="fas fa-hand-holding-heart" style="font-size: 3rem; color: #cf4679; margin: 0 0.5rem;"></i>
+                <i class="fas fa-chart-line" style="font-size: 3rem; color: #b83b6e;"></i>
+                <p>💖 Smart care, human touch</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="section-title">
+            Why moms <span>❤️ MoMind</span>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <h3>AI Baby Advisor</h3>
+                <p>Ask anything about baby growth, milestones, feeding — get instant personalized AI guidance.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-calendar-check"></i></div>
+                <h3>Smart Schedule</h3>
+                <p>Interactive calendar for appointments, vaccinations, and midwife visits — never miss a checkup.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-hand-holding-heart"></i></div>
+                <h3>Postpartum Support</h3>
+                <p>Mood tracking, baby development logs, and wellness resources for the fourth trimester.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-users"></i></div>
+                <h3>Family & Care Team</h3>
+                <p>Connect with partner, midwife, doctor — share progress and stay united in care.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-bar-chart"></i></div>
+                <h3>Health Tracking</h3>
+                <p>Water intake, kick counts, fetal health, lab results — all in one dashboard.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i class="fas fa-robot"></i></div>
+                <h3>Risk Assessment AI</h3>
+                <p>Real-time pregnancy risk analysis with actionable insights for safer motherhood.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section id="testimonials" class="testimonials">
+        <div class="section-title">
+            Real <span>Stories, Real Care</span>
+        </div>
+        <div class="testimonial-grid">
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “MoMind's AI advisor helped me track my baby's growth week by week. The calendar kept all my midwife visits organized, and the postpartum mood tracker was a lifesaver.”
+                </div>
+                <div class="testimonial-author">— Priya S., New Mother</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “As a midwife, having all my mothers' data in one place with risk alerts and easy scheduling improves the quality of care immensely. A game changer!”
+                </div>
+                <div class="testimonial-author">— Sarah J., Certified Midwife</div>
+            </div>
+            <div class="testimonial-card">
+                <div class="testimonial-text">
+                    “The family linking feature made my husband feel involved. We could see kick counts together and prepare for appointments. Empowering and beautiful.”
+                </div>
+                <div class="testimonial-author">— Aditi R., Mother of twins</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Call to Action -->
+    <div class="cta">
+        <h2>Ready to embrace motherhood with confidence?</h2>
+        <p>Join thousands of mothers & care providers who trust MoMind for every milestone.</p>
+        {% if request.user.is_authenticated %}
+            <a href="{% url 'dashboards:dashboard' %}" class="btn-cta"><i class="fas fa-arrow-right"></i> Go to Dashboard</a>
+        {% else %}
+            <a href="{% url 'accounts:register' %}" class="btn-cta"><i class="fas fa-heart"></i> Create Free Account</a>
+        {% endif %}
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="footer">
+        <div class="footer-content">
+            <div class="footer-col">
+                <h4 class="footer-brand"><img src="{% static 'core/images/momind-logo.png' %}" alt="">MoMind</h4>
+                <p>Care beyond birth, empowering mothers, together.</p>
+                <div class="social-links">
+                    <span title="Facebook page coming soon"><i class="fab fa-facebook"></i></span>
+                    <span title="Instagram page coming soon"><i class="fab fa-instagram"></i></span>
+                    <span title="WhatsApp support coming soon"><i class="fab fa-whatsapp"></i></span>
+                    <span title="YouTube channel coming soon"><i class="fab fa-youtube"></i></span>
+                </div>
+            </div>
+            <div class="footer-col">
+                <h4>Quick Links</h4>
+                <a href="#home">Home</a><br>
+                <a href="#features">Features</a><br>
+                <a href="#testimonials">Testimonials</a><br>
+                <a href="{% url 'privacy' %}">Privacy Policy</a>
+            </div>
+            <div class="footer-col">
+                <h4>For Care Providers</h4>
+                <a href="{% url 'accounts:login' %}">Midwife Portal</a><br>
+                <a href="{% url 'accounts:login' %}">Doctor Dashboard</a><br>
+                <a href="{% url 'accounts:register' %}">Hospital Integration</a><br>
+                <a href="{% url 'accounts:register' %}">Become a Partner</a>
+            </div>
+            <div class="footer-col">
+                <h4>Support</h4>
+                <p><i class="fas fa-envelope"></i> hello@momind.com</p>
+                <p><i class="fas fa-phone-alt"></i> +1 (888) MOM-CARE</p>
+                <p>24/7 AI health companion</p>
+            </div>
+        </div>
+        <div class="copyright">
+            &copy; 2025 MoMind — Maternal Wellness Platform. All rights reserved.
+        </div>
+    </footer>
+
+    <!-- Floating Heart Back to Top -->
+    <div class="floating-heart" onclick="window.scrollTo({top:0,behavior:'smooth'})">
+        <i class="fas fa-chevron-up"></i>
+    </div>
+
+    <script>
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                const target = document.querySelector(this.getAttribute('href'));
+                if(target) {
+                    e.preventDefault();
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            });
+        });
+    </script>
+</body>
+</html>

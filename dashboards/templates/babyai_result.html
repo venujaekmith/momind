@@ -1,0 +1,20 @@
+{% extends 'basec.html' %}
+
+{% block content %}
+<div class="page-shell">
+    <div class="card-pink">
+        <div class="page-heading">
+            <h2><i class="fas fa-robot"></i> AI Response for {{ baby }}</h2>
+            <p><strong>You asked:</strong> {{ query }}</p>
+        </div>
+        <div class="ai-response">
+            {{ response|linebreaks }}
+        </div>
+        <div class="form-actions">
+            <a href="{% url 'dashboards:babyai' baby.id %}" class="btn-pink">
+                <i class="fas fa-comment-medical"></i> Ask Another Question
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

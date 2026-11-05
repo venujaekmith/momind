@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#e85d8f">
+    <title>{% block title %}Postpartum care{% endblock %} | MoMind</title>
+    <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="{% static 'postpartum/postpartum.css' %}" rel="stylesheet">
+    <style>{% block extra_css %}{% endblock %}</style>
+    {% block extra_head %}{% endblock %}
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
+</head>
+<body class="pp-body">
+    <header class="pp-header">
+        <a href="{% url 'postpartum:postpartum_dashboard' %}" class="pp-brand">
+            <img class="pp-brand-icon" src="{% static 'core/images/momind-logo.png' %}" alt="" aria-hidden="true">
+            <span><strong>MoMind</strong><small>Postpartum care</small></span>
+        </a>
+        <nav class="pp-nav" aria-label="Postpartum navigation">
+            <a href="{% url 'postpartum:postpartum_dashboard' %}" class="{% block nav_home %}{% endblock %}"><i class="fas fa-house"></i><span>Home</span></a>
+            <a href="{% url 'postpartum:wellness_history' %}" class="{% block nav_history %}{% endblock %}"><i class="fas fa-chart-line"></i><span>History</span></a>
+            <a href="{% url 'postpartum:ai_dash' %}" class="{% block nav_companion %}{% endblock %}"><i class="fas fa-sparkles"></i><span>Companion</span></a>
+            <a href="{% url 'postpartum:journal' %}" class="{% block nav_journal %}{% endblock %}"><i class="fas fa-book-open"></i><span>Journal</span></a>
+            <a href="{% url 'postpartum:profile_settings' %}" class="{% block nav_profile %}{% endblock %}"><i class="fas fa-user-gear"></i><span>Profile</span></a>
+        </nav>
+        <a href="{% url 'dashboards:dashboard' %}" class="pp-back-link"><i class="fas fa-arrow-left"></i> Main dashboard</a>
+    </header>
+
+    {% if messages %}
+    <div class="pp-messages" aria-live="polite">
+        {% for message in messages %}<div class="pp-alert {{ message.tags }}"><i class="fas fa-circle-check"></i>{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="pp-container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="pp-footer">
+        <p><i class="fas fa-shield-heart"></i> MoMind supports wellbeing but does not replace professional medical care. If you or your baby may be in immediate danger, contact local emergency services.</p>
+    </footer>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

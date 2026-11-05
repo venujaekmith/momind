@@ -1,0 +1,65 @@
+{% extends 'basec.html' %}
+
+{% block extra_head %}{% include 'dashboard_role_theme.html' %}{% endblock %}
+
+{% block content %}
+<main class="role-dashboard-page hospital-dashboard-page page-shell--wide">
+    <header class="card-pink">
+        <div class="flex-between">
+            <div><h2><i class="fas fa-hospital"></i> Hospital Dashboard</h2><p>{{ user.user_hospital.name }} · ID: <strong id="qrValue">{{ user.user_hospital.hospital_id }}</strong></p></div>
+            <button type="button" onclick="showQRCodeModal()" class="btn-outline-pink"><i class="fas fa-qrcode"></i> Show My QR Code</button>
+        </div>
+        <div id="qrcode"></div>
+    </header>
+
+    <p class="dashboard-section-heading"><i class="fas fa-bolt"></i> Quick access</p>
+    <nav class="dashboard-quick-actions" aria-label="Hospital dashboard quick actions">
+        <a href="#today-queue" class="dashboard-action"><i class="fas fa-user-clock"></i><span><strong>Today's Queue</strong><small>{{ today_queue_count }} scheduled</small></span></a>
+        <a href="#hospital-clinics" class="dashboard-action"><i class="fas fa-hospital-user"></i><span><strong>Manage Clinics</strong><small>{{ hospital_clinics|length }} active</small></span></a>
+        <a href="{% url 'dashboards:create_hospital_clinic' %}" class="dashboard-action"><i class="fas fa-calendar-plus"></i><span><strong>Create Clinic</strong><small>Add a clinic session</small></span></a>
+        <a href="{% url 'community:group_list' %}" class="dashboard-action"><i class="fas fa-users"></i><span><strong>Care Groups</strong><small>Manage communities</small></span></a>
+        <a href="{% url 'accounts:hospital_details' %}" class="dashboard-action"><i class="fas fa-building-circle-check"></i><span><strong>Hospital Profile</strong><small>Facility information</small></span></a>
+    </nav>
+
+    <section class="dashboard-overview" aria-label="Hospital workload overview">
+        <div class="stat-card"><i class="fas fa-user-clock"></i><h3>{{ today_queue_count }}</h3><p>Visits today</p></div>
+        <div class="stat-card"><i class="fas fa-hospital-user"></i><h3>{{ hospital_clinics|length }}</h3><p>Active clinics</p></div>
+        <div class="stat-card"><i class="fas fa-person-pregnant"></i><h3>{{ pregnancies|length }}</h3><p>Patient records</p></div>
+        <div class="stat-card"><i class="fas fa-users"></i><h3>{{ hospital_staff|length }}</h3><p>Staff members</p></div>
+    </section>
+
+    <section class="card-pink dashboard-anchor" id="today-queue">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-user-clock"></i> Today's Clinic Queue</h3><span class="dashboard-status">{{ today_queue_count }} visit{{ today_queue_count|pluralize }}</span></div>
+        {% if today_queue %}
+        <div class="table-responsive"><table class="table-modern"><thead><tr><th>Time</th><th>Patient</th><th>Visit</th><th>Clinic</th></tr></thead><tbody>{% for visit in today_queue %}<tr><td><strong>{{ visit.scheduled_time|time:"H:i"|default:"TBD" }}</strong></td><td>{{ visit.pregnancy.mother.user.get_full_name|default:visit.pregnancy.mother.user.username }}</td><td>{{ visit.title }}</td><td>{{ visit.clinic.name|default:visit.location|default:"Not specified" }}</td></tr>{% endfor %}</tbody></table></div>
+        {% else %}<div class="dashboard-empty"><i class="fas fa-calendar-check"></i>No hospital clinic visits are scheduled for today.</div>{% endif %}
+    </section>
+
+    <section class="card-pink dashboard-anchor" id="hospital-clinics">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-calendar-check"></i> Clinic Sessions</h3><a href="{% url 'dashboards:create_hospital_clinic' %}" class="btn-pink"><i class="fas fa-plus"></i> Create clinic</a></div>
+        {% for clinic in hospital_clinics %}
+        <article class="clinic-management-card">
+            <header class="clinic-management-header"><div><strong>{{ clinic.name }}</strong><p>{{ clinic.date|date:"d M Y" }} · {{ clinic.time|time:"H:i"|default:"Time TBD" }} · {{ clinic.location|default:"Location TBD" }}</p><small>Capacity {{ clinic.capacity }} · {{ clinic.queue_count }} in queue{% if clinic.description %} · {{ clinic.description|truncatechars:100 }}{% endif %}</small></div><a href="{% url 'dashboards:edit_hospital_clinic' clinic.id %}" class="btn-outline-pink"><i class="fas fa-pen"></i> Edit clinic</a></header>
+            <div class="clinic-action-grid">
+                <section class="section-card"><h4><i class="fas fa-user-nurse"></i> Assign Staff</h4><form method="post" action="{% url 'dashboards:assign_clinic_staff' clinic.id %}">{% csrf_token %}<div class="form-group"><label for="staff_id_{{ clinic.id }}">Staff ID</label><input type="text" name="staff_id" id="staff_id_{{ clinic.id }}" placeholder="Enter staff ID" class="form-control" required></div><div class="form-actions"><button class="btn-pink" type="submit">Assign staff</button></div></form></section>
+                <section class="section-card"><h4><i class="fas fa-person-circle-plus"></i> Add Patient</h4><form method="post" action="{% url 'dashboards:add_clinic_appointment' clinic.id %}">{% csrf_token %}<div class="form-group"><label for="patient_id_{{ clinic.id }}">Mother ID or username</label><input type="text" name="patientID" id="patient_id_{{ clinic.id }}" placeholder="Enter patient identifier" class="form-control" required></div><div class="form-actions"><button class="btn-pink" type="submit">Add to queue</button></div></form></section>
+            </div>
+        </article>
+        {% empty %}<div class="dashboard-empty"><i class="fas fa-calendar-plus"></i>No clinic sessions are active. Create one to start scheduling patients.</div>{% endfor %}
+    </section>
+
+    <section class="card-pink" id="hospital-patients">
+        <div class="dashboard-toolbar"><h3><i class="fas fa-person-pregnant"></i> Patient Records</h3></div>
+        <div class="dashboard-record-grid">
+            {% for p in pregnancies %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ p.mother.user.get_full_name|default:p.mother.user.username }}</strong><span class="dashboard-status">{{ p.status|capfirst }}</span></header><div class="dashboard-record-meta"><div><span>Pregnancy</span><strong>#{{ p.pregnancy_number }}</strong></div><div><span>Week</span><strong>{{ p.get_pregnancy_week|default:"Not available" }}</strong></div><div><span>Expected delivery</span><strong>{{ p.expected_delivery_date|date:"d M Y"|default:"Not set" }}</strong></div><div><span>Risk history</span><strong>{% if p.is_high_risk %}High-risk history{% else %}Routine{% endif %}</strong></div></div><div class="dashboard-record-actions"><a href="{% url 'dashboards:midwife_mother_detail' p.id %}" class="btn-pink"><i class="fas fa-folder-open"></i> Open record</a><a href="{% url 'ai_services:show_risk' p.id %}" class="btn-outline-pink"><i class="fas fa-brain"></i> Risk</a><a href="{% url 'dashboards:add_schedule' p.id %}" class="btn-outline-pink"><i class="fas fa-calendar-plus"></i> Schedule visit</a></div></article>{% empty %}<div class="dashboard-empty"><i class="fas fa-user-plus"></i>No patient records are linked to this hospital.</div>{% endfor %}
+        </div>
+    </section>
+
+    <div class="dashboard-focus-grid">
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-user-nurse"></i> Hospital Staff</h3></div><div class="dashboard-record-grid">{% for staff in hospital_staff %}<article class="dashboard-record"><header class="dashboard-record-header"><strong>{{ staff.user.get_full_name|default:staff.user.username }}</strong><span class="dashboard-status">{{ staff.role_title|default:"Staff" }}</span></header><div class="dashboard-record-meta"><div><span>Staff ID</span><strong>{{ staff.staff_id }}</strong></div><div><span>Status</span><strong>{% if staff.is_active %}Active{% else %}Inactive{% endif %}</strong></div></div></article>{% empty %}<div class="dashboard-empty">No staff members assigned.</div>{% endfor %}</div></section>
+        <section class="card-pink"><div class="dashboard-toolbar"><h3><i class="fas fa-users"></i> Care Communities</h3><a href="{% url 'community:group_list' %}" class="btn-outline-pink">Manage groups</a></div><p>Share clinic updates and support information with hospital communities.</p><a href="{% url 'community:create_group' %}" class="btn-pink"><i class="fas fa-plus"></i> Create group</a></section>
+    </div>
+
+    <details class="dashboard-disclosure"><summary><i class="fas fa-people-roof"></i> Family care assignments <small>{{ families|length }} linked</small></summary><div class="dashboard-disclosure-body"><div class="dashboard-record-grid">{% for family in families %}<article class="dashboard-record"><strong>Family #{{ family.id }}</strong><p>{% if family.mother %}Mother: {{ family.mother.user.get_full_name|default:family.mother.user.username }}{% endif %}{% if family.father %}<br>Father: {{ family.father.user.get_full_name|default:family.father.user.username }}{% endif %}</p><form method="post" action="{% url 'dashboards:leave_family' family.id %}">{% csrf_token %}<button type="submit" class="btn-outline-pink">Leave assignment</button></form></article>{% empty %}<div class="dashboard-empty">No linked families.</div>{% endfor %}</div></div></details>
+</main>
+{% endblock %}

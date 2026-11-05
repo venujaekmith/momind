@@ -1,0 +1,33 @@
+{% extends 'basec.html' %}
+
+{% block extra_head %}
+<style>
+    .professional-chat { max-width: 1000px; margin: 0 auto; }
+    .professional-chat .chat-card { background: #fff; border: 1px solid #f0bdcc; border-radius: 16px; padding: 1.25rem; box-shadow: 0 8px 24px rgba(126,42,75,.08); }
+    .professional-chat .chat-card h3 { color: #743149; margin-bottom: .85rem; }
+    .professional-chat .chat-card + .chat-card { margin-top: 1rem; }
+    .professional-chat .conversation-row { display: flex; justify-content: space-between; gap: 1rem; align-items: center; padding: .85rem 0; border-top: 1px solid #f6dce3; }
+    .professional-chat .conversation-row:first-of-type { border-top: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<main class="professional-chat">
+    <section class="card-pink">
+        <h2><i class="fas fa-comments"></i> Care team chat</h2>
+        <p>Everyone in your family can chat directly with the doctors and midwives linked to that family.</p>
+    </section>
+
+    <section class="chat-card">
+        <h3><i class="fas fa-message"></i> Family conversations</h3>
+        {% for chat_request in conversations %}
+        <div class="conversation-row">
+            <strong>{% if user == chat_request.requester %}{{ chat_request.professional.get_full_name|default:chat_request.professional.username }}{% else %}{{ chat_request.requester.get_full_name|default:chat_request.requester.username }}{% endif %}{% if chat_request.unread_count %} <span class="badge-status active">{{ chat_request.unread_count }} new</span>{% endif %}</strong>
+            <a class="btn-pink" href="{% url 'chat:professional_conversation' chat_request.id %}"><i class="fas fa-comments"></i> Open chat</a>
+        </div>
+        {% empty %}
+        <p class="text-muted">No doctors or midwives are linked to your family yet.</p>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}

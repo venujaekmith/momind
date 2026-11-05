@@ -1,0 +1,1929 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>MoMind - Care Beyond Birth</title>
+    <link rel="icon" type="image/png" href="{% static 'core/images/momind-logo.png' %}">
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{% static 'core/select-theme.css' %}" rel="stylesheet">
+    
+    <!-- FullCalendar CSS/JS -->
+    <link href='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css' rel='stylesheet' />
+    <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js'></script>
+    
+    <!-- QR Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    
+    <style>
+        /* ===== CUSTOM PROPERTIES ===== */
+        :root {
+            --primary: #e85d8f;
+            --primary-dark: #cc4677;
+            --primary-light: #fce4ec;
+            --primary-gradient: linear-gradient(135deg, #e85d8f, #b83b6e);
+            --secondary: #a13e63;
+            --text-dark: #2d3748;
+            --text-muted: #718096;
+            --bg-soft: #fff5f8;
+            --border-light: #f0dce3;
+            --shadow-soft: 0 8px 30px rgba(232, 93, 143, 0.10);
+            --shadow-hover: 0 12px 40px rgba(232, 93, 143, 0.18);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-soft);
+            color: var(--text-dark);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* ===== CONTAINER ===== */
+        .momind-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .momind-container { padding: 0.75rem 1rem; }
+        }
+
+        /* ===== NAVBAR ===== */
+        .navbar-momind {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px;
+            padding: 0.7rem 1.75rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-soft);
+            border: 1px solid rgba(232, 93, 143, 0.12);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            transition: var(--transition);
+        }
+
+        .navbar-momind:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .logo-area .logo-icon {
+            width: 42px;
+            height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo-area .logo-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .top-right-logo img.brand-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .sidebar-brand img.brand-logo {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .qr-modal-body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .modal-momind-content.qr-modal {
+            max-width: 420px;
+        }
+
+        #qrcodeModalContainer {
+            margin: 0 auto;
+        }
+
+        .logo-area h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+            margin: 0;
+        }
+
+        .logo-area .tagline {
+            font-size: 0.7rem;
+            color: var(--secondary);
+            font-weight: 500;
+            opacity: 0.7;
+            display: block;
+            margin-top: -2px;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a,
+        .nav-links button {
+            text-decoration: none;
+            color: var(--secondary);
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 40px;
+            transition: var(--transition);
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: transparent;
+            border: 0;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover,
+        .nav-links button:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            transform: translateY(-1px);
+        }
+
+        .nav-links form { margin: 0; }
+
+        .nav-links a i,
+        .nav-links button i {
+            font-size: 1rem;
+        }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            gap: 1.5rem;
+            align-items: flex-start;
+            transition: var(--transition);
+        }
+
+        /* Collapsed sidebar state: let content take full width smoothly */
+        .main-layout.sidebar-collapsed {
+            grid-template-columns: 0 1fr;
+        }
+
+        .main-column {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .sidebar {
+            background: white;
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-soft);
+            padding: 1.25rem;
+            height: calc(100vh - 3rem);
+            position: sticky;
+            top: 1.5rem;
+            align-self: start;
+            overflow: auto;
+            transition: width 0.28s ease, padding 0.25s ease, opacity 0.25s ease;
+            width: 280px;
+        }
+
+        /* Visual collapsed state for sidebar (keeps element in DOM to preserve grid behavior) */
+        .sidebar.collapsed {
+            width: 0 !important;
+            padding: 0 !important;
+            opacity: 0; 
+            pointer-events: none;
+            border: none;
+            box-shadow: none;
+        }
+
+        .sidebar-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .sidebar-brand h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--secondary);
+        }
+
+        .sidebar-brand p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .sidebar-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .sidebar-nav a,
+        .sidebar-nav button {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            padding: 0.95rem 1rem;
+            border-radius: 14px;
+            color: var(--text-dark);
+            font-weight: 600;
+            background: var(--bg-soft);
+            transition: var(--transition);
+            border: 0;
+            width: 100%;
+            font: inherit;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav button:hover {
+            background: rgba(232, 93, 143, 0.08);
+            color: var(--primary-dark);
+        }
+
+        .sidebar-nav a.active,
+        .sidebar-nav a.active:hover,
+        .sidebar-nav button.active,
+        .sidebar-nav button.active:hover {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .sidebar-nav a.active i,
+        .sidebar-nav button.active i {
+            color: #fff;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .top-right-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: rgba(232, 93, 143, 0.1);
+            border: 1px solid rgba(232, 93, 143, 0.2);
+            padding: 0.65rem 0.85rem;
+            border-radius: 999px;
+            color: var(--secondary);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .top-right-logo .logo-icon {
+            font-size: 1.2rem;
+        }
+
+        .sidebar-toggle {
+            background: rgba(232, 93, 143, 0.1);
+            border: 1px solid rgba(232, 93, 143, 0.2);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-dark);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .sidebar-toggle:hover {
+            background: rgba(232, 93, 143, 0.15);
+            transform: scale(1.03);
+        }
+
+        .nav-bell {
+            position: relative;
+        }
+
+        .modal-momind-content.notifications-modal {
+            max-width: 680px;
+        }
+
+        .notifications-modal-body {
+            max-height: 62vh;
+            overflow-y: auto;
+            padding-right: 0.25rem;
+        }
+
+        .notifications-empty {
+            padding: 2rem 1rem;
+            text-align: center;
+            color: var(--text-muted);
+        }
+
+        .notifications-empty i {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+            font-size: 2rem;
+        }
+
+        .nav-bell .badge-status {
+            position: absolute;
+            top: -6px;
+            right: -10px;
+            font-size: 0.7rem;
+            padding: 0.25rem 0.45rem;
+        }
+
+        .content-area {
+            min-height: calc(100vh - 5rem);
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: relative;
+                height: auto;
+                width: 100%;
+                margin-bottom: 1.5rem;
+                padding: 0.85rem;
+            }
+
+            .sidebar-brand { display: none; }
+            .sidebar-nav { flex-direction: row; flex-wrap: wrap; }
+            .sidebar-nav a,
+            .sidebar-nav form,
+            .sidebar-nav > button { flex: 1 1 170px; }
+            .sidebar-nav form button { height: 100%; }
+
+            .main-column {
+                margin-left: 0;
+            }
+
+            .nav-links {
+                justify-content: center;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-momind {
+                flex-direction: column;
+                gap: 0.75rem;
+                text-align: center;
+                padding: 1rem;
+            }
+            .logo-area { width: 100%; flex-direction: row; justify-content: flex-start; text-align: left; }
+            .logo-area h1 { font-size: 1.4rem; }
+            .nav-links a, .nav-links button { padding: 0.45rem 0.75rem; font-size: 0.8rem; }
+            .sidebar {
+                position: fixed;
+                inset: 0 auto 0 0;
+                z-index: 1200;
+                display: block;
+                width: min(86vw, 320px);
+                height: 100vh;
+                margin: 0;
+                padding: 1rem;
+                overflow-y: auto;
+                border-radius: 0 18px 18px 0;
+                opacity: 1;
+                transform: translateX(-110%);
+                transition: transform .25s ease;
+            }
+            .sidebar.mobile-open { transform: translateX(0); }
+            .sidebar .sidebar-brand { display: flex; }
+            .sidebar .sidebar-nav { flex-direction: column; flex-wrap: nowrap; }
+            .sidebar .sidebar-nav a,
+            .sidebar .sidebar-nav form,
+            .sidebar .sidebar-nav > button { flex: none; width: 100%; }
+            .main-layout.sidebar-collapsed { grid-template-columns: 1fr; }
+            .sidebar-toggle {
+                display: inline-flex;
+            }
+            .nav-right {
+                justify-content: center;
+                width: 100%;
+            }
+            .nav-links { width: 100%; justify-content: center; }
+            .navbar-momind .tagline { display: block; max-width: 230px; }
+        }
+
+        /* ===== CARDS ===== */
+        .content-area .card-pink {
+            background-color: #ffffff;
+            background-image:
+                linear-gradient(90deg, #e85d8f 0%, #f39ab8 48%, #ffd8e2 100%),
+                radial-gradient(circle, rgba(232, 93, 143, 0.13) 0%, rgba(232, 93, 143, 0) 70%);
+            background-repeat: no-repeat;
+            background-size: 100% 4px, 190px 190px;
+            background-position: top left, calc(100% + 70px) -105px;
+            border-radius: var(--radius);
+            box-shadow:
+                0 10px 30px rgba(161, 62, 99, 0.09),
+                inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            padding: 1.75rem;
+            margin-bottom: 1.75rem;
+            border: 1px solid #f3b5c7;
+            transition: var(--transition);
+        }
+
+        .content-area .card-pink:hover {
+            border-color: #e989a6;
+            box-shadow:
+                0 14px 38px rgba(161, 62, 99, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.95);
+            transform: translateY(-3px);
+        }
+
+        .content-area .card-pink .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .content-area .card-pink .card-title i {
+            color: var(--primary);
+            font-size: 1.3rem;
+        }
+
+        .content-area .card-pink > h2,
+        .content-area .card-pink > h3,
+        .content-area .card-pink > h4 {
+            color: var(--secondary);
+        }
+
+        /* Give flex-between rows a card treatment only when they act as a
+           section header or a direct content box, not when they are action rows. */
+        .content-area > .flex-between,
+        .content-area .card-pink > .flex-between:first-child {
+            padding: 1rem 1.1rem;
+            background-color: #fff8fa;
+            background-image:
+                linear-gradient(90deg, #e85d8f 0%, #f39ab8 55%, #ffd8e2 100%),
+                radial-gradient(circle, rgba(232, 93, 143, 0.11) 0%, rgba(232, 93, 143, 0) 72%);
+            background-repeat: no-repeat;
+            background-size: 100% 3px, 140px 140px;
+            background-position: top left, calc(100% + 45px) -78px;
+            border: 1px solid #f3b5c7;
+            border-radius: 13px;
+            box-shadow: 0 6px 18px rgba(161, 62, 99, 0.08);
+        }
+
+        .content-area .card-pink > .flex-between:first-child {
+            margin-bottom: 1rem;
+        }
+
+        /* ===== BUTTONS ===== */
+        .btn-pink {
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 14px rgba(232, 93, 143, 0.25);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            border: 2px solid transparent;
+        }
+
+        .btn-pink:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(232, 93, 143, 0.35);
+            background: linear-gradient(135deg, #cf4679, #b12e60);
+            color: white;
+        }
+
+        .btn-pink:active {
+            transform: scale(0.97);
+        }
+
+        .btn-pink-sm {
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-outline-pink {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 40px;
+            padding: 0.5rem 1.25rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-outline-pink:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 14px rgba(232, 93, 143, 0.25);
+        }
+
+        .btn-outline-pink-sm {
+            padding: 0.3rem 0.9rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-ghost {
+            background: transparent;
+            border: none;
+            color: var(--secondary);
+            padding: 0.5rem 1rem;
+            font-weight: 500;
+            transition: var(--transition);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-ghost:hover {
+            color: var(--primary);
+            background: var(--primary-light);
+            border-radius: 40px;
+        }
+
+        /* ===== BADGES ===== */
+        .badge-risk {
+            padding: 0.3rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: inline-block;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-risk.low { background: #d4edda; color: #155724; }
+        .badge-risk.medium { background: #fff3cd; color: #856404; }
+        .badge-risk.high { background: #f8d7da; color: #721c24; }
+
+        .badge-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-status.active { background: #d4edda; color: #155724; }
+        .badge-status.completed { background: #cce5ff; color: #004085; }
+        .badge-status.postpartum { background: #e8daef; color: #6c3483; }
+
+        /* ===== STATS GRID ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.75rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid var(--border-light);
+            box-shadow: var(--shadow-soft);
+            transition: var(--transition);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .stat-card .stat-icon {
+            font-size: 2rem;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-card .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--secondary);
+            line-height: 1.2;
+        }
+
+        .stat-card .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        /* ===== TABLES ===== */
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .table-modern {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .table-modern th {
+            background: var(--bg-soft);
+            color: var(--secondary);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px solid var(--border-light);
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        .table-modern td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid var(--border-light);
+            vertical-align: middle;
+        }
+
+        .table-modern tbody tr:hover {
+            background: var(--bg-soft);
+        }
+
+        .table-modern .action-cell {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 576px) {
+            .table-modern th,
+            .table-modern td {
+                padding: 0.5rem 0.6rem;
+                font-size: 0.8rem;
+            }
+        }
+
+        /* ===== FORMS ===== */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        .form-group .form-control,
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-sm);
+            border: 2px solid #e8e0e4;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            transition: var(--transition);
+            background: #fafafa;
+            color: var(--text-dark);
+        }
+
+        .form-group .form-control:focus,
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.10);
+            background: white;
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group .help-text {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .form-grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+        }
+
+        /* ===== SELECT PREGNANCY STYLING ===== */
+        #pregSelectF {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 1rem;
+            font-weight: 500;
+            color: var(--text-dark);
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 2px solid var(--border-light);
+            border-radius: var(--radius-sm);
+            padding: 0.75rem 1rem;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        #pregSelectF:hover {
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(232, 93, 143, 0.15);
+        }
+
+        #pregSelectF:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(232, 93, 143, 0.1);
+        }
+
+        #pregSelectF option {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            background-color: white;
+            padding: 0.5rem;
+        }
+
+        #pregSelectF option:hover {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+        }
+
+        /* ===== CALENDAR ===== */
+        .fc {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .fc .fc-button-primary {
+            background-color: var(--primary) !important;
+            border-color: var(--primary) !important;
+        }
+
+        .fc .fc-button-primary:hover {
+            background-color: var(--primary-dark) !important;
+            border-color: var(--primary-dark) !important;
+        }
+
+        .fc .fc-button-primary:disabled {
+            background-color: var(--text-muted) !important;
+            border-color: var(--text-muted) !important;
+        }
+
+        .calendar-wrapper {
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            background: #ffffff;
+            border: 2px solid #f3b5c7;
+            border-radius: var(--radius);
+            box-shadow: 0 8px 28px rgba(204, 70, 119, 0.10);
+            overflow: hidden;
+        }
+
+        .calendar-wrapper > h3 {
+            margin: 0 0 1rem;
+            padding-bottom: 0.85rem;
+            color: var(--secondary);
+            border-bottom: 2px solid #fce4ec;
+        }
+
+        #scheduleCalendar {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+            min-height: 400px;
+            padding: 1rem;
+            background: #ffffff;
+            border: 2px solid #ef9eb7;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        #scheduleCalendar .fc,
+        #scheduleCalendar .fc-view-harness,
+        #scheduleCalendar .fc-view,
+        #scheduleCalendar .fc-scrollgrid,
+        #scheduleCalendar .fc-scrollgrid-section > td,
+        #scheduleCalendar .fc-scrollgrid-section table {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        #scheduleCalendar .fc-scrollgrid-section table {
+            table-layout: fixed !important;
+        }
+
+        #scheduleCalendar .fc-toolbar {
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: #fff5f8;
+            border: 1px solid #f8cbd7;
+            border-radius: 10px;
+        }
+
+        #scheduleCalendar .fc-toolbar-title {
+            color: #a13e63;
+            font-size: clamp(1.05rem, 2vw, 1.45rem);
+            font-weight: 700;
+        }
+
+        #scheduleCalendar .fc-scrollgrid {
+            border: 2px solid #e989a6 !important;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        #scheduleCalendar .fc-theme-standard td,
+        #scheduleCalendar .fc-theme-standard th {
+            border-color: #e9a3b8 !important;
+        }
+
+        #scheduleCalendar .fc-col-header-cell {
+            padding: 0.45rem 0;
+            background: #fce4ec;
+            color: #8e3557;
+            border-bottom: 2px solid #e989a6 !important;
+        }
+
+        #scheduleCalendar .fc-daygrid-day {
+            background: #ffffff;
+            transition: background-color 0.18s ease;
+        }
+
+        #scheduleCalendar .fc-daygrid-day:hover {
+            background: #fff8fa;
+        }
+
+        #scheduleCalendar .fc-day-today {
+            background: #ffe8ed !important;
+        }
+
+        #scheduleCalendar .fc-daygrid-day-number {
+            padding: 0.45rem;
+            color: #6f3049;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        #scheduleCalendar .fc-day-other {
+            background: #fffafa;
+        }
+
+        #scheduleCalendar .fc-event {
+            padding: 0.15rem 0.3rem;
+            border-color: #cc4677;
+            border-radius: 5px;
+        }
+
+        @media (max-width: 720px) {
+            .calendar-wrapper { padding: 1rem; }
+            #scheduleCalendar { padding: 0.5rem; }
+
+            #scheduleCalendar .fc-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #scheduleCalendar .fc-toolbar-chunk {
+                display: flex;
+                justify-content: center;
+            }
+        }
+
+        .fc-event-title {
+            font-weight: 600;
+        }
+
+        /* ===== GRID UTILITIES ===== */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .flex-between {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .flex-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-momind {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            padding: 1rem;
+        }
+
+        .modal-momind-content {
+            background: white;
+            max-width: 560px;
+            width: 100%;
+            border-radius: var(--radius);
+            padding: 2rem;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-momind-content .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border-light);
+        }
+
+        .modal-momind-content .modal-header h3 {
+            font-weight: 700;
+            color: var(--secondary);
+            margin: 0;
+        }
+
+        .modal-momind-content .close-modal {
+            font-size: 1.75rem;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: var(--transition);
+            background: none;
+            border: none;
+            line-height: 1;
+        }
+
+        .modal-momind-content .close-modal:hover {
+            color: var(--primary);
+            transform: rotate(90deg);
+        }
+
+        /* ===== ALERTS ===== */
+        .alert {
+            padding: 1rem 1.25rem;
+            border-radius: var(--radius-sm);
+            margin-bottom: 1.25rem;
+            border: none;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert i {
+            font-size: 1.25rem;
+            margin-top: 0.1rem;
+        }
+
+        .content-area .alert.alert-info,
+        .notifications-modal .alert.alert-info {
+            position: relative;
+            background-color: #fff8fa;
+            background-image:
+                linear-gradient(90deg, #e85d8f 0%, #f39ab8 50%, #ffd8e2 100%),
+                radial-gradient(circle, rgba(232, 93, 143, 0.13) 0%, rgba(232, 93, 143, 0) 72%);
+            background-repeat: no-repeat;
+            background-size: 100% 4px, 170px 170px;
+            background-position: top left, calc(100% + 55px) -92px;
+            color: #743149;
+            border: 1px solid #f3b5c7;
+            border-left: 5px solid var(--primary);
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(161, 62, 99, 0.10);
+            transition: var(--transition);
+        }
+
+        .content-area .alert.alert-info:hover,
+        .notifications-modal .alert.alert-info:hover {
+            border-color: #e989a6;
+            border-left-color: var(--primary-dark);
+            box-shadow: 0 12px 30px rgba(161, 62, 99, 0.14);
+            transform: translateY(-2px);
+        }
+
+        .content-area .alert.alert-info > i,
+        .notifications-modal .alert.alert-info > i {
+            color: var(--primary-dark);
+        }
+
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid #ffc107;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid #28a745;
+        }
+
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid #dc3545;
+        }
+
+        /* ===== TABS ===== */
+        .tabs-nav {
+            display: flex;
+            gap: 0.25rem;
+            border-bottom: 2px solid var(--border-light);
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 0.7rem 1.25rem;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            transition: var(--transition);
+            white-space: nowrap;
+            font-size: 0.9rem;
+            border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+        }
+
+        .tab-btn:hover {
+            color: var(--secondary);
+            background: var(--bg-soft);
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(232, 93, 143, 0.06);
+        }
+
+        .tab-content-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== MISC ===== */
+        hr {
+            border: none;
+            border-top: 2px solid var(--border-light);
+            margin: 1.25rem 0;
+        }
+
+        .text-muted {
+            color: var(--text-muted);
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+
+        .gap-1 { gap: 0.5rem; }
+        .gap-2 { gap: 1rem; }
+
+        .w-100 { width: 100%; }
+        .max-width-sm { max-width: 640px; margin: 0 auto; }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            }
+
+            .card-pink {
+                padding: 1.25rem;
+            }
+
+            .flex-between {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .flex-between .btn-pink,
+            .flex-between .btn-outline-pink {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .form-grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .navbar-momind {
+                border-radius: 14px;
+                padding: 0.75rem 1rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .momind-container { padding: 0.5rem; }
+            .card-pink { padding: 1rem; }
+            .stat-card .stat-number { font-size: 1.5rem; }
+            .btn-pink, .btn-outline-pink { font-size: 0.8rem; padding: 0.4rem 1rem; }
+            .table-modern th, .table-modern td { padding: 0.4rem 0.5rem; font-size: 0.75rem; }
+        }
+
+        /* ===== SCROLLBAR ===== */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-soft);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary-dark);
+        }
+
+        /* ===== SHARED PAGE POLISH ===== */
+        .content-area {
+            width: 100%;
+        }
+
+        .page-shell {
+            width: min(100%, 960px);
+            margin-inline: auto;
+        }
+
+        .page-shell--wide {
+            width: min(100%, 1200px);
+            margin-inline: auto;
+        }
+
+        .page-shell--form {
+            width: min(100%, 760px);
+            margin-inline: auto;
+        }
+
+        .page-heading {
+            margin-bottom: 1.5rem;
+        }
+
+        .page-heading h1,
+        .page-heading h2 {
+            margin: 0 0 0.35rem;
+            color: var(--secondary);
+            font-size: clamp(1.45rem, 3vw, 2rem);
+            line-height: 1.25;
+        }
+
+        .page-heading p {
+            margin: 0;
+            color: var(--text-muted);
+        }
+
+        .content-area h1,
+        .content-area h2,
+        .content-area h3,
+        .content-area h4 {
+            line-height: 1.3;
+        }
+
+        .content-area .card-pink > h2:first-child,
+        .content-area .card-pink > h3:first-child {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.8rem;
+            border-bottom: 2px solid var(--primary-light);
+        }
+
+        /* Django's form.as_p output does not include form-group wrappers. */
+        .content-area form > p {
+            display: grid;
+            gap: 0.4rem;
+            margin-bottom: 1.15rem;
+        }
+
+        .content-area form > p > label,
+        .content-area form label {
+            color: var(--secondary);
+            font-size: 0.9rem;
+            font-weight: 650;
+        }
+
+        .content-area form > p input:not([type="checkbox"]):not([type="radio"]),
+        .content-area form > p select,
+        .content-area form > p textarea,
+        .content-area form .form-control {
+            width: 100%;
+            min-height: 44px;
+            padding: 0.65rem 0.9rem;
+            color: var(--text-dark);
+            background: #fffafb;
+            border: 2px solid #eadde2;
+            border-radius: var(--radius-sm);
+            font: inherit;
+            transition: var(--transition);
+        }
+
+        .content-area form > p textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .content-area form > p input:focus,
+        .content-area form > p select:focus,
+        .content-area form > p textarea:focus,
+        .content-area form .form-control:focus {
+            outline: none;
+            background: #fff;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(232, 93, 143, 0.11);
+        }
+
+        .content-area form .helptext,
+        .content-area form .help-text {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+        }
+
+        .content-area form .errorlist {
+            margin: 0 0 0.4rem;
+            padding: 0.65rem 0.85rem;
+            color: #9f2637;
+            background: #fff0f2;
+            border: 1px solid #f3bcc5;
+            border-radius: 9px;
+            list-style-position: inside;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--border-light);
+        }
+
+        .section-card {
+            padding: 1.25rem;
+            background: #fffafb;
+            border: 1px solid var(--border-light);
+            border-radius: 14px;
+        }
+
+        .stack-list {
+            display: grid;
+            gap: 1rem;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .empty-state {
+            padding: clamp(2rem, 8vw, 4.5rem) 1.25rem;
+            text-align: center;
+            color: var(--text-muted);
+            background: linear-gradient(145deg, #fff, #fff6f9);
+            border: 2px dashed #efc6d2;
+            border-radius: var(--radius);
+        }
+
+        .empty-state i {
+            display: block;
+            margin-bottom: 0.75rem;
+            color: var(--primary);
+            font-size: 2.25rem;
+        }
+
+        .content-area .table {
+            width: 100%;
+            margin: 0;
+            vertical-align: middle;
+            border-color: var(--border-light);
+        }
+
+        .content-area .table thead th {
+            padding: 0.8rem;
+            color: var(--secondary);
+            background: var(--primary-light);
+            white-space: nowrap;
+        }
+
+        .content-area .table tbody td {
+            padding: 0.8rem;
+        }
+
+        .content-area .list-group-item {
+            padding: 1rem;
+            background: #fffafb;
+            border-color: var(--border-light);
+        }
+
+        .inline-form {
+            display: flex;
+            align-items: end;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+        }
+
+        .inline-form > .form-control,
+        .inline-form > input,
+        .inline-form > select {
+            flex: 1 1 170px;
+        }
+
+        .ai-response {
+            padding: 1.25rem;
+            color: #4d2b38;
+            background: linear-gradient(145deg, #fff8fa, #fff);
+            border: 1px solid #efc6d2;
+            border-left: 5px solid var(--primary);
+            border-radius: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .page-shell,
+            .page-shell--form,
+            .page-shell--wide {
+                width: 100%;
+            }
+
+            .form-actions {
+                align-items: stretch;
+                flex-direction: column-reverse;
+            }
+
+            .form-actions > * {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .content-area .table-responsive {
+                border: 1px solid var(--border-light);
+                border-radius: 12px;
+            }
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+    <link href="{% static 'core/momind-theme.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="momind-container">
+        <div class="main-layout">
+            <aside class="sidebar" id="siteSidebar">
+                <div class="sidebar-brand">
+                    <img src="{% static 'core/images/momind-logo.png' %}" alt="MoMind logo" class="brand-logo" />
+                    <div>
+                        <h2>MoMind</h2>
+                        <p>Care beyond birth</p>
+                    </div>
+                </div>
+                {% with request.resolver_match.url_name as active_url %}
+                <nav class="sidebar-nav">
+                    <a href="{% url 'dashboards:dashboard' %}" class="{% if active_url == 'dashboard' %}active{% endif %}"><i class="fas fa-home"></i> Dashboard</a>
+                    {% if user.role == 'MOTHER' %}<a href="{% url 'accounts:mother_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'FATHER' %}<a href="{% url 'accounts:father_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'MIDWIFE' %}<a href="{% url 'accounts:midwife_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'DOCTOR' %}<a href="{% url 'accounts:doctor_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    {% if user.role == 'HOSPITAL' %}<a href="{% url 'accounts:hospital_details' %}"><i class="fas fa-id-card"></i> Hospital Profile</a>{% endif %}
+                    {% if user.role == 'HOSPITAL_STAFF' %}<a href="{% url 'accounts:hospital_staff_details' %}"><i class="fas fa-id-card"></i> My Profile</a>{% endif %}
+                    <a href="{% url 'chat:chatbot' %}" class="{% if active_url == 'chatbot' %}active{% endif %}"><i class="fas fa-robot"></i> AI Assistant</a>
+                    {% if user.role == 'MOTHER' or user.role == 'FATHER' or user.role == 'MIDWIFE' or user.role == 'DOCTOR' %}<a href="{% url 'chat:professional_chat' %}" class="{% if active_url == 'professional_chat' %}active{% endif %}"><i class="fas fa-user-doctor"></i> Care team chat{% if care_team_unread_count %}<span class="badge-status active">{{ care_team_unread_count }}</span>{% endif %}</a>{% endif %}
+                    <a href="{% url 'community:forum_home' %}" class="{% if active_url == 'forum_home' %}active{% endif %}"><i class="fas fa-comments"></i> Community Forum</a>
+                    <a href="{% url 'community:group_list' %}" class="{% if active_url == 'group_list' %}active{% endif %}"><i class="fas fa-users"></i> Care Groups</a>
+                    <a href="{% url 'dashboards:clinic_directory' %}" class="{% if active_url == 'clinic_directory' %}active{% endif %}"><i class="fas fa-hospital-user"></i> Clinics</a>
+                    <button type="button" id="showNotificationsBtn" onclick="showNotifications()" class="nav-bell" aria-haspopup="dialog" aria-controls="notificationsModal">
+                        <i class="fas fa-bell"></i> Notifications
+                        {% if unread_count %}<span class="badge-status active">{{ unread_count }}</span>{% endif %}
+                    </button>
+                    {% if user.is_authenticated %}
+                    <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit" class="{% if active_url == 'logout' %}active{% endif %}"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
+                    {% endif %}
+                </nav>
+                {% endwith %}
+            </aside>
+            <div class="main-column">
+                <!-- Navigation -->
+                <nav class="navbar-momind">
+                    <div class="logo-area">
+                        <button type="button" class="sidebar-toggle" onclick="toggleSidebar()" aria-label="Open navigation" aria-controls="siteSidebar" aria-expanded="false"><i class="fas fa-bars"></i></button>
+                        <span class="logo-icon"><img src="{% static 'core/images/momind-logo.png' %}" alt="MoMind logo"></span>
+                        <div>
+                            <h1>MoMind</h1>
+                            <span class="tagline">care beyond birth, empowering mothers, together</span>
+                        </div>
+                    </div>
+                    <div class="nav-right">
+                        <div class="nav-links">
+                            <a href="{% url 'chat:chatbot' %}"><i class="fas fa-robot"></i> AI Assistant</a>
+                            {% if user.role == 'MOTHER' or user.role == 'FATHER' or user.role == 'MIDWIFE' or user.role == 'DOCTOR' %}<a href="{% url 'chat:professional_chat' %}"><i class="fas fa-comments"></i> Care team chat{% if care_team_unread_count %}<span class="badge-status active">{{ care_team_unread_count }}</span>{% endif %}</a>{% endif %}
+                            <a href="{% url 'community:forum_home' %}"><i class="fas fa-users"></i> Community</a>
+                            {% if user.is_authenticated %}
+                            <form method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit"><i class="fas fa-sign-out-alt"></i> Logout</button></form>
+                            {% endif %}
+                        </div>
+                    </div>
+                </nav>
+                
+                <!-- Main Content -->
+                <main class="content-area">
+                    {% if messages %}
+                    <div aria-live="polite">
+                        {% for message in messages %}
+                        <div class="alert {% if message.tags == 'error' %}alert-danger{% elif message.tags %}alert-{{ message.tags }}{% else %}alert-info{% endif %}" role="alert">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% block content %}{% endblock %}
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications Modal -->
+    <div id="notificationsModal" class="modal-momind" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="notificationsModalTitle">
+        <div class="modal-momind-content notifications-modal">
+            <div class="modal-header">
+                <h3 id="notificationsModalTitle"><i class="fas fa-bell"></i> Notifications</h3>
+                <button type="button" class="close-modal" onclick="hideNotifications()" aria-label="Close notifications">&times;</button>
+            </div>
+            <div class="notifications-modal-body">
+                {% if pending_link_requests %}
+                <h6 style="margin-bottom: 0.75rem; color: var(--secondary);">Pending Family Link Requests</h6>
+                {% for link_req in pending_link_requests %}
+                <div class="card-pink" style="margin-bottom: 0.75rem; padding: 1rem; border-left: 4px solid var(--primary);">
+                    <div style="margin-bottom: 0.75rem;">
+                        <strong>{{ link_req.linker.get_full_name|default:link_req.linker.username }}</strong>
+                        <span class="text-muted">({{ link_req.linker_type }})</span>
+                        wants to link you as <strong>{{ link_req.link_type }}</strong>
+                    </div>
+                    {% if link_req.note %}
+                    <div style="background: var(--bg-soft); padding: 0.5rem 0.75rem; border-radius: var(--radius-sm); margin-bottom: 0.75rem; font-style: italic; font-size: 0.9rem;">
+                        "{{ link_req.note }}"
+                    </div>
+                    {% endif %}
+                    <div class="flex-center" style="justify-content: flex-start; gap: 0.5rem; flex-wrap: wrap;">
+                        <form method="POST" action="{% url 'dashboards:respond_link_request' link_req.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="accept">
+                            <button type="submit" class="btn-pink btn-pink-sm"><i class="fas fa-check"></i> Accept</button>
+                        </form>
+                        <form method="POST" action="{% url 'dashboards:respond_link_request' link_req.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="decline">
+                            <button type="submit" class="btn-outline-pink btn-outline-pink-sm"><i class="fas fa-times"></i> Decline</button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if notifications %}
+                <h6 style="margin-top: 1rem; margin-bottom: 0.75rem; color: var(--secondary);">Recent Notifications</h6>
+                {% for notif in notifications %}
+                <div class="alert alert-info" style="margin-bottom: 0.5rem; padding: 0.75rem;">
+                    <div>
+                        <strong>{{ notif.title }}</strong><br>
+                        {{ notif.message|truncatechars:150 }}
+                        <br><small class="text-muted">{{ notif.created_at|timesince }} ago</small>
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if not pending_link_requests and not notifications %}
+                <div class="notifications-empty">
+                    <i class="far fa-bell"></i>
+                    <p style="margin: 0;">You have no notifications right now.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Link Modal (reusable) -->
+    <div id="linkModal" class="modal-momind" style="display: none;">
+        <div class="modal-momind-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Add Member</h3>
+                <button type="button" class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form action="{% url 'dashboards:link_member' %}" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="role" id="modalRole">
+                <div class="form-group">
+                    <label id="idLabel">Enter ID</label>
+                    <input type="text" name="target_id" id="target_id" class="form-control" required>
+                    <small class="text-muted">Scan QR or enter ID manually</small>
+                </div>
+                <button type="button" id="scanQrButton" class="btn-outline-pink" onclick="startScanner()">
+                    <i class="fas fa-qrcode"></i> Scan QR Code
+                </button>
+                <div class="form-group">
+                    <label for="id_note">Optional message</label>
+                    <textarea name="note" id="id_note" rows="3" placeholder="Add a short message to the recipient (optional)" class="form-control"></textarea>
+                </div>
+                <div id="qrScannerPanel" style="display:none; margin-top:0.75rem;">
+                    <div id="reader" style="width:100%; min-height:200px; border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 0.5rem;"></div>
+                    <p id="qrScannerStatus" class="text-muted" role="status" aria-live="polite" style="margin:0.75rem 0 0;"></p>
+                    <div class="form-group" style="margin-top:0.75rem;">
+                        <label for="qrImageInput">Camera unavailable? Choose a QR image</label>
+                        <input type="file" id="qrImageInput" accept="image/*" class="form-control">
+                    </div>
+                </div>
+                <div class="flex-between" style="margin-top: 1.25rem;">
+                    <button type="button" onclick="closeModal()" class="btn-outline-pink">Cancel</button>
+                    <button type="submit" class="btn-pink"><i class="fas fa-link"></i> Link Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="qrModal" class="modal-momind" style="display: none;">
+        <div class="modal-momind-content qr-modal">
+            <div class="modal-header">
+                <h3>My QR Code</h3>
+                <button type="button" class="close-modal" onclick="closeQRModal()">&times;</button>
+            </div>
+            <div class="qr-modal-body" style="padding: 1rem;">
+                <div id="qrcodeModalContainer"></div>
+                <p id="qrModalText" class="text-muted" style="margin-top: 1rem;"></p>
+                <button type="button" class="btn-outline-pink" onclick="closeQRModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        let html5QrCode = null;
+        let qrScanLocked = false;
+
+        function setQrScannerStatus(message, isError = false) {
+            const status = document.getElementById('qrScannerStatus');
+            if (!status) return;
+            status.textContent = message;
+            status.style.color = isError ? '#b42318' : '';
+        }
+
+        function normaliseScannedId(value) {
+            return String(value || '').trim().replace(/^FAMQR:/i, '');
+        }
+
+        function handleQrScan(decodedText) {
+            if (qrScanLocked) return;
+            const targetInput = document.getElementById('target_id');
+            const scannedId = normaliseScannedId(decodedText);
+            if (!targetInput || !scannedId) {
+                setQrScannerStatus('The QR code did not contain a valid member ID.', true);
+                return;
+            }
+
+            qrScanLocked = true;
+            targetInput.value = scannedId;
+            setQrScannerStatus(`Member ID ${scannedId} scanned successfully.`);
+            stopQrScanner().finally(() => {
+                const scannerPanel = document.getElementById('qrScannerPanel');
+                const scanButton = document.getElementById('scanQrButton');
+                if (scannerPanel) scannerPanel.style.display = 'none';
+                if (scanButton) scanButton.style.display = '';
+                targetInput.focus();
+            });
+        }
+
+        async function stopQrScanner() {
+            if (!html5QrCode) return;
+            try {
+                if (html5QrCode.isScanning) await html5QrCode.stop();
+                html5QrCode.clear();
+            } catch (error) {
+                console.debug('QR scanner cleanup:', error);
+            }
+            html5QrCode = null;
+        }
+        
+        function openModal(role) {
+            const modal = document.getElementById('linkModal');
+            document.getElementById('modalRole').value = role;
+            document.getElementById('modalTitle').innerText = "Link " + role.charAt(0) + role.slice(1).toLowerCase();
+            document.getElementById('idLabel').innerText = role + " ID Number";
+            document.getElementById('target_id').value = '';
+            const imageInput = document.getElementById('qrImageInput');
+            if (imageInput) imageInput.value = '';
+            qrScanLocked = false;
+            modal.style.display = 'flex';
+            const scannerPanel = document.getElementById('qrScannerPanel');
+            const scanButton = document.getElementById('scanQrButton');
+            if (scannerPanel) scannerPanel.style.display = 'none';
+            if (scanButton) scanButton.style.display = '';
+            setQrScannerStatus('');
+        }
+        
+        async function closeModal() {
+            const modal = document.getElementById('linkModal');
+            modal.style.display = 'none';
+            await stopQrScanner();
+        }
+        
+        async function startScanner() {
+            const readerElement = document.getElementById("reader");
+            if (!readerElement) return;
+
+            const scannerPanel = document.getElementById('qrScannerPanel');
+            const scanButton = document.getElementById('scanQrButton');
+            if (scannerPanel) scannerPanel.style.display = 'block';
+            if (scanButton) scanButton.style.display = 'none';
+            qrScanLocked = false;
+            setQrScannerStatus('Requesting camera access…');
+
+            if (typeof Html5Qrcode === 'undefined') {
+                setQrScannerStatus('QR scanner could not load. Enter the ID manually or refresh the page.', true);
+                return;
+            }
+
+            await stopQrScanner();
+            readerElement.innerHTML = '';
+            html5QrCode = new Html5Qrcode('reader');
+
+            try {
+                await html5QrCode.start(
+                    { facingMode: 'environment' },
+                    { fps: 10, qrbox: { width: 220, height: 220 }, aspectRatio: 1 },
+                    handleQrScan,
+                    () => {}
+                );
+                setQrScannerStatus('Point the camera at the QR code.');
+            } catch (error) {
+                console.error('Camera error:', error);
+                setQrScannerStatus(
+                    'Camera access failed. Allow camera permission, use HTTPS or localhost, or choose a QR image below.',
+                    true
+                );
+            }
+        }
+        
+        function renderQRCode(container, value) {
+            if (!container || !value) return false;
+            container.innerHTML = "";
+            if (typeof QRCode === 'undefined') {
+                container.textContent = 'QR generator could not load. Refresh the page and try again.';
+                return false;
+            }
+            new QRCode(container, { text: value, width: 220, height: 220 });
+            return true;
+        }
+
+        function showQRCodeModal() {
+            const value = document.getElementById("qrValue")?.innerText?.trim();
+            if (!value) return;
+            const modal = document.getElementById("qrModal");
+            const container = document.getElementById("qrcodeModalContainer");
+            const text = document.getElementById("qrModalText");
+            if (!value) {
+                if (container) container.textContent = 'No member ID is available for this account.';
+                if (modal) modal.style.display = 'flex';
+                return;
+            }
+            renderQRCode(container, value);
+            if (text) text.innerText = `ID: ${value}`;
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function generateQR() {
+            showQRCodeModal();
+        }
+
+        function closeQRModal() {
+            const modal = document.getElementById('qrModal');
+            const container = document.getElementById('qrcodeModalContainer');
+            if (modal) modal.style.display = 'none';
+            if (container) container.innerHTML = '';
+        }
+
+        document.getElementById('qrImageInput')?.addEventListener('change', async function(event) {
+            const file = event.target.files?.[0];
+            if (!file) return;
+            if (typeof Html5Qrcode === 'undefined') {
+                setQrScannerStatus('QR scanner could not load. Enter the ID manually.', true);
+                return;
+            }
+
+            await stopQrScanner();
+            html5QrCode = new Html5Qrcode('reader');
+            setQrScannerStatus('Reading QR image…');
+            try {
+                const decodedText = await html5QrCode.scanFile(file, true);
+                handleQrScan(decodedText);
+            } catch (error) {
+                console.error('QR image scan error:', error);
+                setQrScannerStatus('No readable QR code was found in that image.', true);
+            }
+        });
+
+        function formatAIOutput(text) {
+            text = text.replace(/\*\*(.*?)\*\*/g, "<b>$1</b>");
+            text = text.replace(/^###\s?(.*)$/gm, "<h3>$1</h3>");
+            text = text.replace(/^##\s?(.*)$/gm, "<h2>$1</h2>");
+            text = text.replace(/^\- (.*)$/gm, "<li>$1</li>");
+            text = text.replace(/(<li>.*<\/li>)/gs, "<ul>$1</ul>");
+            return text;
+        }
+        
+        function showNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            if (modal) modal.style.display = 'flex';
+        }
+
+        function hideNotifications() {
+            const modal = document.getElementById('notificationsModal');
+            if (modal) modal.style.display = 'none';
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('siteSidebar');
+            const layout = document.querySelector('.main-layout');
+            if (!sidebar || !layout) return;
+            const toggle = document.querySelector('.sidebar-toggle');
+            if (window.innerWidth <= 768) {
+                const isOpen = sidebar.classList.toggle('mobile-open');
+                if (toggle) toggle.setAttribute('aria-expanded', String(isOpen));
+                return;
+            }
+            sidebar.classList.toggle('collapsed');
+            layout.classList.toggle('sidebar-collapsed');
+            if (toggle) toggle.setAttribute('aria-expanded', String(!sidebar.classList.contains('collapsed')));
+
+            // FullCalendar measures its columns from the available width. Refresh
+            // after the grid transition so day borders remain evenly divided.
+            requestAnimationFrame(function() {
+                window.dispatchEvent(new Event('resize'));
+            });
+            setTimeout(function() {
+                window.dispatchEvent(new Event('resize'));
+            }, 350);
+        }
+
+        document.querySelectorAll('#siteSidebar a').forEach(function(link) {
+            link.addEventListener('click', function() {
+                if (window.innerWidth <= 768) {
+                    document.getElementById('siteSidebar')?.classList.remove('mobile-open');
+                    document.querySelector('.sidebar-toggle')?.setAttribute('aria-expanded', 'false');
+                }
+            });
+        });
+
+        // Close modal on backdrop click
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('linkModal');
+            if (e.target === modal) {
+                closeModal();
+            }
+            const notificationsModal = document.getElementById('notificationsModal');
+            if (e.target === notificationsModal) {
+                hideNotifications();
+            }
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+                hideNotifications();
+            }
+        });
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

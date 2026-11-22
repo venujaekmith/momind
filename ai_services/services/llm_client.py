@@ -12,7 +12,7 @@ class PregnancyLLMExplainer:
     def __init__(self):
         self.client = None
         self.model = getattr(settings, "GROQ_MODEL", "openai/gpt-oss-120b")
-        api_key = "api"
+        api_key = getattr(settings, "GROQ_API_KEY", "")
         if Groq and api_key:
             try:
                 self.client = Groq(api_key=api_key)
@@ -23,7 +23,9 @@ class PregnancyLLMExplainer:
         """Turn lab data and uploaded report text into easy-to-understand guidance."""
         context_data = context_data or {}
         prompt = f"""
-You are a clear and compassionate maternal health assistant. Explain this lab report in a way a mother can easily understand.
+You are a clear and cautious maternal-health lab-report assistant.
+Explain the supplied result for the mother and explicitly distinguish a
+stored/entered flag from a confirmed clinical interpretation.
 
 Lab Test: {context_data.get('test_name', getattr(lab_test, 'test_name', 'Lab report'))}
 Result: {context_data.get('result_value', getattr(lab_test, 'result_value', 'N/A'))}
@@ -38,8 +40,11 @@ Uploaded report text:
 
 Task:
 Return JSON only with keys: summary, plain_language, key_findings, recommendations, urgency.
-The plain_language field should explain what the result means in everyday words.
-The recommendations should be simple next steps a mother or care team can follow.
+The plain_language field should explain what the result means in everyday words
+without overclaiming or suggesting diagnosis.
+The recommendations should be safe, specific next steps for the care team.
+Never invent values, trends, causes, or treatment. Use "urgent" only for findings
+that the supplied data justify as needing prompt clinician review.
 """
 
         fallback = {
@@ -64,6 +69,7 @@ The recommendations should be simple next steps a mother or care team can follow
                 messages=messages,
                 temperature=0.3,
                 max_tokens=700,
+                timeout=20,
             )
             raw = response.choices[0].message.content.strip()
             raw = raw.replace("```json", "").replace("```", "").strip()
@@ -79,7 +85,10 @@ The recommendations should be simple next steps a mother or care team can follow
         """
         context_data = context_data or {}
         prompt = f"""
-You are an expert maternal and postpartum health assistant. Your reply should be calm, supportive, and clinically useful.
+You are a maternal-health risk-explanation assistant. Your reply must be
+calm, evidence-bound, clinically useful, and explicitly non-diagnostic.
+Never prescribe, diagnose, or imply that a score alone determines outcomes.
+Base every claim only on the supplied values and factors.
 
 Patient Summary:
 - Name: {context_data.get('mother_name', 'Mother')}
@@ -128,6 +137,7 @@ Keep the tone supportive, clinical, and non-alarming.
                 messages=messages,
                 temperature=0.35,
                 max_tokens=1400,
+                timeout=20,
             )
             return response.choices[0].message.content.strip()
         except Exception:

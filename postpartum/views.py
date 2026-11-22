@@ -55,6 +55,9 @@ Rules:
 - Never mention scoring or assessment to the mother
 - Never include the <stress_data> block more than once per conversation
 - Ask about: mood, sleep, feeding challenges, support system, physical recovery, any worries about the outside world
+- Do not diagnose or prescribe, and do not state that you are able to assess a diagnosis.
+- If she describes self-harm thoughts, inability to care for the baby, severe
+  symptoms, or a medical emergency, prioritize immediate human support and emergency services.
 """
 
 DRAW_SYSTEM_PROMPT = """You are analyzing a drawing made by a postpartum mother to express her current emotional state.
@@ -378,15 +381,19 @@ def _force_stress_assessment(conversation):
         return None
     try:
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",   # or a stronger model like llama-3.3-70b
+            model=settings.GROQ_MODEL,
             messages=[{"role": "system", "content": STRESS_EXTRACTION_PROMPT}] + history,
             temperature=0.5,
             max_tokens=600,
+            timeout=20,
         )
 
         raw = response.choices[0].message.content.strip()
         raw = re.sub(r'```json|```', '', raw).strip()
-
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start >= 0 and end > start:
+            raw = raw[start:end + 1]
         return json.loads(raw)
 
     except Exception as e:
@@ -425,10 +432,11 @@ def send_message(request):
         if not client:
             raise RuntimeError('AI service unavailable')
         response = client.chat.completions.create(
-            model="openai/gpt-oss-120b",
+            model=settings.GROQ_MODEL,
             messages=[{'role': 'system', 'content': CHAT_SYSTEM_PROMPT}] + history,
             temperature=0.7,
             max_tokens=1000,
+            timeout=20,
         )
         raw_reply = response.choices[0].message.content
     except Exception:
@@ -504,6 +512,7 @@ def analyze_drawing(request):
             ]}],
             temperature=0.5,
             max_tokens=800,
+            timeout=30,
         )
         raw = re.sub(r'```json|```', '', response.choices[0].message.content.strip()).strip()
         result = json.loads(raw)

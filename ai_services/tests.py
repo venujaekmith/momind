@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase, override_settings
@@ -10,7 +11,9 @@ from ai_services.models import AgentRun
 from ai_services.services.maternal_agent import MaternalCareAgent
 from ai_services.services.postpartum_ai import PostpartumAIService
 from ai_services.services.lab_report_analysis import LabReportAnalysisService
+from ai_services.services.llm_client import PregnancyLLMExplainer
 from ai_services.templatetags.ai_formatting import format_ai_summary
+from chat.services.safety import safety_check
 from dashboards.models import (
     EmergencyAlert,
     FetalHealth,
@@ -40,6 +43,24 @@ class PostpartumAIServiceTests(SimpleTestCase):
         self.assertIn(result["level"], {"low", "moderate", "high"})
         self.assertTrue(result["insight"])
         self.assertTrue(result["recommendation"])
+
+
+class ChatSafetyTests(SimpleTestCase):
+    def test_urgent_patterns_trigger_safety_response(self):
+        self.assertTrue(safety_check("I am bleeding heavily"))
+        self.assertTrue(safety_check("The baby has stopped moving"))
+        self.assertTrue(safety_check("I cannot breathe"))
+
+    def test_general_questions_do_not_trigger_safety_response(self):
+        self.assertFalse(safety_check("How much water should I drink?"))
+
+
+class LLMConfigurationTests(SimpleTestCase):
+    @override_settings(GROQ_API_KEY="test-key", GROQ_MODEL="test-model")
+    @patch("ai_services.services.llm_client.Groq")
+    def test_explainer_uses_configured_groq_credentials(self, groq_class):
+        PregnancyLLMExplainer()
+        groq_class.assert_called_once_with(api_key="test-key")
 
 
 class LabReportAnalysisServiceTests(SimpleTestCase):

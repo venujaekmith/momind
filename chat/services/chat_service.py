@@ -6,7 +6,7 @@ from ..models import CheckupQuestion, MaternalCheckIn, MaternalCheckup
 
 CHECKUP_QUESTION_LIMIT = 5
 
-def get_ai_reply(user, message):
+def get_ai_reply(user, message, history=None):
 
     # 🚨 safety override
     if safety_check(message):
@@ -19,7 +19,12 @@ Please contact a doctor or go to the nearest hospital immediately.
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"""
+    ]
+    if history:
+        messages.extend(history[-10:])
+    messages.append({
+        "role": "user",
+        "content": f"""
 Role: {context['role']}
 Week: {context['week']}
 Phase: {context['phase']}
@@ -27,8 +32,8 @@ Relevant date: {context['delivery_date']}
 
 User message:
 {context['message']}
-        """}
-    ]
+        """
+    })
 
     return ask_groq(messages)
 

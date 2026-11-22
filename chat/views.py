@@ -257,9 +257,19 @@ def send_message(request):
         return JsonResponse({"error": "Too many messages. Please wait a minute."}, status=429)
 
     session = get_object_or_404(ChatSession, id=session_id, user=request.user)
+    history = [
+        {
+            "role": "assistant" if item.sender == "ai" else "user",
+            "content": item.message,
+        }
+        for item in reversed(list(
+            ChatMessage.objects.filter(session=session).order_by("-timestamp")[:20]
+        ))
+        if item.message
+    ]
     ChatMessage.objects.create(session=session, sender="user", message=message)
     try:
-        ai_reply = get_ai_reply(request.user, message)
+        ai_reply = get_ai_reply(request.user, message, history=history)
     except Exception:
         ai_reply = (
             "I’m unable to reach the AI service right now. For urgent symptoms, "

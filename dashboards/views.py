@@ -1581,7 +1581,7 @@ def prepare_baby_context(baby, records):
     """Prepare baby data for AI"""
     data = {
         "baby_name": baby.name or "Baby",
-        "gender": baby.gender.capitalize(),
+        "gender": (baby.gender or "Not recorded").capitalize(),
         "current_age_weeks": baby.get_age_in_weeks() or "Not born yet",
         "age_display": baby.get_age_display(),
         "birth_weight_kg": baby.birth_weight_kg,
@@ -1614,8 +1614,11 @@ def get_groq_baby_response(context, user_query="", is_summary=False):
             "development records and discuss any concerns with your pediatric care team."
         )
 
-    system_prompt = """You are a warm, experienced pediatric nurse and early childhood development expert. 
-    Give practical, encouraging, and evidence-based advice. Always remind parents to consult their doctor for medical concerns."""
+    system_prompt = """You are a cautious pediatric and early-child-development
+support assistant. Give practical, age-appropriate, evidence-based guidance.
+Do not diagnose or prescribe. Ask one focused clarifying question when the
+information is insufficient. Clearly advise a pediatric clinician for red flags,
+rapid change, or urgent concerns."""
 
     if is_summary:
         user_prompt = f"""
@@ -1652,13 +1655,14 @@ Give a helpful, personalized, and caring response.
     try:
         client = Groq(api_key=settings.GROQ_API_KEY)
         completion = client.chat.completions.create(
-            model="openai/gpt-oss-120b",   # Excellent balance of quality and speed
+            model=getattr(settings, "GROQ_MODEL", "openai/gpt-oss-120b"),
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            temperature=0.7,
+            temperature=0.4,
             max_tokens=700 if is_summary else 800,
+            timeout=20,
         )
         return completion.choices[0].message.content.strip()
 

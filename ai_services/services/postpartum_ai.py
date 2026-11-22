@@ -57,6 +57,12 @@ class PostpartumAIService:
             try:
                 llm_response = self._ask_llm(q3_feeling, q4_writing, q5_drawing_desc, score)
                 if llm_response:
+                    llm_score = llm_response.get("score")
+                    if isinstance(llm_score, int) or (
+                        isinstance(llm_score, str) and llm_score.isdigit()
+                    ):
+                        score = max(10, min(95, int(llm_score)))
+                        level = self._score_to_level(score)
                     insight = llm_response.get("insight") or insight
                     recommendation = llm_response.get("recommendation") or recommendation
             except Exception:
@@ -75,9 +81,21 @@ class PostpartumAIService:
                 messages = list(history) + [{"role": "user", "content": user_message}]
                 response = self.client.chat.completions.create(
                     model=self.model,
-                    messages=messages,
+                    messages=[
+                        {
+                            "role": "system",
+                            "content": (
+                                "You are a warm postpartum support companion. Listen first, "
+                                "ask one focused question at a time, and keep replies short. "
+                                "Do not diagnose or prescribe. For thoughts of self-harm or "
+                                "severe symptoms, encourage immediate support and emergency care."
+                            ),
+                        },
+                        *messages[-12:],
+                    ],
                     temperature=0.7,
-                    max_tokens=800,
+                    max_tokens=600,
+                    timeout=20,
                 )
                 reply = response.choices[0].message.content.strip()
                 return {"reply": reply, "stress": None}
@@ -104,24 +122,36 @@ You are a warm postpartum wellbeing assistant. The mother reported:
 - Drawing: {drawing_desc}
 - Current score: {score}/100
 
-Return JSON only with keys: insight, recommendation.
+Return JSON only with keys: score, level, insight, recommendation.
+Score must be from 10 to 95. The level must be low (10-35), moderate
+(36-65), or high (66-95). Ground the score only in the supplied answers.
 """
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
-                {"role": "system", "content": "You are a gentle maternal wellbeing assistant."},
+                {"role": "system", "content": (
+                    "You are a gentle maternal wellbeing assistant. Do not diagnose "
+                    "or imply clinical certainty. Output only valid JSON."
+                )},
                 {"role": "user", "content": prompt},
             ],
             temperature=0.4,
             max_tokens=300,
+            timeout=20,
         )
         raw = response.choices[0].message.content.strip()
         raw = re.sub(r"```json|```", "", raw).strip()
+        start = raw.find("{")
+        end = raw.rfind("}")
+        if start >= 0 and end > start:
+            raw = raw[start:end + 1]
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
             return None
         return {
+            "score": payload.get("score"),
+            "level": payload.get("level"),
             "insight": payload.get("insight", ""),
             "recommendation": payload.get("recommendation", ""),
         }

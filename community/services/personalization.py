@@ -177,6 +177,7 @@ class CommunityPersonalizationService:
                 ],
                 temperature=0.2,
                 max_tokens=900,
+                timeout=20,
             )
             content = response.choices[0].message.content.strip()
             return content or fallback

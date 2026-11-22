@@ -21,6 +21,7 @@ def ask_groq(messages):
             model=settings.GROQ_MODEL,
             messages=messages,
             temperature=0.4,
+            max_tokens=700,
             timeout=20,
         )
         content = response.choices[0].message.content
